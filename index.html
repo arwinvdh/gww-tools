@@ -249,7 +249,8 @@ textarea.inp { resize: vertical; min-height: 64px; }
     <div class="field"><label for="myName">Naam uitvoerder</label><input class="inp" id="myName" autocomplete="name"></div>
     <div class="field"><label for="myRole">Functie</label><input class="inp" id="myRole" placeholder="Uitvoerder" autocomplete="off"></div>
     <div class="field"><label for="myPhone">Telefoon</label><input class="inp" id="myPhone" type="tel" autocomplete="tel"></div>
-    <p class="hint">Eenmalig invullen. Blijft alleen op dit apparaat staan.</p>
+    <p class="hint">Eenmalig invullen. Blijft op dit apparaat staan en wordt alleen gedeeld als je hieronder synchroniseren aanzet.</p>
+    <div id="syncBox"></div>
     <p class="hint" id="ver"></p>
     <p class="hint">Meer tools: <a class="lnk" href="route.html">Route knijperwagen</a></p>
     <button class="btn primary" id="settingsOk">Klaar</button>
@@ -259,11 +260,12 @@ textarea.inp { resize: vertical; min-height: 64px; }
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="sync.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.10.22-d';
+  var VERSION = '2026.11.13-a';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
@@ -601,7 +603,11 @@ textarea.inp { resize: vertical; min-height: 64px; }
     return out.join('\n').replace(/^\n+/, '');
   }
   function saveDraft() {
-    var d = { lat: state.lat, lon: state.lon }; FIELDS.forEach(function (f) { d[f] = $(f).value; }); lsSet(LS.draft, JSON.stringify(d));
+    var d = { lat: state.lat, lon: state.lon }; FIELDS.forEach(function (f) { d[f] = $(f).value; });
+    var js = JSON.stringify(d);
+    if (lsGet(LS.draft, '') === js) return;                 // niets veranderd: tijdstip blijft staan
+    lsSet(LS.draft, js);
+    if (!state.noTouch) { lsSet('locdelen.draftT', String(Date.now())); ghDraftSoon(); }
   }
   function update() {
     saveDraft(); schedulePrebuild();
@@ -901,7 +907,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     var i = a.findIndex(function (p) { return ((p.nr || '') + '|' + p.name).toLowerCase() === key; });
     if (i >= 0) a.splice(i, 1);
     a.unshift(rec);
-    setP(a);
+    setP(a); ghProject(rec);
     if (!silent) toast(i >= 0 ? 'Project bijgewerkt' : 'Project opgeslagen');
     return true;
   }
@@ -931,7 +937,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
       var d = document.createElement('div'); d.className = 'proj';
       d.innerHTML = '<button class="proj-main"><b>' + esc(pl(p)) + '</b><span>' + esc(p.addr || (fmt(p.lat) + ', ' + fmt(p.lon))) + '</span></button><button class="btn sm danger" aria-label="Verwijder ' + esc(pl(p)) + '">&times;</button>';
       d.children[0].onclick = function () { loadProject(p); };
-      d.children[1].onclick = function () { if (confirm('"' + pl(p) + '" verwijderen?')) setP(getP().filter(function (x) { return x.ts !== p.ts || x.name !== p.name || x.nr !== p.nr; })); };
+      d.children[1].onclick = function () { if (confirm('"' + pl(p) + '" verwijderen?')) { setP(getP().filter(function (x) { return x.ts !== p.ts || x.name !== p.name || x.nr !== p.nr; })); ghDelete(p); } };
       box.appendChild(d);
     });
   }
@@ -1021,12 +1027,12 @@ textarea.inp { resize: vertical; min-height: 64px; }
     else if (e.shiftKey && (e.key === 'C' || e.key === 'c')) { e.preventDefault(); if (!$('copy').disabled) $('copy').click(); }
   });
   [['myName', 'locdelen.who'], ['myPhone', 'locdelen.phone'], ['myRole', 'locdelen.role']].forEach(function (x) {
-    $(x[0]).value = lsGet(x[1], ''); $(x[0]).addEventListener('input', function () { lsSet(x[1], this.value.trim()); update(); });
+    $(x[0]).value = lsGet(x[1], ''); $(x[0]).addEventListener('input', function () { lsSet(x[1], this.value.trim()); ghProfileTouch(); update(); });
   });
   [['useWho', 'locdelen.useWho', 'myName'], ['usePhone', 'locdelen.usePhone', 'myPhone']].forEach(function (x) {
     $(x[0]).checked = lsGet(x[1], '1') === '1';
     $(x[0]).onchange = function () {
-      lsSet(x[1], this.checked ? '1' : '0');
+      lsSet(x[1], this.checked ? '1' : '0'); ghProfileTouch();
       if (this.checked && !$(x[2]).value.trim()) openSettings(x[2]);
       update();
     };
@@ -1064,7 +1070,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
         var rec = { via: String(p.via || ''), arrive: String(p.arrive || ''), plabel: String(p.plabel || ''), nr: String(p.nr || ''), name: String(p.name || ''), addr: String(p.addr || ''), note: String(p.note || ''), lat: +p.lat, lon: +p.lon, ts: +p.ts || Date.now() };
         if (i >= 0) cur[i] = rec; else cur.push(rec);
       });
-      setP(cur); toast('Geïmporteerd');
+      setP(cur); ghPushAll(); toast('Geïmporteerd');
     }).catch(function () { toast('Ongeldig bestand'); });
     this.value = '';
   };
@@ -1085,6 +1091,82 @@ textarea.inp { resize: vertical; min-height: 64px; }
   window.addEventListener('online', function () { state.failed = {}; applyLayers(); toast('Weer online'); });
   $('ver').textContent = 'Versie ' + VERSION;
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
+  /* synchroniseren via een eigen privérepo op GitHub (alleen als verbonden, zie sync.js) */
+  var gh = null, lastPull = 0, draftTimer = 0;
+  function ghKey(p) { return 'projects/' + encodeURIComponent(((p.nr || '') + '|' + (p.name || '')).toLowerCase()); }
+  function projDoc(p) { return { nr: p.nr || '', name: p.name || '', addr: p.addr || '', note: p.note || '', via: p.via || '', arrive: p.arrive || '', plabel: p.plabel || '', lat: p.lat, lon: p.lon, t: p.ts || Date.now() }; }
+  function ghProject(p) { if (gh) gh.doc(ghKey(p)).set(projDoc(p)).catch(function () {}); }
+  function ghDelete(p) { if (gh) gh.doc(ghKey(p)).delete().catch(function () {}); }
+  function ghPushAll() { getP().forEach(ghProject); }
+  function profileDoc() {
+    return { who: lsGet('locdelen.who', ''), role: lsGet('locdelen.role', ''), phone: lsGet('locdelen.phone', ''), useWho: lsGet('locdelen.useWho', '1'), usePhone: lsGet('locdelen.usePhone', '1'), t: +lsGet('locdelen.profileT', '0') || Date.now() };
+  }
+  function ghProfileTouch() { lsSet('locdelen.profileT', String(Date.now())); if (gh) gh.doc('profile/main').set(profileDoc()).catch(function () {}); }
+  function draftDoc() { var d = { lat: state.lat, lon: state.lon, t: +lsGet('locdelen.draftT', '0') || Date.now() }; FIELDS.forEach(function (f) { d[f] = $(f).value; }); return d; }
+  function ghDraftPush() { if (gh && state.lat != null) gh.doc('draft/main').set(draftDoc()).catch(function () {}); }
+  function ghDraftSoon() { if (!gh) return; clearTimeout(draftTimer); draftTimer = setTimeout(ghDraftPush, 30000); }
+  function ghPull() {
+    if (!gh) return Promise.resolve();
+    lastPull = Date.now();
+    return gh.pull().then(function () { return Promise.all([gh.entries('projects/'), gh.doc('profile/main').get(), gh.doc('draft/main').get()]); }).then(function (res) {
+      // projecten: per project het nieuwste, verwijderingen meenemen
+      var cur = getP(), byKey = {}, changed = false, remote = {};
+      cur.forEach(function (p) { byKey[ghKey(p)] = p; });
+      res[0].forEach(function (e) {
+        remote[e.key] = e.d;
+        var d = e.d, loc = byKey[e.key];
+        if (d.__del) { if (loc && (loc.ts || 0) <= d.t) { cur = cur.filter(function (x) { return x !== loc; }); changed = true; } return; }
+        if (!validLL(+d.lat, +d.lon)) return;
+        if (!loc || d.t > (loc.ts || 0)) {
+          if (loc) cur = cur.filter(function (x) { return x !== loc; });
+          cur.push({ nr: String(d.nr || ''), name: String(d.name || ''), addr: String(d.addr || ''), note: String(d.note || ''), via: String(d.via || ''), arrive: String(d.arrive || ''), plabel: String(d.plabel || ''), lat: +d.lat, lon: +d.lon, ts: +d.t });
+          changed = true;
+        }
+      });
+      if (changed) { cur.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); setP(cur); }
+      getP().forEach(function (p) { var r = remote[ghKey(p)]; if (!r || (p.ts || 0) > (r.t || 0)) ghProject(p); });
+      // mijn gegevens: het nieuwste wint
+      var pr = res[1], pt = +lsGet('locdelen.profileT', '0');
+      if (pr.exists && pr.data().t > pt) {
+        var d = pr.data();
+        lsSet('locdelen.who', d.who || ''); lsSet('locdelen.role', d.role || ''); lsSet('locdelen.phone', d.phone || '');
+        lsSet('locdelen.useWho', d.useWho === '0' ? '0' : '1'); lsSet('locdelen.usePhone', d.usePhone === '0' ? '0' : '1'); lsSet('locdelen.profileT', String(d.t));
+        $('myName').value = d.who || ''; $('myRole').value = d.role || ''; $('myPhone').value = d.phone || '';
+        $('useWho').checked = d.useWho !== '0'; $('usePhone').checked = d.usePhone !== '0';
+        update();
+      } else if ((!pr.exists || pt > pr.data().t) && (lsGet('locdelen.who', '') || lsGet('locdelen.phone', ''))) {
+        gh.doc('profile/main').set(profileDoc()).catch(function () {});
+      }
+      // laatste invoer: nieuwere invoer van een ander apparaat aanbieden, nooit zomaar overnemen
+      var dr = res[2], dt = +lsGet('locdelen.draftT', '0');
+      if (dr.exists && dr.data().t > dt + 1000 && validLL(+dr.data().lat, +dr.data().lon)) {
+        var rd = dr.data();
+        window.GhSync.notice('gh-draft', 'Er staat nieuwere invoer van een ander apparaat: ' + ([rd.nr, rd.name].filter(Boolean).join(' \u00B7 ') || 'een locatie') + '.', [
+          { label: 'Overnemen', primary: true, fn: function () {
+            state.noTouch = true;
+            FIELDS.forEach(function (f) { $(f).value = rd[f] || ''; }); openMore();
+            setPoint(+rd.lat, +rd.lon, { addr: rd.addr || '' });
+            state.noTouch = false; lsSet('locdelen.draftT', String(rd.t)); lsSet(LS.draft, JSON.stringify(function () { var o = { lat: state.lat, lon: state.lon }; FIELDS.forEach(function (f) { o[f] = $(f).value; }); return o; }()));
+          } },
+          { label: 'Negeren', fn: function () { lsSet('locdelen.draftT', String(rd.t)); } }
+        ]);
+      } else if ((!dr.exists || dt > dr.data().t) && state.lat != null) ghDraftPush();
+    }).catch(function () { /* de status staat al in het instellingenvenster */ });
+  }
+  if (window.GhSync) {
+    window.GhSync.mountSettings($('syncBox'));
+    window.GhSync.syncNow = function () { return ghPull().then(function () { return gh && gh.flush(); }); };
+    if (window.GhSync.getConfig()) {
+      gh = window.GhSync.create('locatie.json');
+      ghPull();
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') { ghDraftPush(); gh.flush().catch(function () {}); }
+        else if (Date.now() - lastPull > 60000) ghPull();
+      });
+      window.addEventListener('pagehide', function () { ghDraftPush(); gh.flush().catch(function () {}); });
+    }
+  } else { var sb = $('syncBox'); if (sb) sb.hidden = true; }
+
   renderP(); update();
 })();
 </script>

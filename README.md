@@ -30,17 +30,41 @@ route.html              Route knijperwagen
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
+sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
 icons/                  iconen voor het beginscherm
 scripts/                hulpscripts (zie hieronder)
 ```
 
 Elke tool is één bestand met eigen stijl en code, zonder build-stap. De enige externe code is Leaflet 1.9.4, geladen van cdnjs.
 
+## Synchroniseren tussen apparaten
+
+Standaard staan gegevens alleen op het apparaat zelf. Wil je projecten, eerdere routes, suggesties, je naam en telefoon en je laatste invoer op meerdere apparaten hebben, dan kun je ze laten bewaren in een **eigen privérepo op GitHub**. Er is geen extra account of server nodig.
+
+Eenmalig instellen:
+
+1. Maak op github.com een nieuwe **privérepo** (bijvoorbeeld `locatie-data`) met een README.
+2. Maak een fine-grained token: Settings, Developer settings, Personal access tokens, Fine-grained tokens. Kies bij Repository access **Only select repositories** en alleen die repo, en zet bij Repository permissions **Contents** op **Read and write**. Kies een vervaldatum.
+3. Open in de tool het tandwiel, vul de reponaam en de token in en tik op **Verbinden**. Doe dit op elk apparaat één keer. Beide tools gebruiken dezelfde verbinding.
+
+Wat er gebeurt:
+
+- De gegevens worden als JSON-bestand in `data/` van die repo gezet (`locatie.json` en `route.json`). Elke wijziging is een commit, dus de geschiedenis staat er ook.
+- Per project of route wint de nieuwste versie. Een verwijdering wordt ook gedeeld. Wijzigen twee apparaten tegelijk, dan worden ze samengevoegd.
+- Je laatste invoer wordt nooit zomaar overgenomen. Staat er op een ander apparaat nieuwere invoer, dan zie je een melding met Overnemen of Negeren.
+- De tool weigert een openbare repo, zodat je gegevens niet publiek komen te staan.
+
+Goed om te weten:
+
+- De token staat in de browser van dat apparaat en gaat alleen naar `api.github.com`. Maak hem alleen voor die ene repo, met een vervaldatum. Verloopt de token, dan zie je dat in het tandwiel en maak je een nieuwe.
+- Alle GitHub Pages-sites onder `arwinvdh.github.io` delen dezelfde browseropslag. Zet daarom geen andere sites van derden onder dit account.
+- In de Claude-versie van Route knijperwagen doet de database van Claude dit werk. Daar is deze instelling niet beschikbaar.
+
 ## Bijwerken en uitrollen
 
 1. Pas het bestand aan en test het lokaal in een browser.
 2. Verhoog `VERSION` in het script van de betreffende tool. Het versienummer staat in de instellingen (tandwiel).
-3. Heb je `index.html`, `route.html`, iconen of manifesten aangepast, verhoog dan ook `CACHE` bovenin `sw.js`. Anders blijft de oude kopie bewaard.
+3. Heb je `index.html`, `route.html`, `sync.js`, iconen of manifesten aangepast, verhoog dan ook `CACHE` bovenin `sw.js`. Anders blijft de oude kopie bewaard.
 4. Push naar `main`. GitHub Pages publiceert binnen ongeveer een minuut (Settings, Pages: deploy from branch `main`, map `/`).
 5. Op een telefoon: sluit de app helemaal en open hem opnieuw. Bij een nieuw icoon moet je de app van het beginscherm verwijderen en opnieuw toevoegen.
 
@@ -61,6 +85,7 @@ en publiceer het resultaat naar het bestaande artifact. Gedeelde opslag en het p
 | PDOK Locatieserver | adres zoeken en het dichtstbijzijnde adres bij een pin (Nederland) |
 | PDOK luchtfoto (`luchtfotorgb`), BRT-achtergrondkaart, kadastrale kaart, bestuurlijke gebieden | luchtfoto, kaart, perceelgrenzen en gemeentegrens |
 | Esri World Imagery en Transportation | luchtfoto buiten Nederland en straatnamen op de luchtfoto |
+| GitHub API (alleen als je synchroniseren aanzet) | je gegevens bewaren in je eigen privérepo |
 | OpenStreetMap (tegels en Nominatim) | kaart en adressen buiten Nederland, en als terugval |
 | cdnjs | Leaflet |
 
@@ -68,7 +93,7 @@ Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzend
 
 ## Bekende beperkingen
 
-- Gegevens worden per apparaat en per browser bewaard. Op een iPhone zijn Safari en de app op het beginscherm gescheiden; gebruik daarom altijd de app op het beginscherm.
+- Zonder synchronisatie worden gegevens per apparaat en per browser bewaard. Op een iPhone zijn Safari en de app op het beginscherm gescheiden; gebruik daarom altijd de app op het beginscherm.
 - Korte Google Maps-links (`maps.app.goo.gl`) kunnen alleen worden gelezen met behulp van gratis tussendiensten van derden en werken daarom niet altijd. Een volledige link, de coördinaten of het adres werken altijd.
 - Delen van de afbeelding gebruikt het deelmenu van het toestel. Wordt dat geblokkeerd, dan wordt de afbeelding opgeslagen en het bericht gekopieerd.
 

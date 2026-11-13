@@ -1,8 +1,8 @@
 // Service worker: de app opent ook zonder of met slecht bereik.
 // Pagina en manifest: eerst het netwerk (altijd de nieuwste versie), na 4 s of zonder netwerk de bewaarde kopie.
 // Kaartbibliotheek en iconen: uit de cache.
-const CACHE = 'locatie-v7';
-const LOCAL = ['./', 'index.html', 'route.html', 'manifest.webmanifest', 'route.webmanifest',
+const CACHE = 'locatie-v8';
+const LOCAL = ['./', 'index.html', 'route.html', 'sync.js', 'manifest.webmanifest', 'route.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/route-icon-180.png', 'icons/route-icon-192.png', 'icons/route-icon-512.png'];
 const CDN = [
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   if (url.origin === self.location.origin) {
-    const isPage = req.mode === 'navigate' || /\.(html|webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
+    const isPage = req.mode === 'navigate' || /\.(html|webmanifest|js)$/.test(url.pathname) || url.pathname.endsWith('/');
     if (isPage) {
       e.respondWith((async () => {
         const net = fetch(req).then((r) => {

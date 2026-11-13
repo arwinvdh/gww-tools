@@ -325,6 +325,7 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
     </div>
     <p class="hint">Een back-up bevat je eerdere routes en de suggesties voor plaatsen en items.</p>
   </div>
+  <!--PWA--><div id="syncBox"></div><!--/PWA-->
   <p id="ver" class="hint"></p>
   <p class="hint">Meer tools: <a class="lnk" href="https://arwinvdh.github.io/locatie/" target="_blank" rel="noopener">Locatie delen</a></p>
   <button id="settingsOk" class="btn primary" type="button">Klaar</button>
@@ -346,6 +347,7 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
 <div class="toast" id="toast" hidden></div>
 <div id="status" class="sr" role="status" aria-live="polite"></div>
 
+<!--PWA--><script src="sync.js"></script><!--/PWA-->
 <script>
 
 /*LOGIC*/
@@ -487,7 +489,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.10.22-b';
+  const VERSION = '2026.11.13-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -559,7 +561,16 @@ function check(stops) {
     const old = lsGet(KEY1);
     return Array.isArray(old) ? { stops: old } : null;
   }
-  function save() { lsSet(KEY, { datum: datum.value, note: note, stops: stops }); }
+  let lastDraftJs = '', noTouch = false;
+  const DKEY = 'knijperwagen-draftT';
+  function save() {
+    const o = { datum: datum.value, note: note, stops: stops };
+    const js = JSON.stringify(o);
+    if (js === lastDraftJs) return;                       // niets veranderd: tijdstip blijft staan
+    lastDraftJs = js;
+    lsSet(KEY, o);
+    if (!noTouch) { try { localStorage.setItem(DKEY, String(Date.now())); } catch (e) { /* opslag mag ontbreken */ } if (typeof ghDraftSoon === 'function') ghDraftSoon(); }
+  }
   function slim(arr) {
     return arr.map(function (s) {
       return { acties: s.acties, voorz: s.voorz, plaats: s.plaats, project: s.project, tijdv: s.tijdv, tijd: s.tijd, items: s.items, link: s.link };
@@ -656,10 +667,17 @@ function check(stops) {
     syncText();
     Promise.all([
       db.doc('memory/main').get(),
-      db.collection('routes').orderBy('t', 'desc').limit(40).get()
+      db.collection('routes').orderBy('t', 'desc').limit(40).get(),
+      db.entries ? db.entries('routes/') : Promise.resolve([])
     ]).then(function (res) {
       const m = res[0].exists ? res[0].data() : null;
       const rs = res[1].docs.map(function (x) { return x.data(); });
+      /* een route die op een ander apparaat is gewist (grafsteen) verdwijnt ook hier, tenzij hij daarna is aangepast */
+      (res[2] || []).forEach(function (e) {
+        if (!e.d || !e.d.__del) return;
+        const day = e.key.slice('routes/'.length);
+        if (routes[day] && (routes[day].t || 0) <= e.d.t) delete routes[day];
+      });
       const push = mergeRemote(m, rs);
       lsSet(MKEY, mem); lsSet(RKEY, routes);
       if (Object.keys(mem.places).length || mem.items.length) saveMem();
@@ -1438,6 +1456,49 @@ function check(stops) {
       if (d2) initDb(d2);
     }).catch(function () { /* alleen lokaal */ });
   }
+
+  /*PWA*/
+  /* synchroniseren via een eigen privérepo op GitHub (zelfstandige pagina; in de Claude-versie doet de database dit, zie sync.js) */
+  var ghdb = null, ghDraftTimer = 0, ghLastPull = 0;
+  function dT() { try { return +localStorage.getItem(DKEY) || 0; } catch (e) { return 0; } }
+  function ghDraftPush() {
+    if (!ghdb || !stops.some(hasContent)) return;
+    ghdb.doc('draft/main').set({ datum: datum.value, note: note, stops: slim(stops), t: dT() || Date.now() }).catch(function () { /* status staat in de instellingen */ });
+  }
+  function ghDraftSoon() { if (!ghdb) return; clearTimeout(ghDraftTimer); ghDraftTimer = setTimeout(ghDraftPush, 30000); }
+  function ghPull() {
+    if (!ghdb) return Promise.resolve();
+    ghLastPull = Date.now();
+    return ghdb.pull().then(function () { initDb(ghdb); return ghdb.doc('draft/main').get(); }).then(function (r) {
+      const t0 = dT();
+      if (r.exists && r.data().t > t0 + 1000 && Array.isArray(r.data().stops) && r.data().stops.some(hasContent)) {
+        const rd = r.data();
+        window.GhSync.notice('gh-draft', 'Er staat een nieuwere route van een ander apparaat (' + (datumLabel(rd.datum) || 'zonder datum') + ').', [
+          { label: 'Overnemen', primary: true, fn: function () {
+            const prev = snapshot();
+            noTouch = true; restore({ stops: rd.stops, note: rd.note || '', datum: rd.datum || todayIso() }); noTouch = false;
+            try { localStorage.setItem(DKEY, String(rd.t)); } catch (e) { /* idem */ }
+            offerUndo('Route van je andere apparaat overgenomen.', function () { restore(prev); });
+          } },
+          { label: 'Negeren', fn: function () { try { localStorage.setItem(DKEY, String(rd.t)); } catch (e) { /* idem */ } } }
+        ]);
+      } else if ((!r.exists || t0 > r.data().t) && stops.some(hasContent)) ghDraftPush();
+    }).catch(function () { /* status staat in de instellingen */ });
+  }
+  if (window.GhSync) {
+    window.GhSync.mountSettings($('syncBox'));
+    window.GhSync.syncNow = function () { return ghPull().then(function () { return ghdb && ghdb.flush(); }); };
+    if (!db && window.GhSync.getConfig()) {
+      ghdb = window.GhSync.create('route.json');
+      ghPull();
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') { ghDraftPush(); ghdb.flush().catch(function () { /* idem */ }); }
+        else if (Date.now() - ghLastPull > 60000) ghPull();
+      });
+      window.addEventListener('pagehide', function () { ghDraftPush(); ghdb.flush().catch(function () { /* idem */ }); });
+    }
+  } else { const sb = $('syncBox'); if (sb) sb.hidden = true; }
+  /*END PWA*/
 })();
 </script>
 </body>
