@@ -194,6 +194,38 @@
   }
   function disconnect() { clearConfig(); setStatus('off'); }
 
+  /* koppellink: zet een ander apparaat met één tik aan. De gegevens staan na de # en gaan dus nooit naar een server;
+     bij het openen worden ze direct uit de adresbalk gehaald. Koppelen gebeurt pas na een bevestiging met de reponaam. */
+  function b64url(str) { return b64enc(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64url(t) { t = String(t).replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return b64dec(t); }
+  function makeLink() {
+    var c = getConfig(); if (!c) return '';
+    return location.href.split('#')[0] + '#koppel=' + b64url(JSON.stringify({ r: c.repo, t: c.token }));
+  }
+  var pending = null;
+  (function readLink() {
+    var m = /^#koppel=([\w-]+)$/.exec(location.hash || '');
+    if (!m) return;
+    try { var j = JSON.parse(unb64url(m[1])); if (j && typeof j.r === 'string' && typeof j.t === 'string') pending = { repo: j.r, token: j.t }; } catch (e) { /* een ongeldige link wordt genegeerd */ }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen geschiedenis aanpassen mogelijk */ }
+  })();
+  function offerPending() {
+    if (!pending) return;
+    var p = pending; pending = null;
+    var cur = getConfig();
+    if (cur && cur.repo === p.repo && cur.token === p.token) return;
+    var txt = 'Koppelen met ' + p.repo + '? Doe dit alleen als je de link zelf hebt gemaakt, anders komen je gegevens in andermans repo.';
+    notice('gh-link', txt, [
+      { label: 'Koppelen', primary: true, fn: function () {
+        connect(p.repo, p.token).then(function () { setTimeout(function () { location.reload(); }, 300); }, function (e) {
+          notice('gh-link-err', (e && e.status ? errorText(e) : (e && e.message)) || 'Koppelen mislukt.', [{ label: 'Ok' }]);
+        });
+      } },
+      { label: 'Annuleren' }
+    ]);
+  }
+  document.addEventListener('DOMContentLoaded', offerPending);
+
   function tijd(ms) { var d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
   /* instellingenblok voor in het tandwiel-venster */
@@ -208,14 +240,15 @@
         '<div class="field"><label for="gh-token">Token</label><input class="inp" id="gh-token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
         '<div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn sm primary" id="gh-go" type="button">Verbinden</button></div>' +
       '</div>' +
-      '<div id="gh-on" style="display:none;gap:.5rem;flex-wrap:wrap"><button class="btn sm" id="gh-now" type="button">Nu synchroniseren</button><button class="btn sm" id="gh-off" type="button">Verbreken</button></div>' +
+      '<div id="gh-on" style="display:none;gap:.5rem;flex-wrap:wrap"><button class="btn sm" id="gh-now" type="button">Nu synchroniseren</button><button class="btn sm" id="gh-linkbtn" type="button">Koppellink voor ander apparaat</button><button class="btn sm" id="gh-off" type="button">Verbreken</button></div>' +
       '<p class="hint" id="gh-msg" role="status"></p>' +
       '<details><summary class="hint" style="cursor:pointer">Hoe stel ik dit in?</summary>' +
         '<ol class="hint" style="margin:.4rem 0 0;padding-left:1.1rem;display:grid;gap:.25rem">' +
           '<li>Maak op github.com een <b>nieuwe privérepo</b>, bijvoorbeeld <i>locatie-data</i>, met een README.</li>' +
           '<li>Ga naar <a class="lnk" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings, Developer settings, Fine-grained tokens</a> en kies Generate new token.</li>' +
           '<li>Kies bij Repository access <b>Only select repositories</b> en alleen die ene repo. Zet bij Repository permissions <b>Contents</b> op <b>Read and write</b>. Kies een vervaldatum.</li>' +
-          '<li>Kopieer de token, plak hem hierboven met de reponaam en tik op Verbinden. Doe dit op elk apparaat één keer.</li>' +
+          '<li>Kopieer de token, plak hem hierboven met de reponaam en tik op Verbinden.</li>' +
+          '<li>Een tweede apparaat koppel je met <b>Koppellink voor ander apparaat</b>: stuur de link naar jezelf en open hem daar.</li>' +
         '</ol>' +
       '</details></div>';
     var $ = function (id) { return el.querySelector('#' + id); };
@@ -242,6 +275,15 @@
       $('gh-msg').textContent = 'Synchroniseren...';
       (typeof window.GhSync.syncNow === 'function' ? window.GhSync.syncNow() : Promise.resolve()).then(function () { $('gh-msg').textContent = 'Klaar.'; }, function () { $('gh-msg').textContent = ''; });
     });
+    $('gh-linkbtn').addEventListener('click', function () {
+      var link = makeLink(); if (!link) return;
+      var done = function (t) { $('gh-msg').textContent = t; };
+      if (navigator.share) {
+        navigator.share({ title: 'Koppel dit apparaat', text: 'Koppellink. Bevat je token: deel hem alleen met jezelf.', url: link }).then(function () { done('Open de link op het andere apparaat en tik op Koppelen.'); }, function (e) { if (e && e.name !== 'AbortError') done('Delen lukte niet.'); });
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { done('Link gekopieerd. Stuur hem naar jezelf en open hem op het andere apparaat. Hij bevat je token.'); }, function () { done('Kopiëren lukte niet.'); });
+      } else done('Delen of kopiëren is hier niet beschikbaar.');
+    });
     paint();
   }
 
@@ -263,7 +305,7 @@
 
   window.GhSync = {
     getConfig: getConfig, create: create, connect: connect, disconnect: disconnect,
-    mountSettings: mountSettings, onStatus: onStatus, notice: notice, errorText: errorText,
+    mountSettings: mountSettings, onStatus: onStatus, notice: notice, errorText: errorText, makeLink: makeLink,
     syncNow: null
   };
 })();

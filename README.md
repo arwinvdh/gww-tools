@@ -45,7 +45,8 @@ Eenmalig instellen:
 
 1. Maak op github.com een nieuwe **privérepo** (bijvoorbeeld `locatie-data`) met een README.
 2. Maak een fine-grained token: Settings, Developer settings, Personal access tokens, Fine-grained tokens. Kies bij Repository access **Only select repositories** en alleen die repo, en zet bij Repository permissions **Contents** op **Read and write**. Kies een vervaldatum.
-3. Open in de tool het tandwiel, vul de reponaam en de token in en tik op **Verbinden**. Doe dit op elk apparaat één keer. Beide tools gebruiken dezelfde verbinding.
+3. Open in de tool het tandwiel, vul de reponaam en de token in en tik op **Verbinden**. Beide tools gebruiken dezelfde verbinding.
+4. Een extra apparaat koppel je met **Koppellink voor ander apparaat** (in het tandwiel, zodra je verbonden bent): stuur de link naar jezelf, open hem op het andere apparaat en tik op **Koppelen**. De token zit in het deel na de `#`, dat nooit naar een server gaat, en wordt bij het openen direct uit de adresbalk gehaald. Het apparaat koppelt pas na jouw bevestiging, en de bevestiging toont de reponaam, zodat een link naar andermans repo opvalt.
 
 Wat er gebeurt:
 
@@ -56,7 +57,8 @@ Wat er gebeurt:
 
 Goed om te weten:
 
-- De token staat in de browser van dat apparaat en gaat alleen naar `api.github.com`. Maak hem alleen voor die ene repo, met een vervaldatum. Verloopt de token, dan zie je dat in het tandwiel en maak je een nieuwe.
+- De token staat in de browser van dat apparaat en gaat alleen naar `api.github.com`. De token staat bewust niet in de code van de website: die is openbaar, en GitHub trekt een token die in een openbare repo belandt automatisch in.
+- De koppellink bevat de token. Deel hem alleen met jezelf en verwijder het bericht daarna. Maak hem alleen voor die ene repo, met een vervaldatum. Verloopt de token, dan zie je dat in het tandwiel en maak je een nieuwe.
 - Alle GitHub Pages-sites onder `arwinvdh.github.io` delen dezelfde browseropslag. Zet daarom geen andere sites van derden onder dit account.
 - In de Claude-versie van Route knijperwagen doet de database van Claude dit werk. Daar is deze instelling niet beschikbaar.
 
