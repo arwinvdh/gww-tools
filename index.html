@@ -44,7 +44,8 @@ h1 { margin: 0; font-size: 1.125rem; font-weight: 600; }
 .warnlink { border: 1px solid var(--warn); border-radius: 999px; padding: .35rem .9rem; background: transparent; text-align: left; color: var(--warn); font: inherit; font-size: .8125rem; font-weight: 600; text-decoration: none; cursor: pointer; }
 .addr-note { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: -.2rem; }
 #img { grid-column: 1 / -1; }
-@media (max-width: 47.999rem) { .toast { bottom: 9.5rem; } .wrap { padding-bottom: 9.5rem; } }
+.ibtn { gap: .4rem; }
+.ibtn.wait { opacity: .5; }
 @media (min-width: 48rem) { .bar .in { grid-template-columns: 2fr 1fr 1fr 1fr; } #img { grid-column: auto; } }
 .map-hint { position: absolute; inset: 0; z-index: 800; display: grid; place-items: center; padding: 1rem; text-align: center; background: rgba(0,31,56,.55); color: #fff; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; }
 .map-hint.on { opacity: 1; }
@@ -132,6 +133,13 @@ textarea.inp { resize: vertical; min-height: 64px; }
 .chip:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .5rem .9rem; border-radius: 8px; z-index: 900; font-size: .875rem; }
+@media (max-width: 47.999rem) {
+  .bar .in { grid-template-columns: 1fr 44px 44px 44px; gap: .35rem; }
+  #img { grid-column: auto; padding-inline: .6rem; }
+  .ibtn { padding: 0; justify-content: center; min-width: 44px; }
+  .ibtn .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .toast { bottom: 5.5rem; } .wrap { padding-bottom: 5.5rem; }
+}
 @media (pointer: coarse) {
   .btn.sm, .seg button, .undo button { min-height: 44px; }
   .gear { width: 44px; height: 44px; }
@@ -249,9 +257,9 @@ textarea.inp { resize: vertical; min-height: 64px; }
 
   <div class="bar"><div class="in">
     <button class="btn primary" id="img" disabled title="Ctrl/Cmd + Enter">Deel afbeelding</button>
-    <button class="btn" id="dl" disabled title="Alleen de afbeelding opslaan">Download</button>
-    <button class="btn" id="wa" disabled>Tekst</button>
-    <button class="btn" id="copy" disabled title="Ctrl/Cmd + Shift + C">Kopieer</button>
+    <button class="btn ibtn" id="dl" disabled title="Alleen de afbeelding opslaan" aria-label="Download afbeelding"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="lbl">Download</span></button>
+    <button class="btn ibtn" id="wa" disabled title="Alleen tekst via WhatsApp" aria-label="Tekst via WhatsApp"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="lbl">Tekst</span></button>
+    <button class="btn ibtn" id="copy" disabled title="Ctrl/Cmd + Shift + C" aria-label="Kopieer tekst"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span class="lbl">Kopieer</span></button>
   </div></div>
 
   <dialog id="settings">
@@ -275,7 +283,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.14-b';
+  var VERSION = '2026.11.14-c';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
@@ -872,7 +880,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
   function fileBase() { return (label() || 'locatie').replace(/[^\w\-]+/g, '_'); }
   // alleen de afbeelding opslaan: geen deelmenu, geen bericht naar het klembord
   function downloadImage() {
-    var b = $('dl'); b.disabled = true; b.textContent = 'Bezig...';
+    var b = $('dl'); b.disabled = true; b.classList.add('wait'); b.setAttribute('aria-busy','true');
     var sig = imgSig();
     getImage().then(function (res) {
       if (res.incomplete && warned !== sig) {
@@ -883,7 +891,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 15000);
       saveProject(true); toast('Afbeelding gedownload');
     }).catch(function () { pre.promise = null; toast('Kaart niet bereikbaar. Controleer je verbinding en probeer opnieuw.'); })
-      .finally(function () { b.textContent = 'Download'; update(); });
+      .finally(function () { b.classList.remove('wait'); b.removeAttribute('aria-busy'); update(); });
   }
   function shareImage() {
     var b = $('img'); b.disabled = true; b.textContent = 'Bezig...';
