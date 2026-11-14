@@ -61,7 +61,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .wrap { max-width: 68rem; margin-inline: auto; padding: 1rem max(16px, env(safe-area-inset-right, 0px)) 10rem max(16px, env(safe-area-inset-left, 0px)); }
 
-.tip { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: 0.875rem; }
+.tip { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: 0.875rem; }
 
 /* tabs op smal scherm: pilschakelaar */
 .tabs { display: none; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; padding-block: 0.25rem 0.75rem; background: var(--bg); }
@@ -242,6 +242,16 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
   @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (pointer: coarse) {
+  .btn.sm, .seg button, .undo button { min-height: 44px; }
+  .gear { width: 44px; height: 44px; }
+  .more-sum, .warnlink { min-height: 44px; }
+  .check { min-height: 44px; }
+  .check input { width: 22px; height: 22px; }
+  .ico { width: 44px; height: 44px; }
+  .chip { min-height: 44px; }
+  .leaflet-touch .leaflet-bar a, .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font-size: 22px; }
+}
 </style>
 </head>
 <body>
@@ -489,7 +499,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.14-a';
+  const VERSION = '2026.11.14-b';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -750,7 +760,7 @@ function check(stops) {
           '<div class="sugg" data-for="items" hidden></div>' +
         '</div>' +
         '<div class="r4">' +
-          '<button type="button" class="more-btn" data-do="more" aria-expanded="' + open + '" aria-controls="s' + id + '-more"><span>Meer</span>' + icon('chev', 16) + '<span class="sum">' + esc(open ? '' : summary(s)) + '</span></button>' +
+          '<button type="button" class="more-btn" data-do="more" aria-expanded="' + open + '" aria-controls="s' + id + '-more"><span>Details</span>' + icon('chev', 16) + '<span class="sum">' + esc(open ? '' : summary(s)) + '</span></button>' +
           '<div class="tools">' +
             '<button type="button" class="ico" data-do="up" aria-label="Stop ' + n + ' omhoog"' + (i === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>' +
             '<button type="button" class="ico" data-do="down" aria-label="Stop ' + n + ' omlaag"' + (i === stops.length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>' +
@@ -1375,7 +1385,12 @@ function check(stops) {
     clearTimeout(copyTimer);
     copyTimer = setTimeout(function () { copyBtn.textContent = COPY_LABEL; copyBtn.classList.remove('done'); }, 2200);
   }
-  function remember() { learn(); saveRouteNow(); }
+  /* vraag de browser de opslag niet te wissen (iOS wist anders na zeven dagen zonder gebruik); kan geweigerd worden */
+  function askPersist() {
+    if (askPersist.done) return; askPersist.done = true;
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* geweigerd */ }); } catch (e) { /* niet beschikbaar */ }
+  }
+  function remember() { learn(); saveRouteNow(); askPersist(); }
   copyBtn.addEventListener('click', async function () {
     const text = buildMessage(stops, datum.value, note);
     try {

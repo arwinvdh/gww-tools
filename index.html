@@ -40,8 +40,8 @@ h1 { margin: 0; font-size: 1.125rem; font-weight: 600; }
 .brand h1 { color: #fff; letter-spacing: .01em; }
 .gear { margin-left: auto; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; transition: background-color .15s; }
 .gear:hover { background: rgba(255,255,255,.14); }
-.tip { display: flex; gap: .75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: .6rem .75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: .875rem; }
-.warnlink { border: 0; background: none; padding: 0; text-align: left; color: var(--warn); font: inherit; font-size: .8125rem; text-decoration: underline; cursor: pointer; }
+.tip { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: .6rem .75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: .875rem; }
+.warnlink { border: 1px solid var(--warn); border-radius: 999px; padding: .35rem .9rem; background: transparent; text-align: left; color: var(--warn); font: inherit; font-size: .8125rem; font-weight: 600; text-decoration: none; cursor: pointer; }
 .addr-note { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: -.2rem; }
 #img { grid-column: 1 / -1; }
 @media (max-width: 47.999rem) { .toast { bottom: 9.5rem; } .wrap { padding-bottom: 9.5rem; } }
@@ -132,6 +132,16 @@ textarea.inp { resize: vertical; min-height: 64px; }
 .chip:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .5rem .9rem; border-radius: 8px; z-index: 900; font-size: .875rem; }
+@media (pointer: coarse) {
+  .btn.sm, .seg button, .undo button { min-height: 44px; }
+  .gear { width: 44px; height: 44px; }
+  .more-sum, .warnlink { min-height: 44px; }
+  .check { min-height: 44px; }
+  .check input { width: 22px; height: 22px; }
+  .ico { width: 44px; height: 44px; }
+  .chip { min-height: 44px; }
+  .leaflet-touch .leaflet-bar a, .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font-size: 22px; }
+}
 </style>
 </head>
 <body>
@@ -162,7 +172,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
         <div class="row" style="justify-content:space-between;align-items:center"><h2>1 &middot; Locatie</h2><button class="btn sm" id="new">Nieuw</button></div>
         <div class="chips" id="chips" hidden></div>
         <div class="row">
-          <input class="inp grow" id="q" placeholder="Maps-link, coördinaten of adres" autocomplete="off" enterkeyhint="search">
+          <input class="inp grow" id="q" placeholder="Maps-link, coördinaten of adres" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
           <button class="btn" id="paste" title="Plak uit klembord">Plak</button>
           <button class="btn primary" id="go">Zoek</button>
           <button class="btn" id="me" title="Mijn locatie">Hier</button>
@@ -181,9 +191,9 @@ textarea.inp { resize: vertical; min-height: 64px; }
           <div class="field" style="width:7.5rem"><label for="nr">Projectnr.</label><input class="inp" id="nr" list="dl-nr" placeholder="24-017" autocomplete="off" autocapitalize="characters"></div>
           <div class="field grow"><label for="name">Projectnaam</label><input class="inp" id="name" list="dl-name" placeholder="Bijv. Nieuwbouw Zuidpoort" autocomplete="off"></div>
         </div>
-        <div class="field"><label for="addr">Adres</label><input class="inp" id="addr" autocomplete="off"></div>
+        <div class="field"><label for="addr">Adres</label><input class="inp" id="addr" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
         <p class="hint addr-note" id="addrNote" hidden><span id="addrNoteTxt"></span> <button class="btn sm" id="addrNoteBtn" hidden>Bijwerken</button></p>
-        <details id="more"><summary class="more-sum">Meer opties</summary>
+        <details id="more"><summary class="more-sum">Extra velden</summary>
           <div class="more-in">
             <div class="field"><label for="plabel">Wat is deze pin?</label>
               <select class="inp" id="plabel"><option value="">Geen label</option><option>Projectlocatie</option><option>Inrit werkterrein</option><option>Meldpunt</option><option>Laad- en losplaats</option><option>Parkeren</option></select></div>
@@ -205,7 +215,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
         </div>
         <button class="warnlink" id="whoWarn" hidden></button>
         <div class="wa"><div class="wa-b" id="preview"></div></div>
-        <details id="imgopts"><summary class="more-sum">Meer instellingen</summary>
+        <details id="imgopts"><summary class="more-sum">Afbeelding en link</summary>
           <div class="more-in">
             <div class="row"><div class="seg" id="linkmode"><button data-k="pin" aria-pressed="true">Locatie</button><button data-k="route" aria-pressed="false">Route</button></div>
               <span class="hint" style="align-self:center">link in bericht</span></div>
@@ -265,7 +275,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.14-a';
+  var VERSION = '2026.11.14-b';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
@@ -615,7 +625,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     $('preview').innerHTML = has ? esc(m).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\*([^*\n]+)\*/g, '<b>$1</b>') : '<span class="hint">Het bericht verschijnt hier zodra je een locatie hebt.</span>';
     ['copy', 'wa', 'img', 'dl'].forEach(function (id) { $(id).disabled = !has; });
     var miss = []; if ($('useWho').checked && !$('myName').value.trim()) miss.push('naam'); if ($('usePhone').checked && !$('myPhone').value.trim()) miss.push('telefoonnummer');
-    $('whoWarn').hidden = !miss.length; $('whoWarn').textContent = miss.length ? 'Je ' + miss.join(' en ') + ' ontbreekt in het bericht. Tik om in te vullen.' : '';
+    $('whoWarn').hidden = !miss.length; $('whoWarn').textContent = miss.length ? 'Je ' + miss.join(' en ') + (miss.length > 1 ? ' ontbreken' : ' ontbreekt') + ' in het bericht. Invullen' : '';
   }
 
   function copyText(t) {
@@ -907,9 +917,14 @@ textarea.inp { resize: vertical; min-height: 64px; }
     var i = a.findIndex(function (p) { return ((p.nr || '') + '|' + p.name).toLowerCase() === key; });
     if (i >= 0) a.splice(i, 1);
     a.unshift(rec);
-    setP(a); ghProject(rec);
+    setP(a); ghProject(rec); askPersist();
     if (!silent) toast(i >= 0 ? 'Project bijgewerkt' : 'Project opgeslagen');
     return true;
+  }
+  // vraag de browser de opslag niet te wissen (iOS wist anders na zeven dagen zonder gebruik); kan geweigerd worden
+  function askPersist() {
+    if (askPersist.done) return; askPersist.done = true;
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) { /* niet beschikbaar */ }
   }
   function pl(p) { return [p.nr, p.name].filter(Boolean).join(' \u00B7 '); }
   function loadProject(p) {

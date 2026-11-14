@@ -292,7 +292,7 @@
     var old = document.getElementById(id); if (old) old.remove();
     var tip = document.getElementById('tip'); if (!tip || !tip.parentNode) return;
     var d = document.createElement('div'); d.className = 'tip'; d.id = id;
-    var s = document.createElement('span'); s.textContent = text; d.appendChild(s);
+    var s = document.createElement('span'); s.textContent = text; s.style.cssText = 'flex:1 1 15rem;min-width:0'; d.appendChild(s);
     var wrap = document.createElement('span'); wrap.style.cssText = 'display:flex;gap:.4rem;flex:none';
     (buttons || []).forEach(function (b) {
       var x = document.createElement('button'); x.type = 'button'; x.className = 'btn sm' + (b.primary ? ' primary' : ''); x.textContent = b.label;
