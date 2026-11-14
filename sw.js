@@ -1,7 +1,7 @@
 // Service worker: de app opent ook zonder of met slecht bereik.
 // Pagina en manifest: eerst het netwerk (altijd de nieuwste versie), na 4 s of zonder netwerk de bewaarde kopie.
 // Kaartbibliotheek en iconen: uit de cache.
-const CACHE = 'locatie-v11';
+const CACHE = 'locatie-v12';
 const LOCAL = ['./', 'index.html', 'route.html', 'sync.js', 'manifest.webmanifest', 'route.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/route-icon-180.png', 'icons/route-icon-192.png', 'icons/route-icon-512.png'];

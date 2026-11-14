@@ -133,6 +133,15 @@ textarea.inp { resize: vertical; min-height: 64px; }
 .chip:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .5rem .9rem; border-radius: 8px; z-index: 900; font-size: .875rem; }
+.steps { list-style: none; margin: 0 0 .9rem; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.steps a { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 44px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); text-decoration: none; font-size: .875rem; font-weight: 600; }
+.steps i { font-style: normal; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--field); border: 1px solid var(--line); font-size: .75rem; }
+.steps a.cur { border-color: var(--accent); color: var(--accent); }
+.steps a.cur i { border-color: var(--accent); }
+.steps a.done { color: var(--ink); }
+.steps a.done i { background: var(--green, #76b720); border-color: var(--green, #76b720); color: #fff; font-size: 0; }
+.steps a.done i::after { content: "\2713"; font-size: .8rem; }
+body.viewer .steps { display: none; }
 @media (max-width: 47.999rem) {
   .bar .in { grid-template-columns: 1fr 44px 44px 44px; gap: .35rem; }
   #img { grid-column: auto; padding-inline: .6rem; }
@@ -174,9 +183,14 @@ textarea.inp { resize: vertical; min-height: 64px; }
 <!-- Maker-weergave -->
 <section id="editor">
   <div class="tip" id="tip" hidden><span>Tip: tik op Deel en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je projecten en gegevens betrouwbaar bewaard.</span><button class="btn sm" id="tipX">Ok</button></div>
+  <ol class="steps" id="steps" aria-label="Voortgang">
+    <li><a href="#card-loc" data-s="1"><i>1</i><span>Locatie</span></a></li>
+    <li><a href="#card-project" data-s="2"><i>2</i><span>Project</span></a></li>
+    <li><a href="#card-send" data-s="3"><i>3</i><span>Versturen</span></a></li>
+  </ol>
   <div class="grid">
     <div style="display:grid;gap:1rem">
-      <div class="card">
+      <div class="card" id="card-loc">
         <div class="row" style="justify-content:space-between;align-items:center"><h2>1 &middot; Locatie</h2><button class="btn sm" id="new">Nieuw</button></div>
         <div class="chips" id="chips" hidden></div>
         <div class="row">
@@ -215,7 +229,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     </div>
 
     <div style="display:grid;gap:1rem" class="sticky">
-      <div class="card">
+      <div class="card" id="card-send">
         <h2>3 &middot; Versturen</h2>
         <div class="row" style="gap:1rem">
           <label class="check"><input type="checkbox" id="useWho"> Mijn naam</label>
@@ -283,7 +297,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.14-c';
+  var VERSION = '2026.11.14-d';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
@@ -633,6 +647,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     $('preview').innerHTML = has ? esc(m).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\*([^*\n]+)\*/g, '<b>$1</b>') : '<span class="hint">Het bericht verschijnt hier zodra je een locatie hebt.</span>';
     ['copy', 'wa', 'img', 'dl'].forEach(function (id) { $(id).disabled = !has; });
     var miss = []; if ($('useWho').checked && !$('myName').value.trim()) miss.push('naam'); if ($('usePhone').checked && !$('myPhone').value.trim()) miss.push('telefoonnummer');
+    stepsUpdate();
     $('whoWarn').hidden = !miss.length; $('whoWarn').textContent = miss.length ? 'Je ' + miss.join(' en ') + (miss.length > 1 ? ' ontbreken' : ' ontbreekt') + ' in het bericht. Invullen' : '';
   }
 
@@ -972,7 +987,13 @@ textarea.inp { resize: vertical; min-height: 64px; }
     setStatus('Plak een Google Maps-link, coördinaten (52.0907, 5.1214) of typ een adres. Of tik op de kaart.');
     update(); $('q').focus();
   }
-  function afterSend(msg) { var saved = saveProject(true); toast(msg + (saved ? ' en opgeslagen' : '')); }
+  [].forEach.call(document.querySelectorAll('#steps a'), function (a) { a.addEventListener('click', function (e) { e.preventDefault(); var t = document.querySelector(a.getAttribute('href')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
+  var sentMsg = null;
+  function stepsUpdate() {
+    var m = message(), d1 = state.lat != null, d2 = d1 && !!label(), d3 = d2 && sentMsg === m, st = [d1, d2, d3], cur = st.indexOf(false);
+    [].forEach.call(document.querySelectorAll('#steps a'), function (a, i) { a.classList.toggle('done', st[i]); a.classList.toggle('cur', i === cur); if (i === cur) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current'); });
+  }
+  function afterSend(msg) { sentMsg = message(); stepsUpdate(); var saved = saveProject(true); toast(msg + (saved ? ' en opgeslagen' : '')); }
 
   /* ---------- viewer ---------- */
   function startViewer(q) {
@@ -1066,7 +1087,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
   };
   [].forEach.call($('range').children, function (b) { b.setAttribute('aria-pressed', +b.dataset.r === state.range ? 'true' : 'false'); });
   $('copy').onclick = function () { copyText(message()).then(function () { afterSend('Gekopieerd'); }); };
-  $('wa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent(message()), '_blank'); saveProject(true); };
+  $('wa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent(message()), '_blank'); sentMsg = message(); stepsUpdate(); saveProject(true); };
   $('img').onclick = shareImage;
   $('dl').onclick = downloadImage;
   $('new').onclick = resetAll;
