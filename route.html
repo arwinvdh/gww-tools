@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -16,6 +16,7 @@
 /* Route knijperwagen in dezelfde stijl als Locatie delen: kopband, kaarten met schaduw, pilknoppen, Avenir Next.
    Opbouw: stops als accordeon (één stop open), bericht rechts (sticky). Smal scherm: tabs Stops/Bericht, actiebalk onderaan. */
 :root {
+  color-scheme: light;
   --bg: #EEF3F8; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0E2236; --ink-2: #566879; --line: #D0DAE5;
   --accent: #014983; --on-accent: #FFFFFF; --warn: #B42318; --ok: #3F7D0A; --focus: #014983;
   --a-laden: #014983; --a-lossen: #3F7D0A; --a-ophalen: #9A5B00;
@@ -23,22 +24,6 @@
   --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #027EB5;
   --font: 'Avenir Next', 'Avenir Next LT Pro', Avenir, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --shadow: 0 12px 20px 0 rgba(0, 31, 56, 0.08);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0A1520; --surface: #112030; --field: #0C1824; --ink: #E6ECF2; --ink-2: #93A5B7; --line: #24384A;
-    --accent: #5AA6E6; --on-accent: #001f38; --warn: #FF8A7A; --ok: #8fd000; --focus: #7FB9EE;
-    --a-laden: #5AA6E6; --a-lossen: #8fd000; --a-ophalen: #F0B35A;
-    --wa-wall: #0B141A; --wa-bubble: #005C4B; --wa-text: #E9EDEF; --wa-link: #53BDEB; --shadow: 0 12px 20px 0 rgba(0, 0, 0, 0.3);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0A1520; --surface: #112030; --field: #0C1824; --ink: #E6ECF2; --ink-2: #93A5B7; --line: #24384A;
-  --accent: #5AA6E6; --on-accent: #001f38; --warn: #FF8A7A; --ok: #8fd000; --focus: #7FB9EE;
-  --a-laden: #5AA6E6; --a-lossen: #8fd000; --a-ophalen: #F0B35A;
-  --wa-wall: #0B141A; --wa-bubble: #005C4B; --wa-text: #E9EDEF; --wa-link: #53BDEB; --shadow: 0 12px 20px 0 rgba(0, 0, 0, 0.3);
-  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -499,7 +484,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.14-c';
+  const VERSION = '2026.11.15-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';

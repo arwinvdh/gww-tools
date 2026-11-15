@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,17 +15,11 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root {
+  color-scheme: light;
   --bg: #EEF3F8; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0E2236; --ink-2: #566879;
   --line: #D0DAE5; --accent: #014983; --on-accent: #FFFFFF; --warn: #B42318; --ok: #3F7D0A; --brand-dark: #001f38; --brand-green: #76b720;
   --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #027EB5;
   --font: 'Avenir Next', 'Avenir Next LT Pro', Avenir, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0A1520; --surface: #112030; --field: #0C1824; --ink: #E6ECF2; --ink-2: #93A5B7;
-    --line: #24384A; --accent: #5AA6E6; --on-accent: #001f38; --warn: #FF8A7A; --ok: #8fd000;
-    --wa-wall: #0B141A; --wa-bubble: #005C4B; --wa-text: #E9EDEF; --wa-link: #53BDEB; color-scheme: dark;
-  }
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -287,7 +281,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.14-d';
+  var VERSION = '2026.11.15-a';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
