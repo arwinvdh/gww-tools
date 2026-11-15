@@ -48,7 +48,7 @@ details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
 .more-sum::after { content: "\25BE"; margin-left: .35rem; transition: transform .2s; }
 details[open] > .more-sum::after { transform: rotate(180deg); }
-.more-in { display: grid; gap: .6rem; padding-top: .4rem; animation: rise .25s ease both; }
+.more-in { grid-template-columns: minmax(0, 1fr); display: grid; gap: .6rem; padding-top: .4rem; animation: rise .25s ease both; }
 @media (max-width: 40rem) { #q { flex: 1 1 100%; } #paste, #go, #me { flex: 1; } }
 a.lnk { color: var(--accent); font-weight: 600; }
 dialog { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem; width: min(24rem, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0,31,56,.3); }
@@ -59,7 +59,7 @@ dialog::backdrop { background: rgba(0,31,56,.5); }
 h2 { margin: 0 0 .5rem; font-size: .8125rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
 .grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 48rem) { .grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; } .sticky { position: sticky; top: 1rem; } }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .875rem; display: grid; gap: .6rem; }
+.card { grid-template-columns: minmax(0, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .875rem; display: grid; gap: .6rem; }
 .row { display: flex; gap: .4rem; align-items: stretch; flex-wrap: wrap; }
 .row > .grow { flex: 1; min-width: 0; }
 .field { display: grid; gap: .15rem; }
@@ -132,12 +132,18 @@ textarea.inp { resize: vertical; min-height: 64px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .5rem .9rem; border-radius: 8px; z-index: 900; font-size: .875rem; }
 @media (max-width: 47.999rem) {
-  .bar .in { grid-template-columns: 1fr 44px 44px 44px; gap: .35rem; }
-  #img { grid-column: auto; padding-inline: .6rem; }
-  .ibtn { padding: 0; justify-content: center; min-width: 44px; }
-  .ibtn .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .toast { bottom: 5.5rem; } .wrap { padding-bottom: 5.5rem; }
+  .bar .in { grid-template-columns: minmax(0, 1fr) repeat(3, 3.6rem); gap: .3rem; align-items: stretch; }
+  #img { grid-column: auto; padding-inline: .4rem; min-height: 56px; line-height: 1.15; }
+  .ibtn { flex-direction: column; gap: .15rem; padding: .3rem .1rem; justify-content: center; min-height: 56px; border-radius: 18px; }
+  .ibtn .lbl { font-size: .625rem; font-weight: 600; line-height: 1.1; white-space: nowrap; }
+  .ibtn .lbl .x { display: none; }
+  .toast { bottom: 6.5rem; } .wrap { padding-bottom: 6.5rem; }
 }
+.grid > div { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.wa-b { overflow-wrap: anywhere; }
+.optrow { display: grid; gap: .25rem; min-width: 0; }
+.optrow .seg { display: grid; grid-auto-columns: minmax(0, 1fr); width: 100%; }
+.optrow .seg button { padding: 0 .4rem; }
 @media (pointer: coarse) {
   .btn.sm, .seg button, .undo button { min-height: 44px; }
   .gear { width: 44px; height: 44px; }
@@ -171,17 +177,17 @@ textarea.inp { resize: vertical; min-height: 64px; }
 
 <!-- Maker-weergave -->
 <section id="editor">
-  <div class="tip" id="tip" hidden><span>Tip: tik op Deel en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je projecten en gegevens betrouwbaar bewaard.</span><button class="btn sm" id="tipX">Ok</button></div>
+  <div class="tip" id="tip" hidden><span>Tip: tik in Safari op het deelicoon en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je projecten en gegevens betrouwbaar bewaard.</span><button class="btn sm" id="tipX">Ok</button></div>
   <div class="grid">
     <div style="display:grid;gap:1rem">
       <div class="recent" id="recent" hidden><span class="rl">Recent</span><div class="chips" id="chips"></div></div>
       <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center"><h2>1 &middot; Locatie</h2><button class="btn sm" id="new">Nieuw</button></div>
+        <div class="row" style="justify-content:space-between;align-items:center"><h2>1 &middot; Locatie</h2><button class="btn sm" id="new">Nieuwe locatie</button></div>
         <div class="row">
-          <input class="inp grow" id="q" placeholder="Maps-link, coördinaten of adres" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+          <input class="inp grow" id="q" aria-label="Maps-link, coördinaten of adres" placeholder="Maps-link, coördinaten of adres" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
           <button class="btn" id="paste" title="Plak uit klembord">Plak</button>
           <button class="btn primary" id="go">Zoek</button>
-          <button class="btn" id="me" title="Mijn locatie">Hier</button>
+          <button class="btn" id="me">Mijn locatie</button>
         </div>
         <p class="hint" id="status">Plak een Google Maps-link, coördinaten (52.0907, 5.1214) of typ een adres. Of tik op de kaart.</p>
         <div class="results" id="results"></div>
@@ -199,7 +205,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
         </div>
         <div class="field"><label for="addr">Adres</label><input class="inp" id="addr" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
         <p class="hint addr-note" id="addrNote" hidden><span id="addrNoteTxt"></span> <button class="btn sm" id="addrNoteBtn" hidden>Bijwerken</button></p>
-        <details id="more"><summary class="more-sum">Extra velden</summary>
+        <details id="more"><summary class="more-sum">Aanwijzingen</summary>
           <div class="more-in">
             <div class="field"><label for="plabel">Wat is deze pin?</label>
               <select class="inp" id="plabel"><option value="">Geen label</option><option>Projectlocatie</option><option>Inrit werkterrein</option><option>Meldpunt</option><option>Laad- en losplaats</option><option>Parkeren</option></select></div>
@@ -214,7 +220,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
 
     <div style="display:grid;gap:1rem" class="sticky">
       <div class="card">
-        <h2>3 &middot; Versturen</h2>
+        <h2>3 &middot; Bericht</h2>
         <div class="row" style="gap:1rem">
           <label class="check"><input type="checkbox" id="useWho"> Mijn naam</label>
           <label class="check"><input type="checkbox" id="usePhone"> Mijn telefoonnummer</label>
@@ -223,12 +229,10 @@ textarea.inp { resize: vertical; min-height: 64px; }
         <div class="wa"><div class="wa-b" id="preview"></div></div>
         <details id="imgopts"><summary class="more-sum">Afbeelding en link</summary>
           <div class="more-in">
-            <div class="row"><div class="seg" id="linkmode"><button data-k="pin" aria-pressed="true">Locatie</button><button data-k="route" aria-pressed="false">Route</button></div>
-              <span class="hint" style="align-self:center">link in bericht</span></div>
-            <div class="row"><div class="seg" id="regio"><button data-g="omgeving" aria-pressed="true">Omgeving</button><button data-g="gemeente" aria-pressed="false">Gemeente</button></div>
-              <span class="hint" style="align-self:center">regiokaart</span></div>
-            <div class="row"><div class="seg" id="range"><button data-r="150" aria-pressed="false">Dichtbij</button><button data-r="400" aria-pressed="true">Midden</button><button data-r="1200" aria-pressed="false">Ruim</button></div>
-              <span class="hint" style="align-self:center">bereik</span></div>
+            <div class="optrow"><span class="hint">Link in bericht</span><div class="seg" id="linkmode"><button data-k="pin" aria-pressed="true">Locatie</button><button data-k="route" aria-pressed="false">Route</button></div>
+              </div>
+            <div class="optrow"><span class="hint">Regio op de regiokaart</span><div class="seg" id="regio"><button data-g="omgeving" aria-pressed="true">Omgeving</button><button data-g="gemeente" aria-pressed="false">Gemeente</button></div></div>
+            <div class="optrow"><span class="hint">Bereik van de foto</span><div class="seg" id="range"><button data-r="150" aria-pressed="false">Dichtbij</button><button data-r="400" aria-pressed="true">Normaal</button><button data-r="1200" aria-pressed="false">Ruim</button></div></div>
             <div class="opts">
               <label class="check"><input type="checkbox" id="optLabels"> Straatnamen</label>
               <label class="check"><input type="checkbox" id="optParcel"> Perceelgrenzen</label>
@@ -236,35 +240,35 @@ textarea.inp { resize: vertical; min-height: 64px; }
             </div>
           </div>
         </details>
-        <p class="hint">Het project wordt vanzelf bewaard zodra je verstuurt.</p>
+        <p class="hint">Het project wordt vanzelf bewaard zodra je deelt of kopieert.</p>
       </div>
       <div class="card">
         <h2>Projecten</h2>
         <input class="inp" id="filter" placeholder="Zoek in projecten" hidden>
         <div id="plist"></div>
         <div class="row">
-          <button class="btn sm" id="exp">Exporteer</button>
-          <button class="btn sm" id="imp">Importeer</button>
+          <button class="btn sm" id="exp">Back-up maken</button>
+          <button class="btn sm" id="imp">Back-up terugzetten</button>
           <input type="file" id="impf" accept="application/json" hidden>
         </div>
-        <p class="hint">Projecten staan alleen op dit apparaat. Exporteer om ze op een ander apparaat te zetten.</p>
-        <p class="hint err" id="backupHint" hidden>Je hebt al een tijdje geen back-up gemaakt. Tik op Exporteer.</p>
+        <p class="hint">Projecten staan alleen op dit apparaat. Maak een back-up om ze op een ander apparaat te zetten.</p>
+        <p class="hint err" id="backupHint" hidden>Je hebt al een tijdje geen back-up gemaakt. Tik op Back-up maken.</p>
       </div>
     </div>
   </div>
 
   <div class="bar"><div class="in">
     <button class="btn primary" id="img" disabled title="Ctrl/Cmd + Enter">Deel afbeelding</button>
-    <button class="btn ibtn" id="dl" disabled title="Alleen de afbeelding opslaan" aria-label="Download afbeelding"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="lbl">Download</span></button>
-    <button class="btn ibtn" id="wa" disabled title="Alleen tekst via WhatsApp" aria-label="Tekst via WhatsApp"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="lbl">Tekst</span></button>
-    <button class="btn ibtn" id="copy" disabled title="Ctrl/Cmd + Shift + C" aria-label="Kopieer tekst"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span class="lbl">Kopieer</span></button>
+    <button class="btn ibtn" id="dl" disabled title="Sla alleen de afbeelding op" aria-label="Bewaar afbeelding"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="lbl">Bewaar<span class="x"> afbeelding</span></span></button>
+    <button class="btn ibtn" id="wa" disabled title="Deel alleen de tekst" aria-label="Deel tekst"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H10l-5 4z"/></svg><span class="lbl">Deel tekst</span></button>
+    <button class="btn ibtn" id="copy" disabled title="Ctrl/Cmd + Shift + C" aria-label="Kopieer bericht"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span class="lbl">Kopieer<span class="x"> bericht</span></span></button>
   </div></div>
 
   <dialog id="settings">
     <h2>Mijn gegevens</h2>
-    <div class="field"><label for="myName">Naam uitvoerder</label><input class="inp" id="myName" autocomplete="name"></div>
-    <div class="field"><label for="myRole">Functie</label><input class="inp" id="myRole" placeholder="Uitvoerder" autocomplete="off"></div>
-    <div class="field"><label for="myPhone">Telefoon</label><input class="inp" id="myPhone" type="tel" autocomplete="tel"></div>
+    <div class="field"><label for="myName">Mijn naam</label><input class="inp" id="myName" autocomplete="name"></div>
+    <div class="field"><label for="myRole">Mijn functie</label><input class="inp" id="myRole" placeholder="Uitvoerder" autocomplete="off"></div>
+    <div class="field"><label for="myPhone">Mijn telefoonnummer</label><input class="inp" id="myPhone" type="tel" autocomplete="tel"></div>
     <p class="hint">Eenmalig invullen. Blijft op dit apparaat staan en wordt alleen gedeeld als je hieronder synchroniseren aanzet.</p>
     <div id="syncBox"></div>
     <p class="hint" id="ver"></p>
@@ -281,14 +285,14 @@ textarea.inp { resize: vertical; min-height: 64px; }
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.15-a';
+  var VERSION = '2026.11.15-b';
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
     document.body.insertBefore(wn, document.body.firstChild); return;
   }
   var lastErr = '';
-  function showErr(m) { m = String(m || '').slice(0, 140); if (!m || m === lastErr || /^Script error/i.test(m) || /ResizeObserver/i.test(m)) return; lastErr = m; var t = document.getElementById('toast'); if (t) { t.textContent = 'Fout: ' + m; t.hidden = false; setTimeout(function () { t.hidden = true; lastErr = ''; }, 8000); } }
-  window.addEventListener('error', function (e) { showErr(e.message + (e.lineno ? ' (regel ' + e.lineno + ')' : '')); });
+  function showErr(m) { m = String(m || '').slice(0, 140); if (!m || m === lastErr || /^Script error/i.test(m) || /ResizeObserver/i.test(m)) return; lastErr = m; try { console.error(m); } catch (x) {} var t = document.getElementById('toast'); if (t) { t.textContent = 'Er ging iets mis. Probeer het opnieuw of ververs de pagina.'; t.hidden = false; setTimeout(function () { t.hidden = true; lastErr = ''; }, 8000); } }
+  window.addEventListener('error', function (e) { showErr(e.message); });
   window.addEventListener('unhandledrejection', function (e) { showErr(e.reason && e.reason.message || e.reason); });
   var LS = { draft: 'locdelen.draft', projects: 'locdelen.projects', base: 'locdelen.base', range: 'locdelen.range', share: 'locdelen.share' };
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
@@ -631,7 +635,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     $('preview').innerHTML = has ? esc(m).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\*([^*\n]+)\*/g, '<b>$1</b>') : '<span class="hint">Het bericht verschijnt hier zodra je een locatie hebt.</span>';
     ['copy', 'wa', 'img', 'dl'].forEach(function (id) { $(id).disabled = !has; });
     var miss = []; if ($('useWho').checked && !$('myName').value.trim()) miss.push('naam'); if ($('usePhone').checked && !$('myPhone').value.trim()) miss.push('telefoonnummer');
-    $('whoWarn').hidden = !miss.length; $('whoWarn').textContent = miss.length ? 'Je ' + miss.join(' en ') + (miss.length > 1 ? ' ontbreken' : ' ontbreekt') + ' in het bericht. Invullen' : '';
+    $('whoWarn').hidden = !miss.length; $('whoWarn').textContent = miss.length ? 'Vul je ' + miss.join(' en ') + ' in' : '';
   }
 
   function copyText(t) {
@@ -954,7 +958,7 @@ textarea.inp { resize: vertical; min-height: 64px; }
     });
     var a = all.filter(function (p) { return !f || (pl(p) + ' ' + p.addr).toLowerCase().indexOf(f) >= 0; });
     box.innerHTML = '';
-    if (!a.length) { box.innerHTML = '<p class="hint">Nog geen projecten opgeslagen.</p>'; return; }
+    if (!a.length) { box.innerHTML = '<p class="hint">Nog geen projecten. Ze verschijnen hier zodra je een locatie deelt.</p>'; return; }
     a.forEach(function (p) {
       var d = document.createElement('div'); d.className = 'proj';
       d.innerHTML = '<button class="proj-main"><b>' + esc(pl(p)) + '</b><span>' + esc(p.addr || (fmt(p.lat) + ', ' + fmt(p.lon))) + '</span></button><button class="btn sm danger" aria-label="Verwijder ' + esc(pl(p)) + '">&times;</button>';
