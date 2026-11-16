@@ -237,13 +237,19 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
   .chip { min-height: 44px; }
   .leaflet-touch .leaflet-bar a, .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font-size: 22px; }
 }
+@media (max-width: 26rem) {
+  .card-hd { flex-wrap: wrap; }
+  .card-hd .tools-r { flex: 1 1 100%; justify-content: flex-start; }
+  .r-dn { grid-template-columns: minmax(0, 1fr); }
+  .r-dn input[type="date"] { width: 100%; }
+}
 </style>
 </head>
 <body>
 <header class="brand"><div class="in"><span class="dot"></span><h1>Route knijperwagen</h1><button class="gear" id="gear" type="button" aria-label="Instellingen" title="Instellingen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></header>
 
 <div class="wrap">
-  <div class="tip" id="tip" hidden><span>Tip: tik op Deel en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je routes en suggesties betrouwbaar bewaard.</span><button class="btn sm" id="tipX" type="button">Ok</button></div>
+  <div class="tip" id="tip" hidden><span>Tip: tik in Safari op het deelicoon en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je routes en suggesties betrouwbaar bewaard.</span><button class="btn sm" id="tipX" type="button">Ok</button></div>
 
   <nav class="tabs" aria-label="Weergave">
     <div class="tabs-in" role="tablist">
@@ -258,9 +264,9 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
         <div class="card-hd">
           <h2>1 &middot; Route</h2>
           <div class="tools-r">
-            <button id="hist-open" class="btn sm" type="button" aria-haspopup="dialog" aria-label="Eerdere routes">Eerder</button>
+            <button id="hist-open" class="btn sm" type="button" aria-haspopup="dialog" aria-label="Eerdere routes">Eerdere routes</button>
             <button id="paste-toggle" class="btn sm" type="button" aria-expanded="false" aria-controls="paste-body" aria-label="Route plakken" hidden>Plakken</button>
-            <button id="reset" class="btn sm" type="button" aria-label="Nieuwe route">Nieuw</button>
+            <button id="reset" class="btn sm" type="button" aria-label="Nieuwe route">Nieuwe route</button>
           </div>
         </div>
         <div id="paste-body" class="paste-body" hidden>
@@ -484,7 +490,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.15-b';
+  const VERSION = '2026.11.15-c';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -498,10 +504,10 @@ function check(stops) {
     m = String(m || '').slice(0, 140);
     if (!m || m === lastErr || /^Script error/i.test(m) || /ResizeObserver/i.test(m)) return;
     lastErr = m;
-    toast('Fout: ' + m);
+    try { console.error(m); } catch (x) {} toast('Er ging iets mis. Probeer het opnieuw of ververs de pagina.');
     setTimeout(function () { lastErr = ''; }, 8000);
   }
-  window.addEventListener('error', function (e) { showErr(e.message + (e.lineno ? ' (regel ' + e.lineno + ')' : '')); });
+  window.addEventListener('error', function (e) { showErr(e.message); });
   window.addEventListener('unhandledrejection', function (e) { showErr(e.reason && e.reason.message || e.reason); });
 
   let stops = [];
@@ -768,7 +774,7 @@ function check(stops) {
     el.style.height = (el.scrollHeight + 2) + 'px';
   }
   function renderStops() {
-    list.innerHTML = stops.length ? stops.map(cardHtml).join('') : '<p class="empty">Nog geen stops.</p>';
+    list.innerHTML = stops.length ? stops.map(cardHtml).join('') : '<p class="empty">Nog geen stops. Tik op Stop toevoegen om te beginnen.</p>';
     list.querySelectorAll('textarea').forEach(autosize);
   }
   function setActive(id, focusSel) {
@@ -1168,7 +1174,7 @@ function check(stops) {
     if (resetBtn.dataset.armed === '1') {
       clearTimeout(resetTimer);
       resetBtn.dataset.armed = '';
-      resetBtn.textContent = 'Nieuw';
+      resetBtn.textContent = 'Nieuwe route';
       resetBtn.classList.remove('danger');
       flushRoute();
       nextId = 1; stops = []; stops = [blank()];
@@ -1181,11 +1187,11 @@ function check(stops) {
       if (f) f.focus({ preventScroll: true });
     } else {
       resetBtn.dataset.armed = '1';
-      resetBtn.textContent = 'Wissen?';
+      resetBtn.textContent = 'Alles wissen?';
       resetBtn.classList.add('danger');
       resetTimer = setTimeout(function () {
         resetBtn.dataset.armed = '';
-        resetBtn.textContent = 'Nieuw';
+        resetBtn.textContent = 'Nieuwe route';
         resetBtn.classList.remove('danger');
       }, 4000);
     }
@@ -1221,7 +1227,7 @@ function check(stops) {
       '<div class="h-acts">' +
         '<button type="button" class="btn" data-h="open">Openen</button>' +
         '<button type="button" class="btn" data-h="base">Als basis voor vandaag</button>' +
-        '<button type="button" class="btn" data-h="del">Wissen</button>' +
+        '<button type="button" class="btn" data-h="del">Route wissen</button>' +
       '</div></article>';
   }
   function renderHistory() {
@@ -1245,7 +1251,7 @@ function check(stops) {
     if (b.dataset.h === 'del') {
       if (b.dataset.armed !== '1') {
         b.dataset.armed = '1'; b.textContent = 'Zeker?'; b.classList.add('danger');
-        setTimeout(function () { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Wissen'; b.classList.remove('danger'); } }, 4000);
+        setTimeout(function () { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Route wissen'; b.classList.remove('danger'); } }, 4000);
         return;
       }
       delete routes[d];
@@ -1422,7 +1428,7 @@ function check(stops) {
       if (db) { saveMem(); push.forEach(function (e) { dbWrite(function () { return db.doc('routes/' + e.datum).set(e); }); }); }
       renderHistory();
       toast('Back-up teruggezet');
-    }).catch(function () { toast('Ongeldig bestand'); });
+    }).catch(function () { toast('Dit is geen geldige back-up. Kies een bestand van Back-up maken.'); });
   });
 
   /*PWA*/
