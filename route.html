@@ -3,15 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!--PWA--><meta name="theme-color" content="#001f38">
+<meta name="theme-color" content="#001f38">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Route">
 <link rel="manifest" href="route.webmanifest">
 <link rel="apple-touch-icon" href="icons/route-icon-180.png">
-<link rel="icon" type="image/png" href="icons/route-icon-192.png"><!--/PWA-->
+<link rel="icon" type="image/png" href="icons/route-icon-192.png">
 <title>Route Knijperwagen</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Route knijperwagen in dezelfde stijl als Locatie delen: kopband, kaarten met schaduw, pilknoppen, Avenir Next.
    Opbouw: stops als accordeon (één stop open), bericht rechts (sticky). Smal scherm: tabs Stops/Bericht, actiebalk onderaan. */
@@ -265,7 +264,7 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
           <h2>1 &middot; Route</h2>
           <div class="tools-r">
             <button id="hist-open" class="btn sm" type="button" aria-haspopup="dialog" aria-label="Eerdere routes">Eerdere routes</button>
-            <button id="paste-toggle" class="btn sm" type="button" aria-expanded="false" aria-controls="paste-body" aria-label="Route plakken" hidden>Plakken</button>
+            <button id="paste-toggle" class="btn sm" type="button" aria-expanded="false" aria-controls="paste-body" aria-label="Route plakken">Plakken</button>
             <button id="reset" class="btn sm" type="button" aria-label="Nieuwe route">Nieuwe route</button>
           </div>
         </div>
@@ -274,7 +273,6 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
           <textarea id="paste-text" class="inp" rows="5" placeholder="Plak hier je ruwe route, bijvoorbeeld: 1. Laden bij R3S 6.00 -> 1 bigbag spramex"></textarea>
           <div class="paste-actions">
             <button id="paste-go" class="btn primary" type="button">Verwerk</button>
-            <button id="paste-stop" class="btn" type="button" hidden>Stop</button>
             <span id="paste-msg" class="paste-msg" role="status"></span>
           </div>
         </div>
@@ -326,7 +324,7 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
     </div>
     <p class="hint">Een back-up bevat je eerdere routes en de suggesties voor plaatsen en items.</p>
   </div>
-  <!--PWA--><div id="syncBox"></div><!--/PWA-->
+  <div id="syncBox"></div>
   <p id="ver" class="hint"></p>
   <p class="hint">Meer tools: <a class="lnk" href="https://arwinvdh.github.io/locatie/" target="_blank" rel="noopener">Locatie delen</a></p>
   <button id="settingsOk" class="btn primary" type="button">Klaar</button>
@@ -348,7 +346,7 @@ dialog h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; text-transform: n
 <div class="toast" id="toast" hidden></div>
 <div id="status" class="sr" role="status" aria-live="polite"></div>
 
-<!--PWA--><script src="sync.js"></script><!--/PWA-->
+<script src="sync.js"></script>
 <script>
 
 /*LOGIC*/
@@ -394,6 +392,49 @@ function itemParts(text) {
       p = p.trim().replace(/\.$/, '');
       if (p) out.push(p);
     });
+  });
+  return out;
+}
+/* ruwe route -> stops (zonder AI): per regel een stop, bijvoorbeeld "1. Laden bij R3S 6.00 -> 1 bigbag spramex" */
+function parseRoute(raw) {
+  const KEY = { laden: 'LADEN', bijladen: 'LADEN', inladen: 'LADEN', lossen: 'LOSSEN', afladen: 'LOSSEN', afleveren: 'LOSSEN', leveren: 'LOSSEN', afgooien: 'LOSSEN', neerzetten: 'LOSSEN', brengen: 'LOSSEN', ophalen: 'OPHALEN', halen: 'OPHALEN' };
+  const KEYRE = /\b(bijladen|inladen|laden|lossen|afladen|afleveren|leveren|afgooien|neerzetten|brengen|ophalen|halen)\b/gi;
+  const SPLIT = /\s*(?:->|=>|→|:(?!\d)|\s[-–—]\s)\s*/;
+  const out = [];
+  function itemList(t) { return String(t || '').split(/\s*(?:,|;|\s\+\s)\s*/).map(clean).filter(Boolean); }
+  String(raw || '').split(/\r?\n/).forEach(function (line0) {
+    const line = line0.replace(/^[\s​]*(?:\d️?⃣|\(?\d{1,2}[.)]\s+|[-*•–]\s*)\s*/, '').trim();
+    if (!line) return;
+    const acts = [];
+    line.replace(KEYRE, function (m) { const a = KEY[m.toLowerCase()]; if (acts.indexOf(a) === -1) acts.push(a); return m; });
+    const last = out[out.length - 1];
+    let link = '';
+    let rest = line.replace(/https?:\/\/\S+/i, function (u) { link = u; return ''; }).trim();
+    if (!acts.length) {
+      if (!last) return;
+      if (link && !last.link) last.link = link;
+      itemList(rest).forEach(function (x) { last.items.push(x); });
+      return;
+    }
+    let left = rest, itemsStr = '';
+    const m = SPLIT.exec(rest);
+    if (m) { left = rest.slice(0, m.index); itemsStr = rest.slice(m.index + m[0].length); }
+    let project = '';
+    left = left.replace(/\(?\b([A-Za-z]{1,3}\d{4,6})\b\)?/, function (_, p) { project = p.toUpperCase(); return ' '; });
+    let tijd = '', tijdv = 'om';
+    left = left.replace(/\b(om|voor|na|rond)?\s*(\d{1,2})(?:[.:](\d{2}))?\s*(?:uur|u)\b|\b(om|voor|na|rond)?\s*(\d{1,2})[.:](\d{2})\b/i, function (_, w1, h1, m1, w2, h2, m2) {
+      const w = (w1 || w2 || '').toLowerCase();
+      tijdv = (w === 'voor' || w === 'na') ? w : 'om';
+      tijd = (h1 || h2) + '.' + (m1 || m2 || '00');
+      return ' ';
+    });
+    left = left.replace(KEYRE, ' ').replace(/(^|\s)(en|&|\+|\/)(?=\s|$)/gi, ' ');
+    left = clean(left).replace(/^[,.\s]+|[,.\s]+$/g, '');
+    let voorz = null;
+    const vm = /^(aan de|bij|in|aan|op)\s+/i.exec(left);
+    if (vm) { voorz = vm[1].toLowerCase(); left = left.slice(vm[0].length); }
+    const plaats = left.split(' ').map(function (w) { return w && w === w.toLowerCase() ? w.charAt(0).toUpperCase() + w.slice(1) : w; }).join(' ');
+    out.push({ acties: acts, voorz: voorz, plaats: plaats, project: project, tijdv: tijdv, tijd: tijd, items: itemList(itemsStr), link: link });
   });
   return out;
 }
@@ -486,11 +527,11 @@ function check(stops) {
         datum = $('datum'), noteEl = $('note'), copyBtn = $('copy'), waBtn = $('wa-send'),
         status = $('status'), undo = $('undo'), resetBtn = $('reset'),
         pasteToggle = $('paste-toggle'), pasteBody = $('paste-body'),
-        pasteText = $('paste-text'), pasteGo = $('paste-go'), pasteStop = $('paste-stop'),
+        pasteText = $('paste-text'), pasteGo = $('paste-go'),
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.17-a';
+  const VERSION = '2026.11.18-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -515,8 +556,7 @@ function check(stops) {
   let nextId = 1;
   let activeId = null;
   let undoFn = null, undoTimer = null, resetTimer = null, copyTimer = null, suggTimer = null, routeTimer = null;
-  let sample = null, pasteCtl = null;
-  let db = null, dbFail = false, dbQueue = Promise.resolve();
+    let db = null, dbFail = false, dbQueue = Promise.resolve();
   let mem = { places: {}, items: [] };
   let routes = {};
 
@@ -1286,32 +1326,6 @@ function check(stops) {
   window.addEventListener('pagehide', flushRoute);
 
   /* route plakken (vraagt Claude om de tekst te splitsen) */
-  function buildPrompt(raw) {
-    return [
-      'Je zet de ruwe routelijst van een uitvoerder bij een Nederlandse GWW-aannemer om naar stops voor de chauffeur van een knijperwagen.',
-      'Antwoord ALLEEN met een JSON-array, één object per stop, in de volgorde van de tekst:',
-      '{"acties":["LADEN"|"LOSSEN"|"OPHALEN"],"voorz":"bij"|"in"|"aan"|"aan de"|"op"|null,"plaats":"","project":"","tijdv":"om"|"voor"|"na","tijd":"","items":[""],"link":""}',
-      'Regels:',
-      '- Eén stop per stap of regel in de tekst. Verzin geen stops en geen informatie. Wat niet in de tekst staat laat je leeg ("" of []).',
-      '- acties: LADEN = laden bij een leverancier, depot of project (ook bijladen). LOSSEN = lossen, afleveren, afladen, afgooien, neerzetten. OPHALEN = spullen halen of ophalen op een locatie. Doet de chauffeur op één plek meerdere dingen (bijvoorbeeld afleveren én bijladen), geef dan meerdere acties.',
-      '- plaats: alleen de plek (plaatsnaam, straat, leverancier of project), met hoofdletters bij eigennamen.',
-      '- items: wat er geladen, gelost of opgehaald wordt, één korte regel per item, in de woorden uit de tekst. Corrigeer duidelijke typefouten (bijvoorbeeld "tirlplaat" wordt "trilplaat"), verander verder niets aan de inhoud.',
-      '- project: projectnummers zoals IB25060 in hoofdletters, anders "".',
-      '- tijd: cijfers met een punt, bijvoorbeeld "6.00". tijdv is "om", tenzij er "voor" of "na" staat. Geen tijd: tijd "" en tijdv "om".',
-      '- link: een URL uit de tekst, anders "".',
-      '- voorz: alleen invullen als de tekst het voorzetsel duidelijk geeft (bijvoorbeeld "aan de Leidsevaart" wordt "aan de"), anders null.',
-      '',
-      'Tekst:',
-      '<<<',
-      raw,
-      '>>>'
-    ].join('\n');
-  }
-  function setBusy(b) {
-    pasteGo.disabled = b;
-    pasteStop.hidden = !b;
-    pasteText.readOnly = b;
-  }
   function pasteMessage(msg, bad) {
     pasteMsg.textContent = msg;
     pasteMsg.classList.toggle('bad', Boolean(bad));
@@ -1322,42 +1336,21 @@ function check(stops) {
     pasteToggle.setAttribute('aria-expanded', String(open));
     if (open) { setView('stops'); pasteText.focus(); }
   });
-  pasteStop.addEventListener('click', function () { if (pasteCtl) pasteCtl.abort(); });
-  pasteGo.addEventListener('click', async function () {
+  pasteGo.addEventListener('click', function () {
     const raw = pasteText.value.trim();
     if (!raw) { pasteMessage('Plak eerst je route.', true); return; }
-    if (!sample) return;
-    pasteCtl = new AbortController();
-    setBusy(true);
-    pasteMessage('Bezig met verwerken...', false);
-    try {
-      const data = await sample.json(buildPrompt(raw), { modelTier: 'quick', signal: pasteCtl.signal });
-      const arr = Array.isArray(data) ? data : (data && Array.isArray(data.stops) ? data.stops : []);
-      const parsed = arr.map(toStop).filter(hasContent);
-      if (!parsed.length) { pasteMessage('Geen stops herkend. Pas de tekst aan en probeer opnieuw.', true); return; }
-      const prev = snapshot();
-      adopt(parsed);
-      renderStops(); update();
-      pasteText.value = '';
-      pasteBody.hidden = true;
-      pasteToggle.setAttribute('aria-expanded', 'false');
-      pasteMessage('', false);
-      status.textContent = parsed.length + ' stops ingevuld';
-      offerUndo('Route vervangen door ' + parsed.length + (parsed.length === 1 ? ' stop.' : ' stops.'), function () { restore(prev); });
-      list.scrollIntoView({ block: 'start' });
-    } catch (e) {
-      const code = e && e.code;
-      if (code === 'cancelled') pasteMessage('Gestopt.', false);
-      else if (code === 'not_granted' || code === 'sampling_disabled' || code === 'not_declared' || code === 'capability_disabled' || code === 'capability_removed') {
-        pasteToggle.hidden = true; pasteBody.hidden = true;
-      }
-      else if (code === 'rate_limited') pasteMessage('Te vaak achter elkaar. Probeer het zo opnieuw.', true);
-      else if (code === 'invalid_json') pasteMessage('Antwoord was niet te lezen. Probeer opnieuw.', true);
-      else pasteMessage('Verwerken is niet gelukt. Probeer opnieuw.', true);
-    } finally {
-      pasteCtl = null;
-      setBusy(false);
-    }
+    const parsed = parseRoute(raw).map(toStop).filter(hasContent);
+    if (!parsed.length) { pasteMessage('Geen stops herkend. Zet elke stop op een eigen regel, met Laden, Lossen of Ophalen erin.', true); return; }
+    const prev = snapshot();
+    adopt(parsed);
+    renderStops(); update();
+    pasteText.value = '';
+    pasteBody.hidden = true;
+    pasteToggle.setAttribute('aria-expanded', 'false');
+    pasteMessage('', false);
+    status.textContent = parsed.length + ' stops ingevuld';
+    offerUndo('Route vervangen door ' + parsed.length + (parsed.length === 1 ? ' stop. Controleer hem.' : ' stops. Controleer ze.'), function () { restore(prev); });
+    list.scrollIntoView({ block: 'start' });
   });
 
   /* kopiëren */
@@ -1410,7 +1403,6 @@ function check(stops) {
   $('settingsOk').addEventListener('click', function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
   $('ver').textContent = 'Versie ' + VERSION;
-  if (window.claude && typeof window.claude.use === 'function') $('backup').hidden = true;   /* in de Claude-pagina kan een bestand niet gedownload worden; daar delen de apparaten via de database */
   $('exp').addEventListener('click', function () {
     flushRoute();
     const blob = new Blob([JSON.stringify({ v: 1, t: Date.now(), mem: mem, routes: routes }, null, 2)], { type: 'application/json' });
@@ -1441,13 +1433,11 @@ function check(stops) {
     }).catch(function () { toast('Dit is geen geldige back-up. Kies een bestand van Back-up maken.'); });
   });
 
-  /*PWA*/
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   try { if (ios && !standalone && localStorage.getItem('knijperwagen-tipX') !== '1') $('tip').hidden = false; } catch (e) { /* opslag mag ontbreken */ }
   $('tipX').addEventListener('click', function () { try { localStorage.setItem('knijperwagen-tipX', '1'); } catch (e) { /* idem */ } $('tip').hidden = true; });
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () { /* zonder offline-kopie */ });
-  /*END PWA*/
 
   /* start */
   loadMem();
@@ -1464,17 +1454,7 @@ function check(stops) {
   renderPreview();
   autosize(noteEl);
 
-  if (window.claude && typeof window.claude.use === 'function') {
-    window.claude.use('sample').then(function (fn) {
-      if (fn) { sample = fn; pasteToggle.hidden = false; }
-    }).catch(function () { /* geen plakveld */ });
-    window.claude.use('db').then(function (d2) {
-      if (d2) initDb(d2);
-    }).catch(function () { /* alleen lokaal */ });
-  }
-
-  /*PWA*/
-  /* synchroniseren via een eigen privérepo op GitHub (zelfstandige pagina; in de Claude-versie doet de database dit, zie sync.js) */
+  /* synchroniseren via een eigen privérepo op GitHub */
   var ghdb = null, ghDraftTimer = 0, ghLastPull = 0;
   function dT() { try { return +localStorage.getItem(DKEY) || 0; } catch (e) { return 0; } }
   function ghDraftPush() {
@@ -1504,7 +1484,7 @@ function check(stops) {
   if (window.GhSync) {
     window.GhSync.mountSettings($('syncBox'));
     window.GhSync.syncNow = function () { return ghPull().then(function () { return ghdb && ghdb.flush(); }); };
-    if (!db && window.GhSync.getConfig()) {
+    if (window.GhSync.getConfig()) {
       ghdb = window.GhSync.create('route.json');
       ghPull();
       document.addEventListener('visibilitychange', function () {
@@ -1514,7 +1494,6 @@ function check(stops) {
       window.addEventListener('pagehide', function () { ghDraftPush(); ghdb.flush().catch(function () { /* idem */ }); });
     }
   } else { const sb = $('syncBox'); if (sb) sb.hidden = true; }
-  /*END PWA*/
 })();
 </script>
 </body>

@@ -13,14 +13,15 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 - Adressen en pinnen voor Nederland via PDOK, daarbuiten via OpenStreetMap.
 - Afbeelding in staand formaat (4:5), met afrondingen die passen bij de weergave in WhatsApp op iOS: projectnummer en naam, adres, uitvoerder en telefoon, optioneel een label op de pin, regiokaart, noordpijl, straatnamen en perceelgrenzen.
 - Bericht met emoji's, adres op twee regels, optioneel aanrijden-via en melden bij aankomst, en een Maps-link (locatie of route).
-- Projecten worden automatisch bewaard en komen terug als suggestie. Exporteren en importeren als bestand kan ook.
+- Projecten worden automatisch bewaard en komen terug als suggestie. Een back-up maken en terugzetten als bestand kan ook.
 
 ## Route knijperwagen
 
 - Stops als accordeon met acties, plaats, project, uur, omschrijving en routelink.
 - Suggesties uit eerdere routes, controle op ontbrekende gegevens, ongedaan maken en slepen om de volgorde te wijzigen.
-- Eerdere routes en suggesties worden bewaard. In de Claude-versie worden ze gedeeld tussen apparaten; op deze pagina staan ze alleen op het apparaat zelf (met een back-up via het tandwiel).
-- Een ruwe route plakken en laten uitwerken werkt alleen in de Claude-versie.
+- Eerdere routes en suggesties worden bewaard op het apparaat zelf (met een back-up via het tandwiel). Wil je ze op meerdere apparaten, zet dan synchroniseren aan (zie hieronder).
+- Een ruwe route plakken: zet elke stop op een eigen regel met Laden, Lossen of Ophalen erin, bijvoorbeeld `1. Laden bij R3S 6.00 -> 1 bigbag spramex`. Plaats, uur, projectnummer, link en items worden uit de regel gehaald. Dit is een eenvoudige tekstherkenning, geen AI: wat niet herkend wordt, vul je zelf aan. Een regel zonder Laden, Lossen of Ophalen hoort bij de stop erboven.
+- Uurchips komen uit je eigen eerdere uren. Enter bij een nieuwe plaats gaat naar Project, bij een bekende plaats naar Items.
 
 ## Bestanden
 
@@ -32,7 +33,7 @@ route.webmanifest       installatiegegevens Route knijperwagen
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
 icons/                  iconen voor het beginscherm
-scripts/                hulpscripts (zie hieronder)
+tests/                  automatische controles (zie hieronder)
 ```
 
 Elke tool is één bestand met eigen stijl en code, zonder build-stap. De enige externe code is Leaflet 1.9.4, geladen van cdnjs.
@@ -60,25 +61,32 @@ Goed om te weten:
 - De token staat in de browser van dat apparaat en gaat alleen naar `api.github.com`. De token staat bewust niet in de code van de website: die is openbaar, en GitHub trekt een token die in een openbare repo belandt automatisch in.
 - De koppellink bevat de token. Deel hem alleen met jezelf en verwijder het bericht daarna. Maak hem alleen voor die ene repo, met een vervaldatum. Verloopt de token, dan zie je dat in het tandwiel en maak je een nieuwe.
 - Alle GitHub Pages-sites onder `arwinvdh.github.io` delen dezelfde browseropslag. Zet daarom geen andere sites van derden onder dit account.
-- In de Claude-versie van Route knijperwagen doet de database van Claude dit werk. Daar is deze instelling niet beschikbaar.
 
 ## Bijwerken en uitrollen
 
 1. Pas het bestand aan en test het lokaal in een browser.
-2. Verhoog `VERSION` in het script van de betreffende tool. Het versienummer staat in de instellingen (tandwiel).
-3. Heb je `index.html`, `route.html`, `sync.js`, iconen of manifesten aangepast, verhoog dan ook `CACHE` bovenin `sw.js`. Anders blijft de oude kopie bewaard.
-4. Push naar `main`. GitHub Pages publiceert binnen ongeveer een minuut (Settings, Pages: deploy from branch `main`, map `/`).
-5. Op een telefoon: sluit de app helemaal en open hem opnieuw. Bij een nieuw icoon moet je de app van het beginscherm verwijderen en opnieuw toevoegen.
+2. Draai de tests (zie hieronder). Alles moet op "Alles goed" eindigen.
+3. Verhoog `VERSION` in het script van de betreffende tool. Het versienummer staat in de instellingen (tandwiel).
+4. Heb je `index.html`, `route.html`, `sync.js`, iconen of manifesten aangepast, verhoog dan ook `CACHE` bovenin `sw.js`. Anders blijft de oude kopie bewaard.
+5. Push naar `main`. GitHub Pages publiceert binnen ongeveer een minuut (Settings, Pages: deploy from branch `main`, map `/`).
+6. Op een telefoon: sluit de app helemaal en open hem opnieuw. Bij een nieuw icoon moet je de app van het beginscherm verwijderen en opnieuw toevoegen.
 
-### Claude-versie van Route knijperwagen
+De tools bestaan alleen als deze website. Er is geen aparte Claude-versie meer.
 
-De Claude-versie is dezelfde pagina zonder de installatieonderdelen en zonder service worker. Maak hem met:
+## Tests
 
-```
-python3 scripts/make-route-artifact.py route-artifact.html
-```
+In `tests/` staan automatische controles die de tools in een echte (onzichtbare) browser doorlopen: synchroniseren met een nagebootste GitHub, de koppellink, ruwe route plakken, Enter-toets en uurchips, en de opmaak op smalle telefoons (geen zijwaartse scroll, knoppen minstens 44px hoog). Zie `tests/README.md` voor het starten.
 
-en publiceer het resultaat naar het bestaande artifact. Gedeelde opslag en het plakken van een ruwe route komen van het artifact zelf. Het bestand wordt niet in deze repo bewaard (`.gitignore`).
+## Woordenlijst
+
+| Woord | Betekent hier |
+|---|---|
+| repo | de map met alle bestanden van deze tools op GitHub |
+| commit | een opgeslagen wijziging met een korte beschrijving |
+| push | wijzigingen naar GitHub sturen, waarna de website bijwerkt |
+| cache | de bewaarde kopie van de tool op je telefoon, zodat hij ook offline opent |
+| service worker | het onderdeel (`sw.js`) dat die kopie beheert |
+| token | een wachtwoord voor één taak, hier alleen voor de sync met je eigen privérepo |
 
 ## Externe diensten
 
