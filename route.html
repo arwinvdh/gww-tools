@@ -531,7 +531,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.19-a';
+  const VERSION = '2026.11.21-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -638,19 +638,30 @@ function check(stops) {
     const keys = Object.keys(mem.places).sort(function (a, b) { return (mem.places[b].t || 0) - (mem.places[a].t || 0); });
     keys.slice(200).forEach(function (k) { delete mem.places[k]; });
     mem.items.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    mem.items = mem.items.slice(0, 300);
+    mem.items = mem.items.slice(0, 400);
   }
   function learn() {
     const now = Date.now();
+    let prevK = '';
     stops.filter(hasContent).forEach(function (s) {
       const pl = clean(s.plaats);
       if (!pl) return;
       const k = pl.toLowerCase(), o = mem.places[k] || {};
-      mem.places[k] = { p: pl, pr: clean(s.project).toUpperCase() || o.pr || '', l: clean(s.link) || o.l || '', n: (o.n || 0) + 1, t: now };
+      const act = Object.assign({ LADEN: 0, LOSSEN: 0, OPHALEN: 0 }, o.a);
+      (s.acties || []).forEach(function (x) { if (x in act) act[x]++; });
+      const tm = normTijd(s.tijd);
+      mem.places[k] = { p: pl, pr: clean(s.project).toUpperCase() || o.pr || '', l: clean(s.link) || o.l || '', n: (o.n || 0) + 1, t: now, a: act, nx: o.nx || {}, tm: /^\d{1,2}\.\d{2}$/.test(tm) ? tm : (o.tm || '') };
+      if (prevK && prevK !== k) {
+        const po = mem.places[prevK], nx = po.nx || (po.nx = {});
+        nx[k] = (nx[k] || 0) + 1;
+        const keep = Object.keys(nx).sort(function (x, y) { return nx[y] - nx[x]; }).slice(0, 8), small = {};
+        keep.forEach(function (x) { small[x] = nx[x]; }); po.nx = small;
+      }
+      prevK = k;
       itemLines(s.items).forEach(function (l) {
         const lk = l.toLowerCase();
-        const hit = mem.items.find(function (x) { return x.t.toLowerCase() === lk; });
-        if (hit) { hit.ts = now; hit.p = k; } else mem.items.push({ t: l, p: k, ts: now });
+        const hit = mem.items.find(function (x) { return x.p === k && x.t.toLowerCase() === lk; });
+        if (hit) hit.ts = now; else mem.items.push({ t: l, p: k, ts: now });
       });
     });
     trimMem();
@@ -685,9 +696,9 @@ function check(stops) {
       });
       (m.items || []).forEach(function (r) {
         if (!r || typeof r.t !== 'string') return;
-        const hit = mem.items.find(function (x) { return x.t.toLowerCase() === r.t.toLowerCase(); });
+        const hit = mem.items.find(function (x) { return x.p === r.p && x.t.toLowerCase() === r.t.toLowerCase(); });
         if (!hit) mem.items.push(r);
-        else if ((r.ts || 0) > (hit.ts || 0)) { hit.ts = r.ts; hit.p = r.p; }
+        else if ((r.ts || 0) > (hit.ts || 0)) hit.ts = r.ts;
       });
       trimMem();
     }
@@ -894,52 +905,98 @@ function check(stops) {
     }
     return (m || pr || l) ? { pr: pr || '', l: l || '' } : null;
   }
+  /* Voorstellen. Volgorde per veld (wat het eerst komt, staat vooraan):
+     plaats  = wat er vorige keer na de vorige plek kwam, dan past bij laden/lossen, dan vaak en recent gebruikt
+     project = project van deze plaats, projecten van de stops hierboven (laatste eerst), daarna recent gebruikt
+     uur     = laatste tijd op deze plaats, daarna latere tijden dan de stop hierboven
+     items   = wat net geladen is (bij lossen), wat je hier eerder deed, wat vandaag al in de route staat, rest */
+  function prevStop(s) {
+    for (let j = stops.indexOf(s) - 1; j >= 0; j--) if (clean(stops[j].plaats)) return stops[j];
+    return null;
+  }
   function placeSuggestions(s, cur) {
     const q = cur.trim().toLowerCase();
     const pool = {};
     Object.keys(mem.places).forEach(function (k) { pool[k] = mem.places[k]; });
+    const today = {};
     stops.forEach(function (o) {
       const p = clean(o.plaats);
       if (o === s || !p) return;
       const k = p.toLowerCase();
-      if (!pool[k]) pool[k] = { p: p, pr: clean(o.project).toUpperCase(), l: clean(o.link), t: 0 };
+      today[k] = true;
+      if (!pool[k]) pool[k] = { p: p, pr: clean(o.project).toUpperCase(), l: clean(o.link), n: 0, t: 0 };
     });
+    const pv = prevStop(s), pk = pv ? clean(pv.plaats).toLowerCase() : '';
+    const nx = (pk && mem.places[pk] && mem.places[pk].nx) || {};
+    const nxSum = Object.keys(nx).reduce(function (t, x) { return t + nx[x]; }, 0);
+    const now = Date.now();
+    function score(k) {
+      const m = pool[k];
+      const trans = nxSum ? (nx[k] || 0) / nxSum : 0;
+      const a = m.a || {}, aSum = (a.LADEN || 0) + (a.LOSSEN || 0) + (a.OPHALEN || 0);
+      let fit = 0.5;
+      if (aSum && s.acties.length) fit = s.acties.reduce(function (t, x) { return t + (a[x] || 0); }, 0) / aSum;
+      const freq = Math.min(1, Math.log2(1 + (m.n || 0)) / 5);
+      const rec = m.t ? 1 / (1 + (now - m.t) / (7 * 864e5)) : 0;
+      return 3 * trans + 2 * fit + freq + rec - (k === pk ? 2 : 0) - (today[k] ? 0.5 : 0);
+    }
     return Object.keys(pool)
       .filter(function (k) { return !q || (k.indexOf(q) > -1 && k !== q); })
       .sort(function (a, b) {
         const as = q && a.indexOf(q) === 0 ? 0 : 1, bs = q && b.indexOf(q) === 0 ? 0 : 1;
-        return (as - bs) || ((pool[b].t || 0) - (pool[a].t || 0));
+        return (as - bs) || (score(b) - score(a));
       })
       .slice(0, 5)
       .map(function (k) { return pool[k]; });
   }
   function projectSuggestions(s, cur) {
     const q = cur.trim().toUpperCase();
-    const out = [];
-    function add(p) { p = clean(p).toUpperCase(); if (p && out.indexOf(p) === -1) out.push(p); }
+    const out = [], label = {};
+    function add(p, plaats) { p = clean(p).toUpperCase(); if (!p) return; if (!label[p] && plaats) label[p] = clean(plaats); if (out.indexOf(p) === -1) out.push(p); }
     const here = mem.places[clean(s.plaats).toLowerCase()];
-    if (here) add(here.pr);
-    stops.slice().reverse().forEach(function (o) { if (o !== s) add(o.project); });   /* het project van de vorige stop eerst */
+    if (here) add(here.pr, here.p);
+    stops.slice().reverse().forEach(function (o) { if (o !== s) add(o.project, o.plaats); });   /* het project van de vorige stop eerst */
     Object.keys(mem.places).sort(function (a, b) { return (mem.places[b].t || 0) - (mem.places[a].t || 0); })
-      .forEach(function (k) { add(mem.places[k].pr); });
-    return out.filter(function (p) { return !q || (p.indexOf(q) > -1 && p !== q); }).slice(0, 4);
+      .forEach(function (k) { add(mem.places[k].pr, mem.places[k].p); });
+    /* bij elk project de plaats waar je het het laatst gebruikte, zodat je ziet welk project het is */
+    Object.keys(mem.places).sort(function (a, b) { return (mem.places[a].t || 0) - (mem.places[b].t || 0); })
+      .forEach(function (k) { const m = mem.places[k], p = clean(m.pr).toUpperCase(); if (p) label[p] = m.p; });
+    return out
+      .filter(function (p) { return !q || ((p.indexOf(q) > -1 || (label[p] || '').toUpperCase().indexOf(q) > -1) && p !== q); })
+      .slice(0, 4)
+      .map(function (p) { return { t: p, label: p + (label[p] ? ' · ' + label[p] : '') }; });
   }
-  function tijdSuggestions(cur) {
+  function tijdMin(t) { const m = /^(\d{1,2})\.(\d{2})$/.exec(clean(t)); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function tijdTxt(min) { return Math.floor(min / 60) + '.' + String(min % 60).padStart(2, '0'); }
+  function tijdSuggestions(cur, s) {
     const q = cur.trim().replace(':', '.');
     const cnt = {};
-    function add(t) { t = clean(t); if (/^\d{1,2}\.\d{2}$/.test(t)) cnt[t] = (cnt[t] || 0) + 1; }
+    function add(t) { t = clean(t); if (tijdMin(t) !== null) cnt[t] = (cnt[t] || 0) + 1; }
     Object.keys(routes).forEach(function (d) { (routes[d].stops || []).forEach(function (o) { add(o.tijd); }); });
     stops.forEach(function (o) { add(o.tijd); });
-    const pool = Object.keys(cnt).sort(function (a, b) { return (cnt[b] - cnt[a]) || (a < b ? -1 : 1); }).slice(0, 5);
-    QUICK_TIJD.forEach(function (t) { if (pool.length < 5 && pool.indexOf(t) === -1) pool.push(t); });
-    return pool.sort(function (a, b) { return parseFloat(a) - parseFloat(b); })
+    let prev = null;   /* laatste ingevulde tijd hierboven: de voorstellen schuiven mee, later op de dag */
+    for (let j = stops.indexOf(s) - 1; j >= 0 && prev === null; j--) prev = tijdMin(stops[j].tijd);
+    const pm = mem.places[clean(s.plaats).toLowerCase()];
+    const pool = [];
+    if (pm && tijdMin(pm.tm) !== null && (prev === null || tijdMin(pm.tm) > prev)) pool.push(pm.tm);   /* de laatste keer op deze plaats */
+    if (prev === null) {
+      Object.keys(cnt).sort(function (a, b) { return (cnt[b] - cnt[a]) || (a < b ? -1 : 1); }).forEach(function (t) { if (pool.length < 5 && pool.indexOf(t) === -1) pool.push(t); });
+      QUICK_TIJD.forEach(function (t) { if (pool.length < 5 && pool.indexOf(t) === -1) pool.push(t); });
+    } else {
+      Object.keys(cnt).filter(function (t) { return tijdMin(t) > prev; })
+        .sort(function (a, b) { return (cnt[b] - cnt[a]) || (tijdMin(a) - tijdMin(b)); })
+        .forEach(function (t) { if (pool.length < 2 && pool.indexOf(t) === -1) pool.push(t); });
+      for (let m = Math.floor(prev / 30) * 30 + 30; pool.length < 5 && m <= 23 * 60 + 30; m += 30) { if (pool.indexOf(tijdTxt(m)) === -1) pool.push(tijdTxt(m)); }
+    }
+    return pool.sort(function (a, b) { return tijdMin(a) - tijdMin(b); })
       .filter(function (t) { return !q || (t.indexOf(q) === 0 && t !== q); });
   }
+  function itemNaam(l) { return clean(l).toLowerCase().replace(/^\d+([.,]\d+)?\s*(x|st\.?|stuks?)?\s+/, ''); }
   function itemSuggestions(s, current) {
     const q = current.trim().toLowerCase();
     const pk = clean(s.plaats).toLowerCase();
     const pool = [];
-    if (s.acties.indexOf('LOSSEN') > -1) {
+    if (s.acties.indexOf('LOSSEN') > -1) {   /* wat er net geladen is */
       for (let j = stops.indexOf(s) - 1; j >= 0; j--) {
         if (stops[j].acties.indexOf('LADEN') > -1 || stops[j].acties.indexOf('OPHALEN') > -1) {
           itemParts(stops[j].items).forEach(function (l) { pool.push(l); });
@@ -947,18 +1004,17 @@ function check(stops) {
         }
       }
     }
+    const byTs = mem.items.slice().sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    if (pk) byTs.forEach(function (x) { if (x.p === pk) pool.push(x.t); });   /* wat je hier eerder deed */
     stops.forEach(function (o) { if (o !== s) itemParts(o.items).forEach(function (l) { pool.push(l); }); });
-    mem.items.slice().sort(function (a, b) {
-      const as = pk && a.p === pk ? 0 : 1, bs = pk && b.p === pk ? 0 : 1;
-      return (as - bs) || ((b.ts || 0) - (a.ts || 0));
-    }).forEach(function (x) { pool.push(x.t); });
+    byTs.forEach(function (x) { pool.push(x.t); });
     const own = {};
-    itemLines(s.items).forEach(function (l) { own[l.toLowerCase()] = true; });
+    itemLines(s.items).forEach(function (l) { own[itemNaam(l)] = true; });
     const seen = {}, out = [];
     for (let i = 0; i < pool.length && out.length < 5; i++) {
-      const k = pool[i].toLowerCase();
-      if (seen[k] || own[k]) continue;
-      seen[k] = true;
+      const k = pool[i].toLowerCase(), n = itemNaam(pool[i]);
+      if (seen[n] || own[n]) continue;   /* hetzelfde ding met een ander aantal telt als dubbel: het eerste (nieuwste) aantal wint */
+      seen[n] = true;
       if (q && (k.indexOf(q) === -1 || k === q)) continue;
       out.push(pool[i]);
     }
@@ -978,9 +1034,9 @@ function check(stops) {
     } else if (f === 'plaats') {
       arr = placeSuggestions(s, el.value).map(function (p) { return { t: p.p, label: p.p + (p.pr ? ' · ' + p.pr : '') }; });
     } else if (f === 'tijd') {
-      arr = tijdSuggestions(el.value).map(function (t) { return { t: t, label: t }; });
+      arr = tijdSuggestions(el.value, s).map(function (t) { return { t: t, label: t }; });
     } else {
-      arr = projectSuggestions(s, el.value).map(function (t) { return { t: t, label: t }; });
+      arr = projectSuggestions(s, el.value);
     }
     list.querySelectorAll('.sugg').forEach(function (b) { if (b !== box) b.hidden = true; });
     box.innerHTML = arr.map(function (x) {

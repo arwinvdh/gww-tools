@@ -21,7 +21,13 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 - Suggesties uit eerdere routes, controle op ontbrekende gegevens, ongedaan maken en slepen om de volgorde te wijzigen.
 - Eerdere routes en suggesties worden bewaard op het apparaat zelf (met een back-up via het tandwiel). Wil je ze op meerdere apparaten, zet dan synchroniseren aan (zie hieronder).
 - Een ruwe route plakken: zet elke stop op een eigen regel met Laden, Lossen of Ophalen erin, bijvoorbeeld `1. Laden bij R3S 6.00 -> 1 bigbag spramex`. Plaats, uur, projectnummer, link en items worden uit de regel gehaald. Dit is een eenvoudige tekstherkenning, geen AI: wat niet herkend wordt, vul je zelf aan. Een regel zonder Laden, Lossen of Ophalen hoort bij de stop erboven.
-- Uurchips komen uit je eigen eerdere uren. Enter bij een nieuwe plaats gaat naar Project, bij een bekende plaats naar Items.
+- Voorstellen (chips) onder de velden, in deze volgorde:
+  - **Plaats:** wat er vorige keer na de vorige plek kwam, daarna plaatsen die bij laden of lossen passen, daarna vaak en recent gebruikte. De plek die je net gebruikte staat laag.
+  - **Project:** het project van deze plaats, dan de projecten van de stops erboven (laatste eerst), dan recent gebruikte. Bij elk project staat de plaats.
+  - **Uur:** de laatste tijd op deze plaats en tijden die later zijn dan de stop erboven, dus hoe verder op de dag hoe later.
+  - **Items:** wat er net geladen is (bij lossen), wat je op deze plaats eerder deed, wat al in de route staat, de rest. Hetzelfde item met een ander aantal staat maar één keer, met het nieuwste aantal.
+  - De tool leert dit pas als je een route kopieert of via WhatsApp verstuurt.
+- Enter bij een nieuwe plaats gaat naar Project, bij een bekende plaats naar Items.
 
 ## Bestanden
 
