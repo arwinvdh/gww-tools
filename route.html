@@ -1325,7 +1325,7 @@ function check(stops) {
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushRoute(); });
   window.addEventListener('pagehide', flushRoute);
 
-  /* route plakken (vraagt Claude om de tekst te splitsen) */
+  /* route plakken: parseRoute() zet de tekst om in stops */
   function pasteMessage(msg, bad) {
     pasteMsg.textContent = msg;
     pasteMsg.classList.toggle('bad', Boolean(bad));
