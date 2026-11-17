@@ -531,7 +531,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.21-a';
+  const VERSION = '2026.11.22-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -557,7 +557,7 @@ function check(stops) {
   let activeId = null;
   let undoFn = null, undoTimer = null, resetTimer = null, copyTimer = null, suggTimer = null, routeTimer = null;
     let db = null, dbFail = false, dbQueue = Promise.resolve();
-  let mem = { places: {}, items: [] };
+  let mem = { places: {}, items: [], cnt: {} };
   let routes = {};
 
   const ICON = {
@@ -619,7 +619,7 @@ function check(stops) {
   }
   function loadMem() {
     const m = lsGet(MKEY);
-    if (m && m.places && Array.isArray(m.items)) { mem = { places: m.places, items: m.items }; return; }
+    if (m && m.places && Array.isArray(m.items)) { mem = { places: m.places, items: m.items, cnt: m.cnt || {} }; return; }
     const old = lsGet(HKEY);
     if (Array.isArray(old)) {
       mem.items = old.filter(function (x) { return typeof x === 'string'; }).slice(0, 80)
@@ -643,15 +643,23 @@ function check(stops) {
   function learn() {
     const now = Date.now();
     let prevK = '';
+    /* een stop telt één keer mee per dag, ook als je de route vaker kopieert */
+    const day = datum.value || todayIso();
+    if (!mem.cnt) mem.cnt = {};
+    const counted = mem.cnt[day] || (mem.cnt[day] = []);
+    Object.keys(mem.cnt).sort().reverse().slice(30).forEach(function (d) { delete mem.cnt[d]; });
     stops.filter(hasContent).forEach(function (s) {
       const pl = clean(s.plaats);
       if (!pl) return;
       const k = pl.toLowerCase(), o = mem.places[k] || {};
+      const sig = k + '|' + (s.acties || []).join(',') + '|' + prevK;
+      const fresh = counted.indexOf(sig) === -1;
+      if (fresh) counted.push(sig);
       const act = Object.assign({ LADEN: 0, LOSSEN: 0, OPHALEN: 0 }, o.a);
-      (s.acties || []).forEach(function (x) { if (x in act) act[x]++; });
+      if (fresh) (s.acties || []).forEach(function (x) { if (x in act) act[x]++; });
       const tm = normTijd(s.tijd);
-      mem.places[k] = { p: pl, pr: clean(s.project).toUpperCase() || o.pr || '', l: clean(s.link) || o.l || '', n: (o.n || 0) + 1, t: now, a: act, nx: o.nx || {}, tm: /^\d{1,2}\.\d{2}$/.test(tm) ? tm : (o.tm || '') };
-      if (prevK && prevK !== k) {
+      mem.places[k] = { p: pl, pr: clean(s.project).toUpperCase() || o.pr || '', l: clean(s.link) || o.l || '', n: (o.n || 0) + (fresh ? 1 : 0), t: now, a: act, nx: o.nx || {}, tm: /^\d{1,2}\.\d{2}$/.test(tm) ? tm : (o.tm || '') };
+      if (fresh && prevK && prevK !== k) {
         const po = mem.places[prevK], nx = po.nx || (po.nx = {});
         nx[k] = (nx[k] || 0) + 1;
         const keep = Object.keys(nx).sort(function (x, y) { return nx[y] - nx[x]; }).slice(0, 8), small = {};
@@ -955,6 +963,11 @@ function check(stops) {
     function add(p, plaats) { p = clean(p).toUpperCase(); if (!p) return; if (!label[p] && plaats) label[p] = clean(plaats); if (out.indexOf(p) === -1) out.push(p); }
     const here = mem.places[clean(s.plaats).toLowerCase()];
     if (here) add(here.pr, here.p);
+    else {   /* nog geen plaats: het project van de plek die er meestal op volgt */
+      const pv = prevStop(s), pm = pv && mem.places[clean(pv.plaats).toLowerCase()], nx = (pm && pm.nx) || {};
+      const top = Object.keys(nx).sort(function (x, y) { return nx[y] - nx[x]; })[0];
+      if (top && mem.places[top]) add(mem.places[top].pr, mem.places[top].p);
+    }
     stops.slice().reverse().forEach(function (o) { if (o !== s) add(o.project, o.plaats); });   /* het project van de vorige stop eerst */
     Object.keys(mem.places).sort(function (a, b) { return (mem.places[b].t || 0) - (mem.places[a].t || 0); })
       .forEach(function (k) { add(mem.places[k].pr, mem.places[k].p); });
@@ -1054,7 +1067,7 @@ function check(stops) {
     const info = lookupPlace(s.plaats, s);
     if (!info) return false;
     let changed = false;
-    if (!clean(s.project) && info.pr) { s.project = info.pr; setField(card, 'project', info.pr); changed = true; }
+    if (!clean(s.project) && info.pr && s.acties.indexOf('LADEN') === -1) {   /* bij laden nooit automatisch een project invullen */ s.project = info.pr; setField(card, 'project', info.pr); changed = true; }
     if (!clean(s.link) && info.l) { s.link = info.l; setField(card, 'link', info.l); changed = true; }
     if (changed) refreshHead(card, s);
     return changed;
@@ -1087,7 +1100,7 @@ function check(stops) {
       const card = t.closest('.stop'), s = findStop(t);
       if (s && t.matches('input[data-f="plaats"]') && fillFromPlace(s, card)) update();
       let nx = card.querySelector('textarea[data-f="items"]');
-      if (s && t.matches('input[data-f="plaats"]') && !clean(s.project)) nx = card.querySelector('input[data-f="project"]');
+      if (s && t.matches('input[data-f="plaats"]') && !clean(s.project) && s.acties.indexOf('LADEN') === -1) nx = card.querySelector('input[data-f="project"]');
       if (nx) nx.focus();
     }
   });

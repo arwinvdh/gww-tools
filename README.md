@@ -23,10 +23,10 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 - Een ruwe route plakken: zet elke stop op een eigen regel met Laden, Lossen of Ophalen erin, bijvoorbeeld `1. Laden bij R3S 6.00 -> 1 bigbag spramex`. Plaats, uur, projectnummer, link en items worden uit de regel gehaald. Dit is een eenvoudige tekstherkenning, geen AI: wat niet herkend wordt, vul je zelf aan. Een regel zonder Laden, Lossen of Ophalen hoort bij de stop erboven.
 - Voorstellen (chips) onder de velden, in deze volgorde:
   - **Plaats:** wat er vorige keer na de vorige plek kwam, daarna plaatsen die bij laden of lossen passen, daarna vaak en recent gebruikte. De plek die je net gebruikte staat laag.
-  - **Project:** het project van deze plaats, dan de projecten van de stops erboven (laatste eerst), dan recent gebruikte. Bij elk project staat de plaats.
+  - **Project:** het project van deze plaats (nog geen plaats: van de plek die er meestal op volgt), dan de projecten van de stops erboven (laatste eerst), dan recent gebruikte. Bij elk project staat de plaats. Bij een laadstop wordt een project nooit automatisch ingevuld.
   - **Uur:** de laatste tijd op deze plaats en tijden die later zijn dan de stop erboven, dus hoe verder op de dag hoe later.
   - **Items:** wat er net geladen is (bij lossen), wat je op deze plaats eerder deed, wat al in de route staat, de rest. Hetzelfde item met een ander aantal staat maar één keer, met het nieuwste aantal.
-  - De tool leert dit pas als je een route kopieert of via WhatsApp verstuurt.
+  - De tool leert dit pas als je een route kopieert of via WhatsApp verstuurt. Een stop telt één keer mee per dag, ook als je de route vaker kopieert.
 - Enter bij een nieuwe plaats gaat naar Project, bij een bekende plaats naar Items.
 
 ## Bestanden
