@@ -490,7 +490,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.15-c';
+  const VERSION = '2026.11.17-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -886,7 +886,14 @@ function check(stops) {
   }
   function tijdSuggestions(cur) {
     const q = cur.trim().replace(':', '.');
-    return QUICK_TIJD.filter(function (t) { return !q || (t.indexOf(q) === 0 && t !== q); });
+    const cnt = {};
+    function add(t) { t = clean(t); if (/^\d{1,2}\.\d{2}$/.test(t)) cnt[t] = (cnt[t] || 0) + 1; }
+    Object.keys(routes).forEach(function (d) { (routes[d].stops || []).forEach(function (o) { add(o.tijd); }); });
+    stops.forEach(function (o) { add(o.tijd); });
+    const pool = Object.keys(cnt).sort(function (a, b) { return (cnt[b] - cnt[a]) || (a < b ? -1 : 1); }).slice(0, 5);
+    QUICK_TIJD.forEach(function (t) { if (pool.length < 5 && pool.indexOf(t) === -1) pool.push(t); });
+    return pool.sort(function (a, b) { return parseFloat(a) - parseFloat(b); })
+      .filter(function (t) { return !q || (t.indexOf(q) === 0 && t !== q); });
   }
   function itemSuggestions(s, current) {
     const q = current.trim().toLowerCase();
@@ -981,7 +988,10 @@ function check(stops) {
     const t = e.target;
     if (t.matches('input[data-f="plaats"], input[data-f="project"], input[data-f="tijd"]')) {
       e.preventDefault();
-      const nx = t.closest('.stop').querySelector('textarea[data-f="items"]');
+      const card = t.closest('.stop'), s = findStop(t);
+      if (s && t.matches('input[data-f="plaats"]') && fillFromPlace(s, card)) update();
+      let nx = card.querySelector('textarea[data-f="items"]');
+      if (s && t.matches('input[data-f="plaats"]') && !clean(s.project)) nx = card.querySelector('input[data-f="project"]');
       if (nx) nx.focus();
     }
   });
