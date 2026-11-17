@@ -39,5 +39,13 @@ const IPHONE = require('playwright').devices['iPhone 13'];
   const chips = await p.evaluate(() => [...document.querySelectorAll('.stop.open .sugg:not([hidden]) .chip')].map(c => c.textContent));
   ok(chips.includes('7.15') && chips.length === 5, 'uurchips bevatten je eigen uur (' + chips.join(' ') + ')');
   ok(p.errs.length === 0, 'Enter/uurchips: geen scriptfouten');
+  // projectvoorstel: het project van de vorige stop staat vooraan
+  await p.fill('#s3-plaats', ''); await p.fill('#s3-project', '');
+  await p.evaluate(() => { document.querySelector('[data-id="1"] [data-do=open]').click(); }); await p.waitForTimeout(300); await p.fill('#s1-project', 'IB11111');
+  await p.evaluate(() => { document.querySelector('[data-id="2"] [data-do=open]').click(); }); await p.waitForTimeout(300); await p.fill('#s2-project', 'IB22222');
+  await p.evaluate(() => { document.querySelector('[data-id="3"] [data-do=open]').click(); }); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('[data-id="3"] input[data-f="project"]').focus()); await p.waitForTimeout(200);
+  const pc = await p.evaluate(() => [...document.querySelectorAll('.stop.open .sugg:not([hidden]) .chip')].map(c => c.textContent));
+  ok(pc[0] === 'IB22222', 'projectvoorstel: project van de vorige stop staat eerst (' + pc.join(' ') + ')');
   await b.close();
 })();

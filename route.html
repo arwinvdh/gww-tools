@@ -531,7 +531,7 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.18-a';
+  const VERSION = '2026.11.19-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -919,7 +919,7 @@ function check(stops) {
     function add(p) { p = clean(p).toUpperCase(); if (p && out.indexOf(p) === -1) out.push(p); }
     const here = mem.places[clean(s.plaats).toLowerCase()];
     if (here) add(here.pr);
-    stops.forEach(function (o) { if (o !== s) add(o.project); });
+    stops.slice().reverse().forEach(function (o) { if (o !== s) add(o.project); });   /* het project van de vorige stop eerst */
     Object.keys(mem.places).sort(function (a, b) { return (mem.places[b].t || 0) - (mem.places[a].t || 0); })
       .forEach(function (k) { add(mem.places[k].pr); });
     return out.filter(function (p) { return !q || (p.indexOf(q) > -1 && p !== q); }).slice(0, 4);
