@@ -1,0 +1,111 @@
+/* Gedeelde stijl voor Locatie delen (index.html) en Route knijperwagen (route.html).
+   Staat hier één keer, zodat beide tools dezelfde basis hebben.
+
+   Volgorde van de lagen: wat later staat, wint van wat eerder staat, ongeacht hoe specifiek de selector is.
+     reset       basisregels die altijd gelden ([hidden], minder beweging)
+     base        kleuren, tekst, formulierbasis, focusring
+     components  knoppen, velden, kaarten, kopband, dialoog, toast, actiebalk
+     overrides   uitzonderingen: smalle schermen, touch, bezig-toestand
+   Regels van de pagina zelf staan in de <style> van die pagina, ook in deze lagen.
+   Leaflet-regels staan buiten de lagen en winnen dus altijd van lagen; daarom staat de aanpassing van de
+   Leaflet-knoppen in de pagina zelf, buiten een laag. */
+@layer reset, base, components, overrides;
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes riseX { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@layer reset {
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --bg: #EEF3F8; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0E2236; --ink-2: #566879; --line: #D0DAE5;
+    --accent: #014983; --on-accent: #FFFFFF; --warn: #B42318; --ok: #3F7D0A; --focus: #014983;
+    --scrim: rgba(0, 31, 56, 0.5); --brand-dark: #001f38; --brand-green: #76b720;
+    --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #027EB5;
+    --font: 'Avenir Next', 'Avenir Next LT Pro', Avenir, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --shadow: 0 12px 20px 0 rgba(0, 31, 56, 0.08);
+    --wrap-max: 64rem;      /* de pagina kan dit aanpassen */
+    --dialog-w: 24rem;
+  }
+  /* de vaste actiebalk onderaan mag een gefocust veld niet bedekken */
+  html { scroll-padding-bottom: 7rem; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 0.9375rem; line-height: 1.4; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  h1 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+  h2 { margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  a.lnk { color: var(--accent); font-weight: 600; }
+}
+
+@layer components {
+  /* kopband */
+  .brand { background: var(--brand-dark); color: #fff; border-bottom: 3px solid var(--brand-green); padding: 0.75rem max(16px, env(safe-area-inset-right, 0px)) 0.75rem max(16px, env(safe-area-inset-left, 0px)); }
+  .brand .in { max-width: var(--wrap-max); margin-inline: auto; display: flex; align-items: center; gap: 0.6rem; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand-green); flex: none; }
+  .brand h1 { color: #fff; letter-spacing: 0.01em; line-height: 1.2; }
+  .gear { margin-left: auto; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; transition: background-color 0.15s; }
+
+  .wrap { max-width: var(--wrap-max); margin-inline: auto; padding: 1rem max(16px, env(safe-area-inset-right, 0px)) 6rem max(16px, env(safe-area-inset-left, 0px)); }
+  .tip { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: 0.875rem; }
+
+  /* kaarten en velden */
+  .grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.875rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; box-shadow: var(--shadow); }
+  .card h2 { margin: 0; min-height: 32px; display: flex; align-items: center; }
+  .field { display: grid; gap: 0.15rem; min-width: 0; }
+  .field > label { font-size: 0.8125rem; color: var(--ink-2); }
+  .inp { width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font-size: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
+  .inp:focus-visible { border-color: var(--accent); outline: 2px solid var(--focus); outline-offset: 0; }
+  .hint { font-size: 0.8125rem; color: var(--ink-2); margin: 0; }
+  .hint.err { color: var(--warn); }
+  .hint.ok { color: var(--ok); }
+
+  /* knoppen */
+  .btn { min-height: 44px; padding: 0.35rem 1.1rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn.sm { min-height: 36px; padding: 0.2rem 0.75rem; font-size: 0.875rem; }
+  .btn.danger { border-color: var(--warn); color: var(--warn); }
+  .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+  /* voorbeeld van het WhatsApp-bericht */
+  .wa { background: var(--wa-wall); border-radius: 12px; padding: 0.75rem; }
+
+  /* actiebalk onderaan */
+  .bar { position: fixed; inset: auto 0 0; padding: 0.6rem max(16px, env(safe-area-inset-right, 0px)) calc(0.6rem + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); z-index: 500; }
+
+  /* dialoog en melding */
+  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem; width: min(var(--dialog-w), calc(100% - 2rem)); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 31, 56, 0.3); }
+  dialog[open] { display: grid; gap: 0.7rem; animation: rise 0.2s ease both; }
+  dialog::backdrop { background: var(--scrim); }
+  .toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); max-width: calc(100% - 2rem); background: var(--ink); color: var(--bg); padding: 0.5rem 0.9rem; border-radius: 10px; z-index: 900; font-size: 0.875rem; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); animation: riseX 0.2s ease both; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: rise 0.35s ease both; }
+  }
+  /* hover alleen op apparaten met een muis: op touch blijft hij anders hangen na een tik */
+  @media (hover: hover) {
+    .gear:hover { background: rgba(255, 255, 255, 0.14); }
+    .btn:hover:not(:disabled) { border-color: var(--ink-2); }
+    .btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+    .chip:hover { border-color: var(--accent); }
+  }
+}
+
+@layer overrides {
+  /* touch: minimaal 44px om te tikken */
+  @media (pointer: coarse) {
+    .btn.sm { min-height: 44px; }
+    .gear { width: 44px; height: 44px; }
+    .chip { min-height: 44px; }
+  }
+}

@@ -38,11 +38,16 @@ manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
+shared.css              gedeelde stijl (kleuren, knoppen, velden, kaarten, kopband) voor beide tools
 icons/                  iconen voor het beginscherm
 tests/                  automatische controles (zie hieronder)
 ```
 
-Elke tool is één bestand met eigen stijl en code, zonder build-stap. De enige externe code is Leaflet 1.9.4, geladen van cdnjs.
+Elke tool is één HTML-bestand met eigen code en de stijl die alleen bij die tool hoort, plus de gedeelde `shared.css`. Er is geen build-stap.
+
+### Opbouw van de stijl
+
+`shared.css` begint met `@layer reset, base, components, overrides;`. Een regel in een latere laag wint van een regel in een eerdere laag, ook als die minder specifiek is. Daardoor hoeft een uitzondering (smal scherm, touch, bezig) niet meer op de goede plek in het bestand te staan. Zet een nieuwe regel in de laag die bij zijn rol past: gewone onderdelen in `components`, uitzonderingen in `overrides`. De aanpassing van de Leaflet-knoppen staat buiten de lagen, omdat Leaflet zelf ook buiten lagen staat. Heb je `shared.css` aangepast, verhoog dan ook `CACHE` in `sw.js`. De enige externe code is Leaflet 1.9.4, geladen van cdnjs.
 
 ## Synchroniseren tussen apparaten
 
