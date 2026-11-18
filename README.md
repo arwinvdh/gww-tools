@@ -6,6 +6,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 |---|---|---|
 | **Locatie delen** | https://arwinvdh.github.io/locatie/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
 | **Route knijperwagen** | https://arwinvdh.github.io/locatie/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
+| **Mijn tools** (startpagina) | https://arwinvdh.github.io/locatie/start.html | Tegels naar alle tools. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
 
 ## Locatie delen
 
@@ -36,6 +37,8 @@ index.html              Locatie delen
 route.html              Route knijperwagen
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
+start.html              startpagina met tegels naar de tools
+start.webmanifest       installatiegegevens van de startpagina
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
 shared.css              gedeelde stijl (kleuren, knoppen, velden, kaarten, kopband) voor beide tools
@@ -123,3 +126,10 @@ Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzend
 - **Oude versie zichtbaar:** sluit de app, open hem opnieuw en vernieuw. Staat het versienummer in het tandwiel nog niet goed, verwijder dan het icoon en voeg de pagina opnieuw toe.
 - **Kaart blijft leeg:** controleer de verbinding. Valt een kaartbron uit, dan schakelt de tool zelf over op een reservekaart en meldt dat.
 - **Een fout in beeld:** de tool toont onderin kort "Fout: …". Noteer de tekst en het versienummer.
+
+## Een nieuwe tool toevoegen aan de startpagina
+
+1. Maak het bestand (bijvoorbeeld `nieuw.html`) met `shared.css` erin, zoals `route.html`.
+2. Zet er een tegel bij in `start.html` (kopieer een bestaande `<a class="tile">`).
+3. Zet het bestand en eventuele iconen in `LOCAL` in `sw.js` en verhoog `CACHE`.
+4. Voeg een regel toe aan `tests/start.test.js` bij de verwachte tegels.

@@ -243,7 +243,7 @@
     <p class="hint">Eenmalig invullen. Blijft op dit apparaat staan en wordt alleen gedeeld als je hieronder synchroniseren aanzet.</p>
     <div id="syncBox"></div>
     <p class="hint" id="ver"></p>
-    <p class="hint">Meer tools: <a class="lnk" href="route.html">Route knijperwagen</a></p>
+    <p class="hint"><a class="lnk" href="start.html">Alle tools</a></p>
     <button class="btn primary" id="settingsOk">Klaar</button>
   </dialog>
 </section>
@@ -256,7 +256,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.23-a'
+  var VERSION = '2026.11.25-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
