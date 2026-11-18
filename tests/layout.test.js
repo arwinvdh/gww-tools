@@ -18,6 +18,10 @@ const { devices } = require('playwright');
         const bar = document.querySelector('.bar, .bar-stack'); const bh = bar ? Math.round(bar.getBoundingClientRect().height) : 0;
         return { vw, sw, small, bh };
       });
+      if (file === 'route.html') {
+        const inside = await p.evaluate(() => { const c = document.querySelector('.card').getBoundingClientRect(); return [...document.querySelectorAll('.r-dn .inp')].filter(e => e.offsetParent).every(e => { const b = e.getBoundingClientRect(); return b.left >= c.left - 0.5 && b.right <= c.right + 0.5; }); });
+        ok(inside, `${file} op ${name}: datum- en opmerkingveld blijven binnen de kaart`);
+      }
       ok(r.sw <= r.vw, `${file} op ${name}: geen zijwaartse scroll (${r.sw} van ${r.vw})`);
       ok(r.small.length === 0, `${file} op ${name}: alle knoppen minstens 44px hoog ${r.small.join(', ')}`);
       if (file === 'index.html') ok(r.bh <= 80, `${file} op ${name}: actiebalk hoogstens 80px (${r.bh})`);
