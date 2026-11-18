@@ -60,7 +60,7 @@ Eenmalig instellen:
 
 1. Maak op github.com een nieuwe **privérepo** (bijvoorbeeld `locatie-data`) met een README.
 2. Maak een fine-grained token: Settings, Developer settings, Personal access tokens, Fine-grained tokens. Kies bij Repository access **Only select repositories** en alleen die repo, en zet bij Repository permissions **Contents** op **Read and write**. Kies een vervaldatum.
-3. Open in de tool het tandwiel, vul de reponaam en de token in en tik op **Verbinden**. Beide tools gebruiken dezelfde verbinding.
+3. Open de startpagina (`start.html`, kaart **Apparaten koppelen**) of het tandwiel van een tool, vul de reponaam en de token in en tik op **Verbinden**. Beide tools gebruiken dezelfde verbinding.
 4. Een extra apparaat koppel je met **Koppellink voor ander apparaat** (in het tandwiel, zodra je verbonden bent): stuur de link naar jezelf, open hem op het andere apparaat en tik op **Koppelen**. De token zit in het deel na de `#`, dat nooit naar een server gaat, en wordt bij het openen direct uit de adresbalk gehaald. Het apparaat koppelt pas na jouw bevestiging, en de bevestiging toont de reponaam, zodat een link naar andermans repo opvalt.
 
 Wat er gebeurt:

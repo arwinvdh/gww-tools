@@ -29,6 +29,8 @@
   .tile span { display: block; margin-top: 0.1rem; font-size: 0.875rem; color: var(--ink-2); }
   .tile::after { content: "\203A"; font-size: 1.6rem; line-height: 1; color: var(--ink-2); }
   .foot { margin-top: 1.5rem; }
+  .sync-h { margin-top: 1.5rem; }
+  .couple { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
   @media (hover: hover) { .tile:hover { border-color: var(--accent); } }
   @media (min-width: 40rem) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 }
@@ -43,11 +45,22 @@
     <a class="tile" href="index.html"><img src="icons/icon-192.png" alt="" width="56" height="56"><div><b>Locatie delen</b><span>Van een Maps-link of adres een WhatsApp-bericht met luchtfoto maken.</span></div></a>
     <a class="tile" href="route.html"><img src="icons/route-icon-192.png" alt="" width="56" height="56"><div><b>Route knijperwagen</b><span>Een route met stops samenstellen en delen als bericht.</span></div></a>
   </nav>
-  <p class="hint foot">Alle tools staan op dit apparaat: gegevens blijven hier, tenzij je synchroniseren aanzet in de tool zelf. <span id="ver"></span></p>
+  <h2 class="sync-h">Apparaten koppelen</h2>
+  <div class="card">
+    <p class="hint">Koppel één keer: daarna synchroniseren al je tools op dit apparaat. Je gegevens komen in je eigen privérepo op GitHub.</p>
+    <div id="syncBox"></div>
+    <ol class="hint couple" id="couple" hidden>
+      <li>Tik hierboven op <b>Koppellink voor ander apparaat</b>.</li>
+      <li>Stuur de link naar jezelf (AirDrop of WhatsApp aan jezelf).</li>
+      <li>Open de link op het andere apparaat en tik op <b>Koppelen</b>. Verwijder het bericht daarna.</li>
+    </ol>
+  </div>
+  <p class="hint foot">Zonder koppeling blijven je gegevens op dit apparaat. <span id="ver"></span></p>
 </div>
+<script src="sync.js"></script>
 <script>
 (function () {
-  var VERSION = '2026.11.25-a';
+  var VERSION = '2026.11.26-a';
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* geen opslag */ } }
   document.getElementById('ver').textContent = 'Versie ' + VERSION + '.';
@@ -55,6 +68,15 @@
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('start.tipX') !== '1') document.getElementById('tip').hidden = false;
   document.getElementById('tipX').onclick = function () { lsSet('start.tipX', '1'); document.getElementById('tip').hidden = true; };
+  /* koppelen: de verbinding geldt voor alle tools, ze delen dezelfde opslag in deze browser */
+  if (window.GhSync) {
+    var couple = document.getElementById('couple');
+    window.GhSync.mountSettings(document.getElementById('syncBox'));
+    window.GhSync.syncNow = function () {
+      return Promise.all([window.GhSync.create('locatie.json').pull(), window.GhSync.create('route.json').pull()]);
+    };
+    window.GhSync.onStatus(function () { couple.hidden = !window.GhSync.getConfig(); });
+  } else { document.getElementById('syncBox').textContent = 'Synchroniseren is hier niet beschikbaar.'; }
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
 </script>
