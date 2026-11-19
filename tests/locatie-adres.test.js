@@ -40,6 +40,16 @@ const { chromium, ROOT, LEAFLET_JS, LEAFLET_CSS, launchOptions, ok } = require('
   r = await run({ adres: adres('Vijverlaan', 1, '6731CK', 'Otterlo', 1164), wegen: [weg('Fietspad', 'Otterlo', 90), weg('CER', 'Otterlo', 242), weg('Houtkampweg', 'Otterlo', 700)] });
   ok(r.addr === 'Nabij Otterlo' && /Alleen|alleen/.test(r.note), 'geen bruikbare weg binnen 500 m: alleen de plaats (' + r.addr + ')');
 
+  // pin langs een andere straat dan het dichtstbijzijnde adres (zoals Schapendrift tegenover Moerbei 4)
+  r = await run({ adres: adres('Moerbei', 4, '3371NZ', 'Hardinxveld-Giessendam', 62), wegen: [weg('Schapendrift', 'Hardinxveld-Giessendam', 12), weg('Moerbei', 'Hardinxveld-Giessendam', 55)] });
+  ok(r.addr === 'Nabij Schapendrift, Hardinxveld-Giessendam' && /Moerbei 4/.test(r.note) && /Schapendrift/.test(r.note), 'pin langs Schapendrift, adres aan Moerbei: de straat van de pin, niet het adres (' + r.addr + ')');
+  // zelfde straat: het huisnummer blijft
+  r = await run({ adres: adres('Merenweg', 22, '2665KM', 'Bleiswijk', 60), wegen: [weg('Merenweg', 'Bleiswijk', 20)] });
+  ok(r.addr === 'Nabij Merenweg 22, 2665 KM Bleiswijk', 'pin langs dezelfde straat als het adres: het adres blijft (' + r.addr + ')');
+  // weg verder dan 30 m: het adres blijft (de pin staat niet langs die weg)
+  r = await run({ adres: adres('Merenweg', 22, '2665KM', 'Bleiswijk', 60), wegen: [weg('Rottedijk', 'Bleiswijk', 45)] });
+  ok(r.addr === 'Nabij Merenweg 22, 2665 KM Bleiswijk', 'andere weg op 45 m: nog steeds het adres (' + r.addr + ')');
+
   // woord kiezen met één tik, en onthouden bij een nieuwe pin
   r = await run({ adres: adres('Merenweg', 22, '2665KM', 'Bleiswijk', 81), wegen: [] });
   await p.click('#near1 button:has-text("Tegenover")'); await p.waitForTimeout(200);

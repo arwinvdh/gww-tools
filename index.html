@@ -269,7 +269,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.30-a'
+  var VERSION = '2026.12.01-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -568,16 +568,23 @@
         if (dist > 1500) return null;                      // geen adres in de buurt: dan is dit waarschijnlijk geen Nederlandse locatie
         var word = state.near || 'Nabij';
         if (dist <= 20) return { addr: pdokAddr(d), note: '' };                      // de pin staat op dit adres
-        if (dist <= 100) return { addr: word + ' ' + pdokAddr(d), note: 'Op deze plek is geen adres. Het dichtstbijzijnde adres, ongeveer ' + dist + ' m van de pin, staat als "' + word + '" in het bericht. Tik op een ander woord als dat beter past.' };
-        // geen adres in de buurt: de dichtstbijzijnde echte weg (geen fietspad of naamloos pad), anders alleen de plaats
         var plaatsOnly = { addr: word + ' ' + (d.woonplaatsnaam || ''), note: 'Geen adres of weg in de buurt (het dichtstbijzijnde adres is ' + dist + ' m weg). Er staat alleen de plaats. De Maps-link wijst de plek zelf aan.' };
+        // de dichtstbijzijnde echte weg (geen fietspad of naamloos pad)
         return timeoutFetch(PDOK_LS + 'reverse?type=weg&rows=8&lat=' + lat + '&lon=' + lon + '&fl=straatnaam,woonplaatsnaam,weergavenaam,afstand', 5000)
           .then(function (r) { return r.json(); })
-          .then(function (w) {
-            var road = ((w.response && w.response.docs) || []).filter(function (x) { return usableRoad(x.straatnaam) && +x.afstand <= 500; })[0];
+          .then(function (w) { return ((w.response && w.response.docs) || []).filter(function (x) { return usableRoad(x.straatnaam) && +x.afstand <= 500; })[0] || null; })
+          .catch(function () { return null; })
+          .then(function (road) {
+            var roadAddr = road ? word + ' ' + road.straatnaam + ', ' + (road.woonplaatsnaam || d.woonplaatsnaam || '') : '';
+            if (dist <= 100) {
+              // staat de pin langs een andere straat dan het adres, dan hoort dat adres daar niet bij: het huisnummer zou misleiden
+              if (road && +road.afstand <= 30 && String(road.straatnaam).toLowerCase() !== String(d.straatnaam || '').toLowerCase())
+                return { addr: roadAddr, note: 'De pin staat langs ' + road.straatnaam + ' (ongeveer ' + Math.round(+road.afstand) + ' m). Het dichtstbijzijnde adres, ' + pdokAddr(d) + ' (ongeveer ' + dist + ' m), ligt aan een andere straat en staat daarom niet in het bericht.' };
+              return { addr: word + ' ' + pdokAddr(d), note: 'Op deze plek is geen adres. Het dichtstbijzijnde adres, ongeveer ' + dist + ' m van de pin, staat als "' + word + '" in het bericht. Tik op een ander woord als dat beter past.' };
+            }
             if (!road) return plaatsOnly;
-            return { addr: word + ' ' + road.straatnaam + ', ' + (road.woonplaatsnaam || d.woonplaatsnaam || ''), note: 'Geen adres in de buurt (het dichtstbijzijnde is ' + dist + ' m weg). In het bericht staat de dichtstbijzijnde weg, ongeveer ' + Math.round(+road.afstand) + ' m van de pin.' };
-          }).catch(function () { return plaatsOnly; });
+            return { addr: roadAddr, note: 'Geen adres in de buurt (het dichtstbijzijnde is ' + dist + ' m weg). In het bericht staat de dichtstbijzijnde weg, ongeveer ' + Math.round(+road.afstand) + ' m van de pin.' };
+          });
       }).catch(function () { return null; })
       .then(function (r) { return r || viaOsm(); });
   }
