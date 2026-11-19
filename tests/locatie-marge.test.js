@@ -32,13 +32,18 @@ const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV
       // laagste rode punt (pinpunt) in het kaartvlak
       const mid = g.getImageData(M, M + 400, W, T - 400 + 30).data; let lowest = 0;
       for (let y = 0; y < T - 400 + 30; y++) for (let x = 0; x < W; x += 2) { const i = (y * W + x) * 4; if (mid[i] > 190 && mid[i + 1] < 90 && mid[i + 2] < 90) lowest = Math.max(lowest, y + 400); }
+      const areas = []; { const gw = W, gh = T - 400 + 30, seen = new Uint8Array(gw * gh), isRed = (x, y) => { const i = (y * gw + x) * 4; return mid[i] > 190 && mid[i + 1] < 90 && mid[i + 2] < 90; };
+        for (let y = 0; y < gh; y += 2) for (let x = 0; x < gw; x += 2) if (isRed(x, y) && !seen[y * gw + x]) { const st = [[x, y]]; seen[y * gw + x] = 1; let n = 0;
+          while (st.length) { const [qx, qy] = st.pop(); n++; for (const [dx, dy] of [[2,0],[-2,0],[0,2],[0,-2]]) { const nx = qx + dx, ny = qy + dy; if (nx < 0 || ny < 0 || nx >= gw || ny >= gh || seen[ny * gw + nx] || !isRed(nx, ny)) continue; seen[ny * gw + nx] = 1; st.push([nx, ny]); } }
+          if (n > 150) areas.push(n); } }
       return {
+        areas, creditDev: dev(W - 520, W - 36, H - 34, H - 10, barRef),
         barSides: Math.max(dev(0, 30, T + 14, H - 62, barRef), dev(W - 30, W, T + 14, H - 62, barRef)),
         barBottom: dev(60, W - 60, H - 12, H - 4, barRef),
         mapSides: Math.max(dev(0, 40, 440, T - 24, mapRef), dev(W - 40, W, 440, T - 24, mapRef)),
         gapAbovePin: T - lowest
       };
-    }, [b64, locs.length > 2 ? 284 : 250]);
+    }, [b64, locs.length > 2 ? 330 : locs.length > 1 ? 290 : 250]);
     await ctx.close(); return m;
   }
   const LONG = 'Nieuwbouw woonwijk Zuidpoort fase 2 kavel 14 t/m 22';
@@ -53,5 +58,10 @@ const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV
   m = await render(['51.9960, 4.4730', '51.9975, 4.4780', '51.9962, 4.4830'], [l40, l40, l40], [addr(1), addr(2), addr(3)], LONG);
   ok(m.barSides <= 14 && m.barBottom <= 14 && m.mapSides <= 14, 'drie locaties ver uit elkaar met lange labels en adressen: niets tegen de rand (' + m.barSides + ', ' + m.barBottom + ', ' + m.mapSides + ')');
   ok(m.gapAbovePin >= 50, 'drie locaties (hogere balk): de pinpunten staan minstens 50 px boven de balk (' + m.gapAbovePin + ')');
+  // jouw situatie: pin 2 en 3 dicht onder elkaar, pin 1 ver links; het label van pin 3 mag pin 2 niet afdekken
+  m = await render(['51.82654, 4.80650', '51.82744, 4.81670', '51.82644, 4.81710'], ['Inrit Schapendrift', 'Directiekeet', 'Inrit Goudreinet'], ['Aan de Schapedrift ter hoogte van Moerbei', 'Naast Kleipeer 22', 'Nabij Kleipeer 24'], 'BRM Ons Dorp');
+  ok(m.areas.length === 3 && Math.min.apply(null, m.areas) >= 0.7 * Math.max.apply(null, m.areas), 'geen enkele pin is afgedekt door een label (oppervlakten ' + m.areas.join(', ') + ')');
+  ok(m.creditDev <= 14, 'geen bronvermelding meer rechtsonder in de afbeelding (afwijking ' + m.creditDev + ')');
+  ok(m.barSides <= 14 && m.barBottom <= 14 && m.mapSides <= 14 && m.gapAbovePin >= 50, 'ook hier marges in orde (' + m.barSides + ', ' + m.barBottom + ', ' + m.mapSides + ', ' + m.gapAbovePin + ')');
   await b.close();
 })();

@@ -277,7 +277,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.12.03-a'
+  var VERSION = '2026.12.04-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -917,7 +917,7 @@
   function buildImage() {
     var W = 1080, H = 1360, lat = state.lat, lon = state.lon, o = state.opts;
     var LS_ = locs(), two = LS_.length > 1, mpp = state.range / W;
-    var BH = LS_.length > 2 ? 284 : 250, bandTop = 580, bandBot = H - BH - 70;   // bij drie locaties een hogere balk, en de pins blijven erboven
+    var BH = LS_.length > 2 ? 330 : LS_.length > 1 ? 290 : 250, bandTop = 580, bandBot = H - BH - 70;   // bij meer locaties een hogere balk (meer lucht), en de pins blijven erboven
     var zf = Math.log(156543.03392 * Math.cos(lat * Math.PI / 180) / mpp) / Math.LN2, clat = lat, clon = lon, rlat = lat, rlon = lon;
     var pins = [{ x: W / 2, y: H / 2 }];
     if (two) {
@@ -966,12 +966,27 @@
         var pl = LS_[i] ? LS_[i].label : '';
         if (pl) {
           g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif'; pl = clip(g, pl, 520); var pw = g.measureText(pl).width + 36, px = Math.max(48, Math.min(W - pw - 48, x - pw / 2));
-          pills.push({ t: pl, w: pw, x: px, y: y - 100 - 22 - 48, tipY: y });
+          pills.push({ t: pl, w: pw, x: px, y: y - 100 - 22 - 48, tipY: y, i: i });
         }
       });
-      // liggen labels over elkaar, dan komt het label van de zuidelijkere pin onder zijn punt te staan
-      pills.sort(function (p, q) { return p.tipY - q.tipY; }).forEach(function (p, k) {
-        for (var j = 0; j < k; j++) { var o2 = pills[j]; if (p.x < o2.x + o2.w && o2.x < p.x + p.w && Math.abs(p.y - o2.y) < 56) { p.y = p.tipY + 16; break; } }
+      // een label staat liefst boven zijn pin. Zou het een andere pin, een ander label, het kaartje, de noordpijl of de balk raken, dan
+      // proberen we onder de punt, rechts en links van de pin, en pas als niets past blijft het boven staan.
+      var hit = function (a, b2, m) { return a.x < b2.x + b2.w + m && b2.x < a.x + a.w + m && a.y < b2.y + b2.h + m && b2.y < a.y + a.h + m; };
+      var fixed = [{ x: 50, y: 50, w: 350, h: 350 }, { x: W - 60 - 88 - 8, y: 52, w: 104, h: 104 }];
+      var bodies = pins.map(function (pp) { return { x: pp.x - 48, y: pp.y - 104, w: 96, h: 108 }; });
+      var placed = [];
+      pills.sort(function (p, q) { return p.tipY - q.tipY; }).forEach(function (p) {
+        var own = p.i;
+        var cands = [{ x: p.x, y: p.tipY - 170 }, { x: p.x, y: p.tipY + 16 }, { x: pins[own] ? pins[own].x + 58 : p.x, y: p.tipY - 86 }, { x: pins[own] ? pins[own].x - 58 - p.w : p.x, y: p.tipY - 86 }];
+        var ok2 = function (c) {
+          var r = { x: c.x, y: c.y, w: p.w, h: 48 };
+          if (r.x < 48 || r.x + r.w > W - 48 || r.y < 40 || r.y + r.h > H - BH - 24) return false;
+          if (fixed.some(function (f) { return hit(r, f, 6); })) return false;
+          if (bodies.some(function (bd, j) { return j !== own && hit(r, bd, 6); })) return false;
+          return !placed.some(function (q) { return hit(r, q, 8); });
+        };
+        var pick2 = cands.filter(ok2)[0] || cands[0];
+        p.x = pick2.x; p.y = pick2.y; placed.push({ x: p.x, y: p.y, w: p.w, h: 48 });
       });
       pills.forEach(function (p) {
         g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif';
@@ -990,7 +1005,8 @@
       g.fillStyle = 'rgba(0,31,56,.96)'; g.fillRect(0, H - BH, W, BH);
       g.fillStyle = '#76b720'; g.fillRect(0, H - BH, W, 8);
       // vaste rasterlijnen (baselines) zodat links en rechts exact op elkaar aansluiten
-      var T = H - BH, PAD = 36, r0 = T + 96, r1 = T + 80, r2 = T + 138, r3 = T + 184, r4 = T + 220;
+      var T = H - BH, PAD = 36, roomy = two;   // bij meer locaties meer ruimte boven, tussen en onder de regels
+      var r1 = roomy ? T + 92 : T + 80, r0 = r1 + 16, r2 = r1 + 58, r3 = r2 + (roomy ? 50 : 46), r4 = r3 + 36;
       var rt = [];
       if (who) rt.push({ t: role().toUpperCase(), f: '600 17px Avenir Next, Avenir, system-ui, sans-serif', c: '#8fd000', y: r0 }, { t: who, f: '600 32px Avenir Next, Avenir, system-ui, sans-serif', c: '#fff', y: r2 });
       if (tel) rt.push({ t: tel, f: '32px Avenir Next, Avenir, system-ui, sans-serif', c: '#fff', y: who ? r3 : r2 });
@@ -1006,27 +1022,23 @@
         while (fs > 34 && g.measureText(title).width > lw) { fs -= 2; g.font = '700 ' + fs + 'px Avenir Next, Avenir, system-ui, sans-serif'; }
         g.fillStyle = '#fff'; g.fillText(clip(g, title, lw), PAD, nr ? r2 : r1 + 30);
       }
-      g.font = '14px Avenir Next, Avenir, system-ui, sans-serif';
-      var credTxt = credits.join(' \u00B7 '), credX = W - PAD - g.measureText(credTxt).width;
-      var lwB = Math.max(260, Math.min(lw, credX - PAD - 24));      // regels vlak boven de bronvermelding mogen er niet overheen lopen
       g.font = '30px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.88)';
       var ay = [r3, r4];
       if (two) {
         // meerdere locaties: één regel per locatie, met nummer en eventueel label. Past het volledige adres niet op alle regels, dan nemen ze alleen straat en nummer.
         var three = LS_.length > 2;
-        if (three) { g.font = '26px Avenir Next, Avenir, system-ui, sans-serif'; ay = [T + 172, T + 204, T + 236]; }
+        if (three) g.font = '26px Avenir Next, Avenir, system-ui, sans-serif';
+        ay = [r3, r3 + 40, r3 + 80];
         var rowsL = LS_.map(function (L, k) {
           var pre = (k + 1) + ' \u00B7 ' + (L.label ? L.label + ' \u00B7 ' : ''), short = L.addr ? (addrLines(L.addr)[0] || L.addr) : fmt(L.lat) + ', ' + fmt(L.lon);
           return { full: pre + (L.addr && !L.label ? L.addr : short), short: pre + short };
         });
-        var lim = function (k) { return ay[k] > H - 62 ? lwB : lw; };
+        var lim = function () { return lw; };
         var useFull = rowsL.every(function (r, k) { return g.measureText(r.full).width <= lim(k); });
         rowsL.forEach(function (r, k) { g.fillText(clip(g, useFull ? r.full : r.short, lim(k)), PAD, ay[k]); });
       } else {
-        (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(k ? clip(g, ln, lwB) : ln, PAD, ay[k]); });
+        (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(ln, PAD, ay[k]); });
       }
-      g.font = '14px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.5)'; g.textAlign = 'right';
-      g.fillText(credTxt, W - PAD, H - 22);
       // witte rand met schaduw. Gemeten in een iOS-screenshot: WhatsApp zet ~6,9% van de breedte als buitenradius en snijdt ~2,4% per zijde af,
       // dus de zichtbare rand is ~27px. Boven: binnenradius concentrisch (buiten - rand). Onder: klein, want WhatsApp laat daar met bijschrift een rechte rand.
       var M = 56, WA_R = Math.round((W + 2 * M) * 0.069), RT = Math.max(10, WA_R - 27), RB = RT, out = document.createElement('canvas'); out.width = W + 2 * M; out.height = H + 2 * M;
