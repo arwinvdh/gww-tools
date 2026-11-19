@@ -13,6 +13,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 - Invoer: Google Maps-link (de pin wordt uit de link gelezen, niet het kaartmidden), coördinaten, adres, plaatsnaam uit een link, tikken op de kaart of de huidige positie.
 - Adressen en pinnen voor Nederland via PDOK, daarbuiten via OpenStreetMap.
 - Afbeelding in staand formaat (4:5), met afrondingen die passen bij de weergave in WhatsApp op iOS: projectnummer en naam, adres, uitvoerder en telefoon, optioneel een label op de pin, regiokaart, noordpijl, straatnamen en perceelgrenzen.
+- Twee locaties per bericht (bijvoorbeeld inrit en werkterrein, tot enkele honderden meters uit elkaar): tik onder de kaart op **+ Tweede locatie**, zet de tweede plek op dezelfde manier (link, adres, tikken op de kaart) en kies met **Locatie 1 / Locatie 2** welke je aanpast. De kaart toont dan twee genummerde pins en in het bericht staat elke locatie met een eigen Maps-link. Op de afbeelding staan beide pins op één kaart: liggen ze ver uit elkaar, dan zoomt de kaart uit; liggen ze vlak bij elkaar, dan zoomt hij in. Projecten bewaren beide locaties.
 - Bericht met emoji's, adres op twee regels, optioneel aanrijden-via en melden bij aankomst, en een Maps-link (locatie of route).
 - Projecten worden automatisch bewaard en komen terug als suggestie. Een back-up maken en terugzetten als bestand kan ook.
 

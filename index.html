@@ -51,6 +51,8 @@
   .viewer :where(#map) { height: 55vh; height: 55dvh; min-height: 280px; }
   .pin { width: 28px; height: 28px; margin: -28px 0 0 -14px; background: #E5322D; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); transform-origin: 50% 100%; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   .pin::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+  .pin .pn { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; transform: rotate(45deg); color: #E5322D; font-size: 13px; font-weight: 800; line-height: 1; }
+  .p2row { align-items: center; }
   .pin-new .pin { animation: drop .4s cubic-bezier(.3,1.4,.5,1); }
 
   /* zoekresultaten, projecten, recent */
@@ -167,6 +169,11 @@
           <div class="seg" id="layer"><button data-l="sat" aria-pressed="true">Satelliet</button><button data-l="map" aria-pressed="false">Kaart</button></div>
           <span class="hint" id="coords"></span>
         </div>
+        <div class="row p2row">
+          <button class="btn sm" id="p2add" type="button" hidden>+ Tweede locatie</button>
+          <div class="seg" id="curseg" hidden><button data-c="1" aria-pressed="true">Locatie 1</button><button data-c="2" aria-pressed="false">Locatie 2</button></div>
+          <button class="btn sm danger" id="p2del" type="button" hidden>Locatie 2 weghalen</button>
+        </div>
       </div>
       <div class="card" id="card-project">
         <h2>2 &middot; Project</h2>
@@ -175,11 +182,14 @@
           <div class="field grow"><label for="name">Projectnaam</label><input class="inp" id="name" list="dl-name" placeholder="Bijv. Nieuwbouw Zuidpoort" autocomplete="off"></div>
         </div>
         <div class="field"><label for="addr">Adres</label><input class="inp" id="addr" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
+        <div class="field" id="addr2f" hidden><label for="addr2">Adres locatie 2</label><input class="inp" id="addr2" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
         <p class="hint addr-note" id="addrNote" hidden><span id="addrNoteTxt"></span> <button class="btn sm" id="addrNoteBtn" hidden>Bijwerken</button></p>
         <details id="more"><summary class="more-sum">Aanwijzingen</summary>
           <div class="more-in">
-            <div class="field"><label for="plabel">Wat is deze pin?</label>
+            <div class="field"><label for="plabel" id="plabelL">Wat is deze pin?</label>
               <select class="inp" id="plabel"><option value="">Geen label</option><option>Projectlocatie</option><option>Inrit werkterrein</option><option>Meldpunt</option><option>Laad- en losplaats</option><option>Parkeren</option></select></div>
+            <div class="field" id="plabel2f" hidden><label for="plabel2">Wat is locatie 2?</label>
+              <select class="inp" id="plabel2"><option value="">Geen label</option><option>Projectlocatie</option><option>Inrit werkterrein</option><option>Meldpunt</option><option>Laad- en losplaats</option><option>Parkeren</option></select></div>
             <div class="field"><label for="note">Notitie</label><textarea class="inp" id="note" placeholder="Bijv. ingang via de achterpoort"></textarea></div>
             <div class="field"><label for="via">Aanrijden via</label><input class="inp" id="via" placeholder="Bijv. Oudelandselaan, afslag Westersingel" autocomplete="off"></div>
             <div class="field"><label for="arrive">Bij aankomst</label><input class="inp" id="arrive" placeholder="Bijv. bel uitvoerder, meld bij de keet" autocomplete="off"></div>
@@ -256,7 +266,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.28-a'
+  var VERSION = '2026.11.29-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -272,7 +282,8 @@
 
   var OPT_DEF = { labels: 1, parcel: 0, mini: 1 };
   var state = { addrAuto: true, layer: 'sat', failed: {}, opts: loadOpts(), lat: null, lon: null, range: +lsGet(LS.range, 400) };
-  var map, marker;
+  var map, marker, marker2;
+  state.cur = 1; state.p2on = false; state.lat2 = null; state.lon2 = null; state.addrAuto2 = true;
   function loadOpts() { var o = {}; Object.keys(OPT_DEF).forEach(function (k) { o[k] = lsGet('locdelen.opt.' + k, String(OPT_DEF[k])) === '1'; }); return o; }
 
   /* ---------- helpers ---------- */
@@ -356,12 +367,13 @@
     state.layer = l; lsSet('locdelen.layer', l);
     applyLayers();
   }
-  function pinIcon() { return L.divIcon({ className: '', html: '<div class="pin"></div>', iconSize: [0, 0] }); }
+  function pinIcon(n) { return L.divIcon({ className: '', html: '<div class="pin">' + (n ? '<span class="pn">' + n + '</span>' : '') + '</div>', iconSize: [0, 0] }); }
+  function twoPins() { return state.lat2 != null; }
   function placePin(lat, lon, draggable, fly) {
     if (marker) marker.setLatLng([lat, lon]);
     else {
-      marker = L.marker([lat, lon], { icon: pinIcon(), draggable: !!draggable }).addTo(map);
-      if (draggable) marker.on('dragend', function () { var p = marker.getLatLng(); setPoint(p.lat, p.lng, { reverse: true, keepView: true }); });
+      marker = L.marker([lat, lon], { icon: pinIcon(twoPins() ? 1 : 0), draggable: !!draggable }).addTo(map);
+      if (draggable) marker.on('dragend', function () { var p = marker.getLatLng(); setPointN(1, p.lat, p.lng, { reverse: true, keepView: true }); });
     }
     if (fly) {
       var z = Math.max(map.getZoom(), 17);
@@ -370,18 +382,69 @@
     var el = marker.getElement && marker.getElement();
     if (el) { el.classList.remove('pin-new'); void el.offsetWidth; el.classList.add('pin-new'); }
   }
+  function placePin2(lat, lon) {
+    if (marker2) marker2.setLatLng([lat, lon]);
+    else {
+      marker2 = L.marker([lat, lon], { icon: pinIcon(2), draggable: true }).addTo(map);
+      marker2.on('dragend', function () { var p = marker2.getLatLng(); setPointN(2, p.lat, p.lng, { reverse: true, keepView: true }); });
+    }
+    if (marker) marker.setIcon(pinIcon(1));
+    var el = marker2.getElement && marker2.getElement();
+    if (el) { el.classList.remove('pin-new'); void el.offsetWidth; el.classList.add('pin-new'); }
+  }
+  // beide pins in beeld
+  function fitBoth() {
+    if (!twoPins() || state.lat == null) return;
+    var b = L.latLngBounds([[state.lat, state.lon], [state.lat2, state.lon2]]);
+    map.fitBounds(b, { padding: [70, 70], maxZoom: 19, animate: !calm() });
+  }
 
   /* ---------- locatie zetten ---------- */
-  function setPoint(lat, lon, o) {
+  // setPoint zet de locatie waar je nu mee bezig bent (1 of 2); setPointN kiest zelf
+  function setPoint(lat, lon, o) { setPointN(state.p2on && state.cur === 2 ? 2 : 1, lat, lon, o); }
+  function setPointN(n, lat, lon, o) {
     o = o || {};
+    if (n === 2) {
+      state.lat2 = lat; state.lon2 = lon;
+      applyLayers();
+      placePin2(lat, lon);
+      $('coords').textContent = fmt(lat) + ', ' + fmt(lon);
+      $('results').innerHTML = '';
+      if (o.addr) { $('addr2').value = o.addr; state.addrAuto2 = !!o.autoAddr; }
+      else if (o.reverse) reverse2(lat, lon);
+      if (!o.keepView) fitBoth();
+      paintP2(); update();
+      return;
+    }
     state.lat = lat; state.lon = lon;
     applyLayers();
-    placePin(lat, lon, true, !o.keepView);
+    placePin(lat, lon, true, !o.keepView && !twoPins());
+    if (twoPins() && !o.keepView) fitBoth();
     $('coords').textContent = fmt(lat) + ', ' + fmt(lon);
     $('results').innerHTML = '';
     if (o.addr) setAddr(o.addr, !!o.autoAddr);
     else if (o.reverse) reverse(lat, lon);
-    update();
+    paintP2(); update();
+  }
+  function clearP2() {
+    state.lat2 = state.lon2 = null; state.p2on = false; state.cur = 1; state.addrAuto2 = true;
+    if (marker2 && map) { map.removeLayer(marker2); } marker2 = null;
+    if (marker) marker.setIcon(pinIcon(0));
+    $('addr2').value = ''; $('plabel2').value = '';
+  }
+  function restoreP2(o) {
+    if (!o || o.lat2 == null || o.lat2 === '' || !validLL(+o.lat2, +o.lon2)) return;
+    state.p2on = true; state.cur = 1;
+    setPointN(2, +o.lat2, +o.lon2, { addr: o.addr2 || '', keepView: false });
+  }
+  function paintP2() {
+    var has1 = state.lat != null, on = !!state.p2on;
+    $('p2add').hidden = !has1 || on; $('curseg').hidden = !on; $('p2del').hidden = !on;
+    [].forEach.call($('curseg').children, function (b) { b.setAttribute('aria-pressed', +b.dataset.c === state.cur ? 'true' : 'false'); });
+    $('addr2f').hidden = !twoPins(); $('plabel2f').hidden = !twoPins();
+    $('plabelL').textContent = twoPins() ? 'Wat is locatie 1?' : 'Wat is deze pin?';
+    var la = state.cur === 2 ? state.lat2 : state.lat, lo = state.cur === 2 ? state.lon2 : state.lon;
+    $('coords').textContent = la != null ? fmt(la) + ', ' + fmt(lo) : '';
   }
 
   function parseCoords(s) {
@@ -467,7 +530,7 @@
   function pick(it) {
     setPoint(it.lat, it.lon, { addr: it.addr, autoAddr: true });
     setStatus('Locatie gezet. Sleep de pin om te verfijnen.', 'ok'); focusName();
-    if (!it.exact) showAddrNote('Geen exact adres gevonden, alleen de straat of plaats. Controleer het adres.');
+    if (!it.exact && state.cur !== 2) showAddrNote('Geen exact adres gevonden, alleen de straat of plaats. Controleer het adres.');
   }
   function fmtAddr(a) {
     if (!a || !a.road) return '';
@@ -515,6 +578,14 @@
     }).catch(function () {});
   }
 
+  function reverse2(lat, lon) {
+    var tok = state.rev2Tok = (state.rev2Tok || 0) + 1;
+    addressAt(lat, lon).then(function (r) {
+      if (tok !== state.rev2Tok || !r || !r.addr) return;
+      if (!$('addr2').value.trim() || state.addrAuto2) { $('addr2').value = r.addr; state.addrAuto2 = true; }
+      update();
+    }).catch(function () {});
+  }
   function busy(on) { $('go').classList.toggle('busy', on); }
   // links met alleen een plaatsnaam (google.com/maps/place/Straat+1,+Plaats/, maps.apple.com/?address=...)
   function placeFromUrl(q) {
@@ -548,6 +619,7 @@
     busy(true); geocode(q).then(function () { busy(false); });
   }
   function focusName() {
+    if (state.p2on && state.cur === 2) return;
     if ($('name').value.trim() || $('nr').value.trim()) return;
     var el = $('nr'), r = el.getBoundingClientRect();
     if (r.top < 0 || r.bottom > innerHeight - 110) el.scrollIntoView({ block: 'center', behavior: calm() ? 'auto' : 'smooth' });
@@ -565,44 +637,63 @@
     if (/^316\d{8}$/.test(d)) d = '0' + d.slice(2);
     return /^06\d{8}$/.test(d) ? '06-' + d.slice(2) : String(t).trim();
   }
-  var FIELDS = ['nr', 'name', 'addr', 'note', 'via', 'arrive', 'plabel'];
-  function openMore() { if (['note', 'via', 'arrive', 'plabel'].some(function (f) { return $(f).value; })) $('more').open = true; }
+  var FIELDS = ['nr', 'name', 'addr', 'note', 'via', 'arrive', 'plabel', 'addr2', 'plabel2'];
+  function openMore() { if (['note', 'via', 'arrive', 'plabel', 'plabel2'].some(function (f) { return $(f).value; })) $('more').open = true; }
   function role() { return $('myRole').value.trim() || 'Uitvoerder'; }
   function label() { return [$('nr').value.trim(), $('name').value.trim()].filter(Boolean).join(' \u00B7 '); }
   function addrLines(a) {
     var i = a.indexOf(',');
     return i > 0 ? [a.slice(0, i).trim(), a.slice(i + 1).trim()].filter(Boolean) : (a ? [a] : []);
   }
+  var KEYCAP = ['1️⃣', '2️⃣'];
+  function pinLink(lat, lon) { return linkRoute() ? routeUrl(lat, lon) : googleUrl(lat, lon); }
   function message() {
     if (state.lat == null) return '';
     var title = label(), addr = $('addr').value.trim(), note = $('note').value.trim(), pl = $('plabel').value, via = $('via').value.trim(), arr = $('arrive').value.trim(), out = [];
     var who = $('useWho').checked ? $('myName').value.trim() : '', tel = $('usePhone').checked ? phoneFmt($('myPhone').value) : '';
-    if (title) out.push('\uD83C\uDFD7\uFE0F *' + title + '*');
-    var al = addrLines(addr);
-    if (pl) { out.push('\uD83D\uDCCD *' + pl + '*'); al.forEach(function (l) { out.push(l); }); }
-    else al.forEach(function (l, i) { out.push((i ? '' : '\uD83D\uDCCD ') + l); });
-    if (via) out.push('\uD83D\uDE9A Aanrijden via: ' + via);
-    if (arr) out.push('\uD83D\uDEAA Bij aankomst: ' + arr);
-    if (note) { out.push(''); out.push('\u2139\uFE0F ' + note); }   /* een lege regel boven de notitie */
+    if (title) out.push('🏗️ *' + title + '*');
+    var two = twoPins();
+    if (two) {
+      // twee locaties: elk blok met nummer, eventueel label, adres en een eigen link
+      if (title) out.push('');
+      [[addr, pl, state.lat, state.lon], [$('addr2').value.trim(), $('plabel2').value, state.lat2, state.lon2]].forEach(function (L, i) {
+        var al = addrLines(L[0]);
+        if (L[1]) { out.push(KEYCAP[i] + ' *' + L[1] + '*'); al.forEach(function (l) { out.push(l); }); }
+        else if (al.length) al.forEach(function (l, k) { out.push(k ? l : KEYCAP[i] + ' ' + l); });
+        else out.push(KEYCAP[i]);
+        out.push(pinLink(L[2], L[3]));
+        if (i === 0) out.push('');
+      });
+    } else {
+      var al = addrLines(addr);
+      if (pl) { out.push('📍 *' + pl + '*'); al.forEach(function (l) { out.push(l); }); }
+      else al.forEach(function (l, i) { out.push((i ? '' : '📍 ') + l); });
+    }
+    if (two && (via || arr)) out.push('');
+    if (via) out.push('🚚 Aanrijden via: ' + via);
+    if (arr) out.push('🚪 Bij aankomst: ' + arr);
+    if (note) { out.push(''); out.push('ℹ️ ' + note); }   /* een lege regel boven de notitie */
     if (who || tel) {
       out.push('');
-      if (who) out.push('\uD83D\uDC77 ' + who + ' (' + role().toLowerCase() + ')');
-      if (tel) out.push('\uD83D\uDCDE ' + tel);
+      if (who) out.push('👷 ' + who + ' (' + role().toLowerCase() + ')');
+      if (tel) out.push('📞 ' + tel);
     }
-    out.push('');
-    out.push(linkRoute() ? 'Route in Google Maps:' : 'Locatie in Google Maps:');
-    out.push(linkRoute() ? routeUrl(state.lat, state.lon) : googleUrl(state.lat, state.lon));
+    if (!two) {
+      out.push('');
+      out.push(linkRoute() ? 'Route in Google Maps:' : 'Locatie in Google Maps:');
+      out.push(pinLink(state.lat, state.lon));
+    }
     return out.join('\n').replace(/^\n+/, '');
   }
   function saveDraft() {
-    var d = { lat: state.lat, lon: state.lon }; FIELDS.forEach(function (f) { d[f] = $(f).value; });
+    var d = { lat: state.lat, lon: state.lon, lat2: state.lat2, lon2: state.lon2 }; FIELDS.forEach(function (f) { d[f] = $(f).value; });
     var js = JSON.stringify(d);
     if (lsGet(LS.draft, '') === js) return;                 // niets veranderd: tijdstip blijft staan
     lsSet(LS.draft, js);
     if (!state.noTouch) { lsSet('locdelen.draftT', String(Date.now())); ghDraftSoon(); }
   }
   function update() {
-    saveDraft(); schedulePrebuild(); markRecent();
+    saveDraft(); schedulePrebuild(); markRecent(); paintP2();
     var m = message(), has = state.lat != null;
     $('preview').innerHTML = has ? esc(m).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\*([^*\n]+)\*/g, '<b>$1</b>') : '<span class="hint">Het bericht verschijnt hier zodra je een locatie hebt.</span>';
     ['copy', 'wa', 'img', 'dl'].forEach(function (id) { $(id).disabled = !has; });
@@ -679,6 +770,10 @@
     var sc = 256 * Math.pow(2, zf), sl = Math.sin(lat * Math.PI / 180);
     return [(lon + 180) / 360 * sc, (0.5 - Math.log((1 + sl) / (1 - sl)) / (4 * Math.PI)) * sc];
   }
+  function unWorldPx(x, y, zf) {
+    var sc = 256 * Math.pow(2, zf), n = Math.PI - 2 * Math.PI * y / sc;
+    return [180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))), x / sc * 360 - 180];
+  }
   function regionPart(lat, lon) {
     var S = 330, nl = inNL(lat, lon);
     var mode = lsGet('locdelen.regio', 'omgeving');
@@ -734,8 +829,22 @@
 
   function buildImage() {
     var W = 1080, H = 1360, lat = state.lat, lon = state.lon, o = state.opts;
-    var mpp = state.range / W;
-    var c = { W: W, H: H, lat: lat, lon: lon, zf: Math.log(156543.03392 * Math.cos(lat * Math.PI / 180) / mpp) / Math.LN2 };
+    var mpp = state.range / W, two = twoPins();
+    var zf = Math.log(156543.03392 * Math.cos(lat * Math.PI / 180) / mpp) / Math.LN2, clat = lat, clon = lon, rlat = lat, rlon = lon;
+    var pins = [{ x: W / 2, y: H / 2 }];
+    if (two) {
+      // twee pins: zoom alleen uit als ze anders niet passen, en zet het midden van de pins in het vrije vlak tussen kaartje en balk
+      var a0 = worldPx(lat, lon, zf), b0 = worldPx(state.lat2, state.lon2, zf);
+      var spread = Math.max(Math.abs(a0[0] - b0[0]), Math.abs(a0[1] - b0[1]));
+      zf -= Math.log(Math.max(1, Math.abs(a0[0] - b0[0]) / 720, Math.abs(a0[1] - b0[1]) / 460)) / Math.LN2;
+      // liggen de pins vlak bij elkaar, dan verbergen ze elkaars nummer: zoom in tot ze minstens ~220 px uit elkaar staan (max. zoomniveau 21)
+      if (spread > 0 && spread < 220) zf = Math.min(21, zf + Math.log(220 / spread) / Math.LN2);
+      var a1 = worldPx(lat, lon, zf), b1 = worldPx(state.lat2, state.lon2, zf);
+      var cp = [(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2 - (810 - H / 2)], ll = unWorldPx(cp[0], cp[1], zf);
+      clat = ll[0]; clon = ll[1]; rlat = (lat + state.lat2) / 2; rlon = (lon + state.lon2) / 2;
+      pins = [{ x: W / 2 + a1[0] - cp[0], y: H / 2 + a1[1] - cp[1] }, { x: W / 2 + b1[0] - cp[0], y: H / 2 + b1[1] - cp[1] }];
+    }
+    var c = { W: W, H: H, lat: clat, lon: clon, zf: zf };
     var bk = baseKey();
     return loadLayer(bk, c).then(function (b) {
       if (!b.ok && SRC[bk].fb) return loadLayer(SRC[bk].fb, c);
@@ -745,25 +854,37 @@
       var extra = [];
       if (state.layer === 'sat' && o.labels) extra.push(loadLayer('labels', c));
       if (o.parcel) extra.push(loadLayer('parcel', c));
-      return Promise.all(extra.concat([o.mini ? regionPart(lat, lon).catch(function () { return null; }) : null])).then(function (ex) { var rg = ex.pop(); return [[base].concat(ex), rg]; });
+      return Promise.all(extra.concat([o.mini ? regionPart(rlat, rlon).catch(function () { return null; }) : null])).then(function (ex) { var rg = ex.pop(); return [[base].concat(ex), rg]; });
     }).then(function (pr) {
       var ls = pr[0], region = pr[1];
       var cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d');
       g.fillStyle = '#cfd4d9'; g.fillRect(0, 0, W, H);
       ls.forEach(function (l) { l.draw(g); });
       var credits = []; ls.forEach(function (l) { if (!l.ok) return; var t = SRC[l.key].credit; if (credits.indexOf(t) < 0) credits.push(t); });
-      // pin
-      var x = W / 2, y = H / 2;
-      g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 10; g.fillStyle = '#E5322D'; g.strokeStyle = '#fff'; g.lineWidth = 5;
-      g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - 46, y - 44, x - 40, y - 100, x, y - 100); g.bezierCurveTo(x + 40, y - 100, x + 46, y - 44, x, y); g.closePath(); g.fill(); g.stroke();
-      g.restore(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y - 66, 13, 0, 7); g.fill();
-      var pl = $('plabel').value;
-      if (pl) {
-        g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif'; var pw = g.measureText(pl).width + 36, px = Math.max(10, Math.min(W - pw - 10, x - pw / 2)), py = y - 100 - 22 - 48;
-        g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 10; g.shadowOffsetY = 3; g.fillStyle = '#001f38'; rrect(g, px, py, pw, 48, 24); g.fill(); g.restore();
-        g.strokeStyle = '#76b720'; g.lineWidth = 3; rrect(g, px, py, pw, 48, 24); g.stroke();
-        g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(pl, px + pw / 2, py + 33);
+      // pins (bij twee locaties genummerd) met eventueel een label erboven
+      var labels = [$('plabel').value, two ? $('plabel2').value : ''], pills = [];
+      pins.forEach(function (pp, i) {
+        var x = pp.x, y = pp.y;
+        g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 10; g.fillStyle = '#E5322D'; g.strokeStyle = '#fff'; g.lineWidth = 5;
+        g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - 46, y - 44, x - 40, y - 100, x, y - 100); g.bezierCurveTo(x + 40, y - 100, x + 46, y - 44, x, y); g.closePath(); g.fill(); g.stroke();
+        g.restore(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y - 66, two ? 23 : 13, 0, 7); g.fill();
+        if (two) { g.fillStyle = '#E5322D'; g.font = '800 32px Avenir Next, Avenir, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(String(i + 1), x, y - 55); }
+        var pl = labels[i];
+        if (pl) {
+          g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif'; var pw = g.measureText(pl).width + 36, px = Math.max(10, Math.min(W - pw - 10, x - pw / 2));
+          pills.push({ t: pl, w: pw, x: px, y: y - 100 - 22 - 48, tipY: y, cx: x });
+        }
+      });
+      // liggen twee labels over elkaar, dan komt het label van de onderste pin onder zijn punt te staan
+      if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < Math.max(pills[0].w, pills[1].w) && Math.abs(pills[0].y - pills[1].y) < 56) {
+        var low = pills[0].tipY > pills[1].tipY ? pills[0] : pills[1]; low.y = low.tipY + 16;
       }
+      pills.forEach(function (p) {
+        g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif';
+        g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 10; g.shadowOffsetY = 3; g.fillStyle = '#001f38'; rrect(g, p.x, p.y, p.w, 48, 24); g.fill(); g.restore();
+        g.strokeStyle = '#76b720'; g.lineWidth = 3; rrect(g, p.x, p.y, p.w, 48, 24); g.stroke();
+        g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(p.t, p.x + p.w / 2, p.y + 33);
+      });
       // regiokaart linksboven, noordpijl rechtsboven
       if (region) { try { drawRegion(g, region, 60, 60); } catch (e) {} [region.base].forEach(function (l) { if (l && l.ok) { var t = SRC[l.key].credit; if (credits.indexOf(t) < 0) credits.push(t); } }); }
       drawNorth(g, W - 60 - 88, 60, 88);
@@ -793,7 +914,17 @@
       }
       g.font = '30px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.88)';
       var ay = [r3, r4];
-      (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(ln, PAD, ay[k]); });
+      if (two) {
+        // twee locaties: één regel per locatie, met nummer en eventueel label. Past het volledige adres niet op beide regels, dan nemen beide alleen straat en nummer.
+        var rowsL = [[addr, $('plabel').value, lat, lon], [$('addr2').value.trim(), $('plabel2').value, state.lat2, state.lon2]].map(function (L, k) {
+          var pre = (k + 1) + ' \u00B7 ' + (L[1] ? L[1] + ' \u00B7 ' : ''), short = L[0] ? (addrLines(L[0])[0] || L[0]) : fmt(L[2]) + ', ' + fmt(L[3]);
+          return { full: pre + (L[0] && !L[1] ? L[0] : short), short: pre + short };
+        });
+        var useFull = rowsL.every(function (r) { return g.measureText(r.full).width <= lw; });
+        rowsL.forEach(function (r, k) { g.fillText(clip(g, useFull ? r.full : r.short, lw), PAD, ay[k]); });
+      } else {
+        (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(ln, PAD, ay[k]); });
+      }
       g.font = '14px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.5)'; g.textAlign = 'right';
       g.fillText(credits.join(' \u00B7 '), W - 64, H - 14);
       // witte rand met schaduw. Gemeten in een iOS-screenshot: WhatsApp zet ~6,9% van de breedte als buitenradius en snijdt ~2,4% per zijde af,
@@ -829,8 +960,8 @@
   // afbeelding op de achtergrond klaarzetten, zodat delen direct kan (iOS wil dat delen vlak na je tik gebeurt)
   var pre = { sig: '', promise: null }, preT = 0;
   function imgSig() {
-    var v = {}; ['nr', 'name', 'addr', 'plabel', 'myName', 'myPhone', 'myRole'].forEach(function (k) { v[k] = $(k).value; });
-    v.w = $('useWho').checked; v.t = $('usePhone').checked; v.lat = state.lat; v.lon = state.lon; v.r = state.range; v.l = state.layer; v.o = state.opts; v.g = lsGet('locdelen.regio', 'omgeving');
+    var v = {}; ['nr', 'name', 'addr', 'plabel', 'addr2', 'plabel2', 'myName', 'myPhone', 'myRole'].forEach(function (k) { v[k] = $(k).value; });
+    v.w = $('useWho').checked; v.t = $('usePhone').checked; v.lat = state.lat; v.lon = state.lon; v.lat2 = state.lat2; v.lon2 = state.lon2; v.r = state.range; v.l = state.layer; v.o = state.opts; v.g = lsGet('locdelen.regio', 'omgeving');
     return JSON.stringify(v);
   }
   function getImage(force) {
@@ -895,6 +1026,7 @@
     var name = $('name').value.trim(), nr = $('nr').value.trim();
     if (!name && !nr) { if (!silent) { toast('Geef eerst een projectnaam'); $('name').focus(); } return false; }
     var a = getP(), rec = { nr: nr, name: name, addr: $('addr').value.trim(), note: $('note').value.trim(), via: $('via').value.trim(), arrive: $('arrive').value.trim(), plabel: $('plabel').value, lat: state.lat, lon: state.lon, ts: Date.now() };
+    if (twoPins()) { rec.lat2 = state.lat2; rec.lon2 = state.lon2; rec.addr2 = $('addr2').value.trim(); rec.plabel2 = $('plabel2').value; }
     var key = (nr + '|' + name).toLowerCase();
     var i = a.findIndex(function (p) { return ((p.nr || '') + '|' + p.name).toLowerCase() === key; });
     if (i >= 0) a.splice(i, 1);
@@ -910,8 +1042,9 @@
   }
   function pl(p) { return [p.nr, p.name].filter(Boolean).join(' \u00B7 '); }
   function loadProject(p) {
+    clearP2();
     FIELDS.forEach(function (f) { $(f).value = p[f] || ''; }); openMore();
-    setPoint(p.lat, p.lon, { addr: p.addr || '' }); window.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); setStatus('Project geladen.', 'ok');
+    setPoint(p.lat, p.lon, { addr: p.addr || '' }); restoreP2(p); window.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); setStatus('Project geladen.', 'ok');
   }
   function markRecent() { var cur = label(); [].forEach.call($('chips').children, function (c) { var on = !!cur && c.textContent === cur; c.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
   function renderP() {
@@ -940,10 +1073,10 @@
     });
   }
   function resetAll() {
-    state.lat = state.lon = null;
+    state.lat = state.lon = null; clearP2();
     ['q'].concat(FIELDS).forEach(function (id) { $(id).value = ''; }); state.addrAuto = true; hideAddrNote();
     if (marker) { map.removeLayer(marker); marker = null; }
-    $('coords').textContent = ''; $('results').innerHTML = '';
+    $('coords').textContent = ''; $('results').innerHTML = ''; paintP2();
     setStatus('Plak een Google Maps-link, coördinaten (52.0907, 5.1214) of typ een adres. Of tik op de kaart.');
     update(); $('q').focus();
   }
@@ -974,7 +1107,7 @@
   if (validLL(parseFloat(params.get('lat')), parseFloat(params.get('lon'))) && params.get('lat') !== null) { startViewer(params); return; }
 
   initMap($('map'), false);
-  map.on('click', function (e) { state.searchTok = (state.searchTok || 0) + 1; setPoint(e.latlng.lat, e.latlng.lng, { reverse: true, keepView: true }); setStatus('Pin geplaatst. Sleep om te verfijnen.', 'ok'); });
+  map.on('click', function (e) { state.searchTok = (state.searchTok || 0) + 1; setPoint(e.latlng.lat, e.latlng.lng, { reverse: true, keepView: true }); setStatus((state.p2on && state.cur === 2 ? 'Locatie 2' : 'Pin') + ' geplaatst. Sleep om te verfijnen.', 'ok'); });
   Object.keys(OPT_DEF).forEach(function (k) {
     var el = $('opt' + k.charAt(0).toUpperCase() + k.slice(1));
     el.checked = state.opts[k];
@@ -999,6 +1132,19 @@
   };
   FIELDS.forEach(function (id) { $(id).addEventListener('input', update); $(id).addEventListener('change', update); });
   $('addr').addEventListener('input', function () { state.addrAuto = false; hideAddrNote(); });
+  $('addr2').addEventListener('input', function () { state.addrAuto2 = false; });
+  $('p2add').onclick = function () {
+    state.p2on = true; state.cur = 2; paintP2(); $('q').value = '';
+    setStatus('Locatie 2: plak een link, typ een adres of tik op de kaart.'); $('q').focus();
+  };
+  $('curseg').onclick = function (e) {
+    var c = +e.target.dataset.c; if (!c) return;
+    state.cur = c; paintP2();
+    var la = c === 2 ? state.lat2 : state.lat, lo = c === 2 ? state.lon2 : state.lon;
+    if (la != null && map) map.panTo([la, lo], { animate: !calm() });
+    setStatus('Locatie ' + c + ': plak een link, typ een adres, tik op de kaart of sleep de pin.');
+  };
+  $('p2del').onclick = function () { clearP2(); paintP2(); update(); setStatus('Locatie 2 is weggehaald.'); };
   // kiest iemand een bewaard project uit de suggesties, dan vullen we de rest in
   function suggestPick(field) {
     return function () {
@@ -1065,7 +1211,8 @@
         if (!p || !(p.name || p.nr) || !validLL(+p.lat, +p.lon)) return;
         var k = (String(p.nr || '') + '|' + String(p.name || '')).toLowerCase();
         var i = cur.findIndex(function (x) { return ((x.nr || '') + '|' + (x.name || '')).toLowerCase() === k; });
-        var rec = { via: String(p.via || ''), arrive: String(p.arrive || ''), plabel: String(p.plabel || ''), nr: String(p.nr || ''), name: String(p.name || ''), addr: String(p.addr || ''), note: String(p.note || ''), lat: +p.lat, lon: +p.lon, ts: +p.ts || Date.now() };
+        var two = p.lat2 != null && validLL(+p.lat2, +p.lon2);
+        var rec = { lat2: two ? +p.lat2 : null, lon2: two ? +p.lon2 : null, addr2: String(p.addr2 || ''), plabel2: String(p.plabel2 || ''), via: String(p.via || ''), arrive: String(p.arrive || ''), plabel: String(p.plabel || ''), nr: String(p.nr || ''), name: String(p.name || ''), addr: String(p.addr || ''), note: String(p.note || ''), lat: +p.lat, lon: +p.lon, ts: +p.ts || Date.now() };
         if (i >= 0) cur[i] = rec; else cur.push(rec);
       });
       setP(cur); ghPushAll(); toast('Geïmporteerd');
@@ -1076,7 +1223,7 @@
     var dr = JSON.parse(lsGet(LS.draft, 'null'));
     if (dr && dr.lat != null && validLL(+dr.lat, +dr.lon)) {
       FIELDS.forEach(function (f) { $(f).value = dr[f] || ''; }); openMore();
-      setPoint(+dr.lat, +dr.lon, { addr: dr.addr || '', keepView: false });
+      setPoint(+dr.lat, +dr.lon, { addr: dr.addr || '', keepView: false }); restoreP2(dr);
       setStatus('Vorige locatie hersteld. Tik op Nieuw voor een lege start.');
     } else $('q').focus();
   } catch (e) {}
@@ -1092,7 +1239,7 @@
   /* synchroniseren via een eigen privérepo op GitHub (alleen als verbonden, zie sync.js) */
   var gh = null, lastPull = 0, draftTimer = 0;
   function ghKey(p) { return 'projects/' + encodeURIComponent(((p.nr || '') + '|' + (p.name || '')).toLowerCase()); }
-  function projDoc(p) { return { nr: p.nr || '', name: p.name || '', addr: p.addr || '', note: p.note || '', via: p.via || '', arrive: p.arrive || '', plabel: p.plabel || '', lat: p.lat, lon: p.lon, t: p.ts || Date.now() }; }
+  function projDoc(p) { return { nr: p.nr || '', name: p.name || '', addr: p.addr || '', note: p.note || '', via: p.via || '', arrive: p.arrive || '', plabel: p.plabel || '', lat: p.lat, lon: p.lon, lat2: p.lat2 == null ? null : p.lat2, lon2: p.lon2 == null ? null : p.lon2, addr2: p.addr2 || '', plabel2: p.plabel2 || '', t: p.ts || Date.now() }; }
   function ghProject(p) { if (gh) gh.doc(ghKey(p)).set(projDoc(p)).catch(function () {}); }
   function ghDelete(p) { if (gh) gh.doc(ghKey(p)).delete().catch(function () {}); }
   function ghPushAll() { getP().forEach(ghProject); }
@@ -1100,7 +1247,7 @@
     return { who: lsGet('locdelen.who', ''), role: lsGet('locdelen.role', ''), phone: lsGet('locdelen.phone', ''), useWho: lsGet('locdelen.useWho', '1'), usePhone: lsGet('locdelen.usePhone', '1'), t: +lsGet('locdelen.profileT', '0') || Date.now() };
   }
   function ghProfileTouch() { lsSet('locdelen.profileT', String(Date.now())); if (gh) gh.doc('profile/main').set(profileDoc()).catch(function () {}); }
-  function draftDoc() { var d = { lat: state.lat, lon: state.lon, t: +lsGet('locdelen.draftT', '0') || Date.now() }; FIELDS.forEach(function (f) { d[f] = $(f).value; }); return d; }
+  function draftDoc() { var d = { lat: state.lat, lon: state.lon, lat2: state.lat2, lon2: state.lon2, t: +lsGet('locdelen.draftT', '0') || Date.now() }; FIELDS.forEach(function (f) { d[f] = $(f).value; }); return d; }
   function ghDraftPush() { if (gh && state.lat != null) gh.doc('draft/main').set(draftDoc()).catch(function () {}); }
   function ghDraftSoon() { if (!gh) return; clearTimeout(draftTimer); draftTimer = setTimeout(ghDraftPush, 30000); }
   function ghPull() {
@@ -1117,7 +1264,7 @@
         if (!validLL(+d.lat, +d.lon)) return;
         if (!loc || d.t > (loc.ts || 0)) {
           if (loc) cur = cur.filter(function (x) { return x !== loc; });
-          cur.push({ nr: String(d.nr || ''), name: String(d.name || ''), addr: String(d.addr || ''), note: String(d.note || ''), via: String(d.via || ''), arrive: String(d.arrive || ''), plabel: String(d.plabel || ''), lat: +d.lat, lon: +d.lon, ts: +d.t });
+          cur.push({ nr: String(d.nr || ''), name: String(d.name || ''), addr: String(d.addr || ''), note: String(d.note || ''), via: String(d.via || ''), arrive: String(d.arrive || ''), plabel: String(d.plabel || ''), lat: +d.lat, lon: +d.lon, lat2: d.lat2 != null && validLL(+d.lat2, +d.lon2) ? +d.lat2 : null, lon2: d.lat2 != null && validLL(+d.lat2, +d.lon2) ? +d.lon2 : null, addr2: String(d.addr2 || ''), plabel2: String(d.plabel2 || ''), ts: +d.t });
           changed = true;
         }
       });
@@ -1142,9 +1289,10 @@
         window.GhSync.notice('gh-draft', 'Er staat nieuwere invoer van een ander apparaat: ' + ([rd.nr, rd.name].filter(Boolean).join(' \u00B7 ') || 'een locatie') + '.', [
           { label: 'Overnemen', primary: true, fn: function () {
             state.noTouch = true;
+            clearP2();
             FIELDS.forEach(function (f) { $(f).value = rd[f] || ''; }); openMore();
-            setPoint(+rd.lat, +rd.lon, { addr: rd.addr || '' });
-            state.noTouch = false; lsSet('locdelen.draftT', String(rd.t)); lsSet(LS.draft, JSON.stringify(function () { var o = { lat: state.lat, lon: state.lon }; FIELDS.forEach(function (f) { o[f] = $(f).value; }); return o; }()));
+            setPoint(+rd.lat, +rd.lon, { addr: rd.addr || '' }); restoreP2(rd);
+            state.noTouch = false; lsSet('locdelen.draftT', String(rd.t)); lsSet(LS.draft, JSON.stringify(function () { var o = { lat: state.lat, lon: state.lon, lat2: state.lat2, lon2: state.lon2 }; FIELDS.forEach(function (f) { o[f] = $(f).value; }); return o; }()));
           } },
           { label: 'Negeren', fn: function () { lsSet('locdelen.draftT', String(rd.t)); } }
         ]);
