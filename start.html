@@ -54,13 +54,14 @@
       <li>Stuur de link naar jezelf (AirDrop of WhatsApp aan jezelf).</li>
       <li>Open de link op het andere apparaat en tik op <b>Koppelen</b>. Verwijder het bericht daarna.</li>
     </ol>
+    <p class="hint"><a class="lnk" href="vault.html">Pincode instellen of wijzigen</a></p>
   </div>
   <p class="hint foot">Zonder koppeling blijven je gegevens op dit apparaat. <span id="ver"></span></p>
 </div>
 <script src="sync.js"></script>
 <script>
 (function () {
-  var VERSION = '2026.11.26-a';
+  var VERSION = '2026.11.27-a';
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* geen opslag */ } }
   document.getElementById('ver').textContent = 'Versie ' + VERSION + '.';

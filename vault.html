@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pincode instellen</title>
+<meta name="theme-color" content="#001f38">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="icons/start-icon-192.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Pincode instellen: versleutelt de token op dit apparaat. Er gaat niets over het netwerk. */
+@layer components {
+  .wrap { padding-bottom: 3rem; }
+  .form { display: grid; gap: 0.75rem; }
+  .out { width: 100%; min-height: 8rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--field); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.75rem; line-height: 1.35; word-break: break-all; resize: vertical; }
+  .strength { font-size: 0.8125rem; color: var(--ink-2); margin: 0; }
+  .strength.weak { color: var(--warn); }
+  .strength.ok { color: var(--ok); }
+  ol.steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
+}
+</style>
+</head>
+<body>
+<header class="brand"><div class="in"><span class="dot"></span><h1>Pincode instellen</h1></div></header>
+<div class="wrap">
+  <div class="card">
+    <p class="hint">Hier versleutel je de token met een pincode. Daarna typ je op elk apparaat alleen de pincode om te koppelen. Alles gebeurt op dit apparaat: de token en de pincode gaan nergens heen.</p>
+    <div class="form">
+      <div class="field"><label for="repo">Privérepo op GitHub</label><input class="inp" id="repo" placeholder="arwinvdh/locatie-data" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="token">Token</label><input class="inp" id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="pin">Pincode (minstens 6 cijfers)</label><input class="inp" id="pin" type="password" inputmode="numeric" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="pin2">Pincode nog eens</label><input class="inp" id="pin2" type="password" inputmode="numeric" autocomplete="off" spellcheck="false"></div>
+      <p class="strength" id="strength"></p>
+      <div class="row"><button class="btn primary" id="go" type="button">Versleutelen</button></div>
+      <p class="hint" id="msg" role="status"></p>
+    </div>
+  </div>
+
+  <div class="card" id="result" hidden style="margin-top:1rem">
+    <h2>Je versleutelde tekst</h2>
+    <p class="hint">Dit is geen token en geen pincode, maar alleen de versleutelde vorm. Hij is veilig om te delen met mij of in de repo te zetten.</p>
+    <textarea class="out" id="out" readonly></textarea>
+    <div class="row"><button class="btn" id="copy" type="button">Kopieer</button></div>
+    <ol class="steps hint">
+      <li>Kopieer de tekst hierboven.</li>
+      <li>Geef hem aan Claude, met de opdracht om hem als <b>vault.json</b> in de repo te zetten.</li>
+      <li>Na het uitrollen verschijnt er bij <b>Apparaten koppelen</b> een veld voor de pincode.</li>
+    </ol>
+  </div>
+  <p class="hint" style="margin-top:1rem"><a class="lnk" href="start.html">Terug naar Mijn tools</a></p>
+</div>
+<script src="sync.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function rate(pin) {
+    if (!pin) return ['', ''];
+    if (!/^\d+$/.test(pin)) return pin.length >= 8 ? ['Sterk genoeg.', 'ok'] : ['Gebruik minstens 8 tekens, of alleen cijfers (minstens 6).', 'weak'];
+    if (pin.length < 6) return ['Te kort: minstens 6 cijfers.', 'weak'];
+    if (pin.length < 8) return ['6 of 7 cijfers zijn te raden door wie het versleutelde bestand downloadt: met een snelle grafische kaart kost 6 cijfers minuten tot een paar uur. Dat doet alleen iemand die het erop toelegt. Kies 8 cijfers of meer voor echte bescherming.', 'weak'];
+    return ['Sterk genoeg voor dit gebruik.', 'ok'];
+  }
+  $('pin').addEventListener('input', function () { var r = rate($('pin').value.trim()); $('strength').textContent = r[0]; $('strength').className = 'strength ' + r[1]; });
+  $('go').addEventListener('click', function () {
+    var repo = $('repo').value.trim(), token = $('token').value.trim(), pin = $('pin').value.trim(), pin2 = $('pin2').value.trim(), msg = $('msg');
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { msg.textContent = 'Vul de reponaam in als eigenaar/naam, bijvoorbeeld arwinvdh/locatie-data.'; return; }
+    if (token.length < 20) { msg.textContent = 'Plak de volledige token.'; return; }
+    if (pin !== pin2) { msg.textContent = 'De twee pincodes zijn niet gelijk.'; return; }
+    if (/^\d+$/.test(pin) ? pin.length < 6 : pin.length < 8) { msg.textContent = 'De pincode is te kort.'; return; }
+    if (!(window.crypto && crypto.subtle)) { msg.textContent = 'Versleutelen kan niet in deze browser. Open deze pagina via https.'; return; }
+    var b = $('go'); b.disabled = true; msg.textContent = 'Bezig met versleutelen. Dit duurt een paar seconden.';
+    window.GhSync.vaultSeal(repo, token, pin).then(function (v) {
+      return window.GhSync.vaultOpen(v, pin).then(function (c) {
+        if (c.r !== repo || c.t !== token) throw new Error('Controle mislukt.');
+        $('out').value = JSON.stringify(v);
+        $('result').hidden = false;
+        $('token').value = ''; $('pin').value = ''; $('pin2').value = '';
+        msg.textContent = 'Klaar. De versleutelde tekst staat hieronder, en is gecontroleerd door hem weer te ontsleutelen.';
+        $('result').scrollIntoView({ block: 'start' });
+      });
+    }).catch(function (e) { msg.textContent = (e && e.message) || 'Versleutelen mislukt.'; }).finally(function () { b.disabled = false; });
+  });
+  $('copy').addEventListener('click', function () {
+    var t = $('out').value, done = function (m) { $('copy').textContent = m; setTimeout(function () { $('copy').textContent = 'Kopieer'; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { done('Gekopieerd'); }, function () { $('out').select(); done('Selecteer en kopieer'); });
+    else { $('out').select(); done('Selecteer en kopieer'); }
+  });
+})();
+</script>
+</body>
+</html>

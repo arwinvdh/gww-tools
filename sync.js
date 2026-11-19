@@ -194,6 +194,46 @@
   }
   function disconnect() { clearConfig(); setStatus('off'); }
 
+  /* pincode: de token staat versleuteld in vault.json (AES-GCM, sleutel uit de pincode via PBKDF2).
+     De pincode zelf staat nergens. Een korte pincode is te raden door wie het bestand downloadt: kies liever lang. */
+  var VAULT_ITER = 1000000;
+  function bytesToB64(buf) { var b = new Uint8Array(buf), s = ''; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+  function b64ToBytes(t) { var s = atob(t), b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; }
+  function vaultKey(pin, salt, iter) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(String(pin)), 'PBKDF2', false, ['deriveKey']).then(function (k) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: iter, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+  }
+  function vaultSeal(repo, token, pin) {
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    return vaultKey(pin, salt, VAULT_ITER).then(function (k) {
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(JSON.stringify({ r: repo, t: token })));
+    }).then(function (ct) {
+      return { v: 1, iter: VAULT_ITER, n: /^\d+$/.test(String(pin)) ? 1 : 0, s: bytesToB64(salt), i: bytesToB64(iv), c: bytesToB64(ct) };
+    });
+  }
+  function vaultOpen(v, pin) {
+    return vaultKey(pin, b64ToBytes(v.s), v.iter).then(function (k) {
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(v.i) }, k, b64ToBytes(v.c));
+    }).then(function (pt) {
+      var j = JSON.parse(new TextDecoder().decode(pt));
+      if (!j || typeof j.r !== 'string' || typeof j.t !== 'string') throw new Error('vault');
+      return j;
+    }, function () { var e = new Error('Pincode klopt niet.'); e.pin = true; throw e; });
+  }
+  function vaultLoad() {
+    if (!(window.crypto && crypto.subtle)) return Promise.resolve(null);
+    return fetch('vault.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
+      return v && v.v === 1 && v.s && v.i && v.c && v.iter ? v : null;
+    }).catch(function () { return null; });
+  }
+  function unlock(pin) {
+    return vaultLoad().then(function (v) {
+      if (!v) throw new Error('Er is hier geen pincode ingesteld.');
+      return vaultOpen(v, pin);
+    }).then(function (c) { return connect(c.r, c.t); });
+  }
+
   /* koppellink: zet een ander apparaat met één tik aan. De gegevens staan na de # en gaan dus nooit naar een server;
      bij het openen worden ze direct uit de adresbalk gehaald. Koppelen gebeurt pas na een bevestiging met de reponaam. */
   function b64url(str) { return b64enc(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -236,6 +276,9 @@
       '<h3 style="margin:0;font-size:.9375rem;font-weight:600">Synchroniseren tussen apparaten</h3>' +
       '<p class="hint" id="gh-status"></p>' +
       '<div id="gh-form" style="display:grid;gap:.5rem">' +
+        '<div id="gh-pin" style="display:none;gap:.5rem"><div class="field"><label for="gh-pinval">Pincode</label><input class="inp" id="gh-pinval" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
+          '<div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn sm primary" id="gh-pingo" type="button">Ontgrendelen en koppelen</button></div>' +
+          '<p class="hint">Heb je geen pincode? Plak dan zelf de token hieronder.</p></div>' +
         '<div class="field"><label for="gh-repo">Privérepo op GitHub</label><input class="inp" id="gh-repo" placeholder="arwinvdh/locatie-data" autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
         '<div class="field"><label for="gh-token">Token</label><input class="inp" id="gh-token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
         '<div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn sm primary" id="gh-go" type="button">Verbinden</button></div>' +
@@ -262,6 +305,19 @@
         : (s.state === 'fout' ? s.msg : 'Verbonden met ' + c.repo + (s.at ? '. Laatst gesynchroniseerd om ' + tijd(s.at) + '.' : '.'));
       $('gh-status').style.color = c && s.state === 'fout' ? 'var(--warn)' : '';
     }
+    vaultLoad().then(function (v) {
+      if (!v) return;
+      $('gh-pin').style.display = 'grid';
+      $('gh-pinval').setAttribute('inputmode', v.n ? 'numeric' : 'text');
+    });
+    function pinGo() {
+      var b = $('gh-pingo'); b.disabled = true; $('gh-msg').textContent = 'Bezig met ontgrendelen...';
+      unlock($('gh-pinval').value.trim()).then(function () {
+        $('gh-pinval').value = ''; $('gh-msg').textContent = 'Verbonden. De pagina wordt vernieuwd...'; setTimeout(function () { location.reload(); }, 700);
+      }).catch(function (e) { $('gh-msg').textContent = e && e.pin ? e.message : (e && e.status ? errorText(e) : (e && e.message) || 'Koppelen mislukt.'); }).finally(function () { b.disabled = false; });
+    }
+    $('gh-pingo').addEventListener('click', pinGo);
+    $('gh-pinval').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); pinGo(); } });
     if (cfg) $('gh-repo').value = cfg.repo;
     onStatus(paint);
     $('gh-go').addEventListener('click', function () {
@@ -305,6 +361,7 @@
 
   window.GhSync = {
     getConfig: getConfig, create: create, connect: connect, disconnect: disconnect,
+    vaultSeal: vaultSeal, vaultOpen: vaultOpen, unlock: unlock,
     mountSettings: mountSettings, onStatus: onStatus, notice: notice, errorText: errorText, makeLink: makeLink,
     syncNow: null
   };

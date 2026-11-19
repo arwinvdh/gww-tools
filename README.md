@@ -63,6 +63,17 @@ Eenmalig instellen:
 3. Open de startpagina (`start.html`, kaart **Apparaten koppelen**) of het tandwiel van een tool, vul de reponaam en de token in en tik op **Verbinden**. Beide tools gebruiken dezelfde verbinding.
 4. Een extra apparaat koppel je met **Koppellink voor ander apparaat** (in het tandwiel, zodra je verbonden bent): stuur de link naar jezelf, open hem op het andere apparaat en tik op **Koppelen**. De token zit in het deel na de `#`, dat nooit naar een server gaat, en wordt bij het openen direct uit de adresbalk gehaald. Het apparaat koppelt pas na jouw bevestiging, en de bevestiging toont de reponaam, zodat een link naar andermans repo opvalt.
 
+### Koppelen met een pincode
+
+In plaats van op elk apparaat de token te plakken, kun je de token met een pincode versleutelen:
+
+1. Open `vault.html` (op de startpagina bij Apparaten koppelen, link **Pincode instellen of wijzigen**).
+2. Vul de reponaam, de token en een pincode in (minstens 6 cijfers, liever 8 of meer) en tik op **Versleutelen**.
+3. Kopieer de versleutelde tekst en zet hem als `vault.json` in de repo (naast `index.html`).
+4. Daarna staat er bij **Apparaten koppelen** een veld voor de pincode. Typ de pincode en tik op **Ontgrendelen en koppelen**.
+
+Waar je op moet letten: `vault.json` staat in een publieke repo. Iedereen kan het downloaden en proberen te ontsleutelen (AES-GCM, sleutel uit de pincode met 1.000.000 PBKDF2-rondes). Een pincode van 6 cijfers is met een snelle grafische kaart in minuten tot uren te raden, 8 cijfers of meer is praktisch niet te raden. De token geeft alleen toegang tot je ene privérepo en elke wijziging daarin is een commit die je kunt terugdraaien. Vervang je de token, verwijder dan de oude op GitHub en maak een nieuwe `vault.json`.
+
 Wat er gebeurt:
 
 - De gegevens worden als JSON-bestand in `data/` van die repo gezet (`locatie.json` en `route.json`). Elke wijziging is een commit, dus de geschiedenis staat er ook.
