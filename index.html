@@ -53,6 +53,7 @@
   .pin::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
   .pin .pn { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; transform: rotate(45deg); color: #E5322D; font-size: 13px; font-weight: 800; line-height: 1; }
   .p2row { align-items: center; }
+  .near { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin-top: -.2rem; }
   .pin-new .pin { animation: drop .4s cubic-bezier(.3,1.4,.5,1); }
 
   /* zoekresultaten, projecten, recent */
@@ -182,7 +183,9 @@
           <div class="field grow"><label for="name">Projectnaam</label><input class="inp" id="name" list="dl-name" placeholder="Bijv. Nieuwbouw Zuidpoort" autocomplete="off"></div>
         </div>
         <div class="field"><label for="addr">Adres</label><input class="inp" id="addr" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
+        <div class="near" id="near1" hidden></div>
         <div class="field" id="addr2f" hidden><label for="addr2">Adres locatie 2</label><input class="inp" id="addr2" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
+        <div class="near" id="near2" hidden></div>
         <p class="hint addr-note" id="addrNote" hidden><span id="addrNoteTxt"></span> <button class="btn sm" id="addrNoteBtn" hidden>Bijwerken</button></p>
         <details id="more"><summary class="more-sum">Aanwijzingen</summary>
           <div class="more-in">
@@ -266,7 +269,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.11.29-a'
+  var VERSION = '2026.11.30-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -563,9 +566,39 @@
         var d = j.response && j.response.docs && j.response.docs[0]; if (!d) return null;
         var dist = Math.round(+d.afstand || 0);
         if (dist > 1500) return null;                      // geen adres in de buurt: dan is dit waarschijnlijk geen Nederlandse locatie
-        return { addr: pdokAddr(d), note: dist > 40 ? 'Dichtstbijzijnde adres, ongeveer ' + dist + ' m van de pin. Controleer of dit klopt.' : '' };
+        var word = state.near || 'Nabij';
+        if (dist <= 20) return { addr: pdokAddr(d), note: '' };                      // de pin staat op dit adres
+        if (dist <= 100) return { addr: word + ' ' + pdokAddr(d), note: 'Op deze plek is geen adres. Het dichtstbijzijnde adres, ongeveer ' + dist + ' m van de pin, staat als "' + word + '" in het bericht. Tik op een ander woord als dat beter past.' };
+        // geen adres in de buurt: de dichtstbijzijnde echte weg (geen fietspad of naamloos pad), anders alleen de plaats
+        var plaatsOnly = { addr: word + ' ' + (d.woonplaatsnaam || ''), note: 'Geen adres of weg in de buurt (het dichtstbijzijnde adres is ' + dist + ' m weg). Er staat alleen de plaats. De Maps-link wijst de plek zelf aan.' };
+        return timeoutFetch(PDOK_LS + 'reverse?type=weg&rows=8&lat=' + lat + '&lon=' + lon + '&fl=straatnaam,woonplaatsnaam,weergavenaam,afstand', 5000)
+          .then(function (r) { return r.json(); })
+          .then(function (w) {
+            var road = ((w.response && w.response.docs) || []).filter(function (x) { return usableRoad(x.straatnaam) && +x.afstand <= 500; })[0];
+            if (!road) return plaatsOnly;
+            return { addr: word + ' ' + road.straatnaam + ', ' + (road.woonplaatsnaam || d.woonplaatsnaam || ''), note: 'Geen adres in de buurt (het dichtstbijzijnde is ' + dist + ' m weg). In het bericht staat de dichtstbijzijnde weg, ongeveer ' + Math.round(+road.afstand) + ' m van de pin.' };
+          }).catch(function () { return plaatsOnly; });
       }).catch(function () { return null; })
       .then(function (r) { return r || viaOsm(); });
+  }
+  // echte wegnamen: geen fietspad, voetpad of afkorting (zoals "CER")
+  function usableRoad(n) {
+    n = String(n || '').trim();
+    return n.length > 2 && !/^(fietspad|voetpad|wandelpad|ruiterpad|bospad|pad|parkeerplaats|brug|viaduct|tunnel|onbekend)$/i.test(n) && !/^[A-Z]{2,5}$/.test(n);
+  }
+  var NEAR_WORDS = ['Nabij', 'Ter hoogte van', 'Tegenover', 'Naast'], NEAR_RE = /^(Nabij|Ter hoogte van|Tegenover|Naast)\s+/i;
+  // bij een geschat adres kies je zelf het woord ervoor: de tool weet niet aan welke kant van de weg je staat
+  function paintNear() {
+    [['addr', 'near1'], ['addr2', 'near2']].forEach(function (x) {
+      var el = $(x[0]), box = $(x[1]), m = NEAR_RE.exec(el.value);
+      box.hidden = !m; if (!m) return;
+      var cur = m[1].toLowerCase(); box.innerHTML = '<span class="hint">Aanduiding</span>';
+      NEAR_WORDS.forEach(function (w) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = w; b.setAttribute('aria-pressed', w.toLowerCase() === cur ? 'true' : 'false');
+        b.onclick = function () { el.value = el.value.replace(NEAR_RE, w + ' '); state.near = w; update(); };
+        box.appendChild(b);
+      });
+    });
   }
   function reverse(lat, lon) {
     var tok = state.revTok = (state.revTok || 0) + 1;
@@ -693,7 +726,7 @@
     if (!state.noTouch) { lsSet('locdelen.draftT', String(Date.now())); ghDraftSoon(); }
   }
   function update() {
-    saveDraft(); schedulePrebuild(); markRecent(); paintP2();
+    saveDraft(); schedulePrebuild(); markRecent(); paintP2(); paintNear();
     var m = message(), has = state.lat != null;
     $('preview').innerHTML = has ? esc(m).replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\*([^*\n]+)\*/g, '<b>$1</b>') : '<span class="hint">Het bericht verschijnt hier zodra je een locatie hebt.</span>';
     ['copy', 'wa', 'img', 'dl'].forEach(function (id) { $(id).disabled = !has; });
@@ -1073,7 +1106,7 @@
     });
   }
   function resetAll() {
-    state.lat = state.lon = null; clearP2();
+    state.lat = state.lon = null; state.near = null; clearP2();
     ['q'].concat(FIELDS).forEach(function (id) { $(id).value = ''; }); state.addrAuto = true; hideAddrNote();
     if (marker) { map.removeLayer(marker); marker = null; }
     $('coords').textContent = ''; $('results').innerHTML = ''; paintP2();
