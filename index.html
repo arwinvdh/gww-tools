@@ -277,7 +277,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.12.02-a'
+  var VERSION = '2026.12.03-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -322,8 +322,8 @@
     return inside;
   }
   var SRC = {
-    lucht: { tpl: 'https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:3857/{z}/{x}/{y}.jpeg', max: 21, credit: 'Luchtfoto PDOK', fb: 'esri' },
-    brt: { tpl: 'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png', max: 19, credit: 'Kaart Kadaster/PDOK', fb: 'osm' },
+    lucht: { tpl: 'https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:3857/{z}/{x}/{y}.jpeg', max: 21, credit: 'Luchtfoto Beeldmateriaal Nederland', fb: 'esri' },
+    brt: { tpl: 'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png', max: 19, credit: 'Kaart Kadaster', fb: 'osm' },
     esri: { tpl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', max: 19, credit: 'Esri' },
     osm: { tpl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max: 19, credit: '\u00A9 OpenStreetMap' },
     labels: { tpl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', max: 19, credit: 'Esri' },
@@ -917,6 +917,7 @@
   function buildImage() {
     var W = 1080, H = 1360, lat = state.lat, lon = state.lon, o = state.opts;
     var LS_ = locs(), two = LS_.length > 1, mpp = state.range / W;
+    var BH = LS_.length > 2 ? 284 : 250, bandTop = 580, bandBot = H - BH - 70;   // bij drie locaties een hogere balk, en de pins blijven erboven
     var zf = Math.log(156543.03392 * Math.cos(lat * Math.PI / 180) / mpp) / Math.LN2, clat = lat, clon = lon, rlat = lat, rlon = lon;
     var pins = [{ x: W / 2, y: H / 2 }];
     if (two) {
@@ -926,13 +927,13 @@
       var xs = px0.map(function (q) { return q[0]; }), ys = px0.map(function (q) { return q[1]; });
       var sx = Math.max.apply(null, xs) - Math.min.apply(null, xs), sy = Math.max.apply(null, ys) - Math.min.apply(null, ys);
       var dmin = 1e9; for (var i = 0; i < px0.length; i++) for (var j = i + 1; j < px0.length; j++) dmin = Math.min(dmin, Math.hypot(px0[i][0] - px0[j][0], px0[i][1] - px0[j][1]));
-      var fit = Math.max(1, sx / 720, sy / 460);                           // > 1: uitzoomen om te passen
+      var fit = Math.max(1, sx / 720, sy / (bandBot - bandTop));                           // > 1: uitzoomen om te passen
       zf -= Math.log(fit) / Math.LN2;
-      var d1 = dmin / fit, room = Math.min(sx ? 720 / (sx / fit) : 1e9, sy ? 460 / (sy / fit) : 1e9);   // ruimte om nog in te zoomen
+      var d1 = dmin / fit, room = Math.min(sx ? 720 / (sx / fit) : 1e9, sy ? (bandBot - bandTop) / (sy / fit) : 1e9);   // ruimte om nog in te zoomen
       if (d1 > 0 && d1 < 200) zf = Math.min(21, zf + Math.log(Math.max(1, Math.min(200 / d1, room))) / Math.LN2);
       var px1 = LS_.map(function (L) { return worldPx(L.lat, L.lon, zf); });
       var x1 = px1.map(function (q) { return q[0]; }), y1 = px1.map(function (q) { return q[1]; });
-      var cp = [(Math.max.apply(null, x1) + Math.min.apply(null, x1)) / 2, (Math.max.apply(null, y1) + Math.min.apply(null, y1)) / 2 - (810 - H / 2)], ll = unWorldPx(cp[0], cp[1], zf);
+      var cp = [(Math.max.apply(null, x1) + Math.min.apply(null, x1)) / 2, (Math.max.apply(null, y1) + Math.min.apply(null, y1)) / 2 - ((bandTop + bandBot) / 2 - H / 2)], ll = unWorldPx(cp[0], cp[1], zf);
       clat = ll[0]; clon = ll[1];
       rlat = LS_.reduce(function (t, L) { return t + L.lat; }, 0) / LS_.length; rlon = LS_.reduce(function (t, L) { return t + L.lon; }, 0) / LS_.length;
       pins = px1.map(function (q) { return { x: W / 2 + q[0] - cp[0], y: H / 2 + q[1] - cp[1] }; });
@@ -964,7 +965,7 @@
         if (two) { g.fillStyle = '#E5322D'; g.font = '800 32px Avenir Next, Avenir, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(String(i + 1), x, y - 55); }
         var pl = LS_[i] ? LS_[i].label : '';
         if (pl) {
-          g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif'; pl = clip(g, pl, 520); var pw = g.measureText(pl).width + 36, px = Math.max(10, Math.min(W - pw - 10, x - pw / 2));
+          g.font = '700 30px Avenir Next, Avenir, system-ui, sans-serif'; pl = clip(g, pl, 520); var pw = g.measureText(pl).width + 36, px = Math.max(48, Math.min(W - pw - 48, x - pw / 2));
           pills.push({ t: pl, w: pw, x: px, y: y - 100 - 22 - 48, tipY: y });
         }
       });
@@ -982,7 +983,7 @@
       if (region) { try { drawRegion(g, region, 60, 60); } catch (e) {} [region.base].forEach(function (l) { if (l && l.ok) { var t = SRC[l.key].credit; if (credits.indexOf(t) < 0) credits.push(t); } }); }
       drawNorth(g, W - 60 - 88, 60, 88);
       // onderbalk
-      var BH = 250, nr = $('nr').value.trim(), nm = $('name').value.trim(), addr = $('addr').value.trim();
+      var nr = $('nr').value.trim(), nm = $('name').value.trim(), addr = $('addr').value.trim();
       var who = $('useWho').checked ? $('myName').value.trim() : '', tel = $('usePhone').checked ? phoneFmt($('myPhone').value) : '';
       var sh = g.createLinearGradient(0, H - BH - 18, 0, H - BH); sh.addColorStop(0, 'rgba(0,31,56,0)'); sh.addColorStop(1, 'rgba(0,31,56,.16)');
       g.fillStyle = sh; g.fillRect(0, H - BH - 18, W, 18);
@@ -1005,23 +1006,27 @@
         while (fs > 34 && g.measureText(title).width > lw) { fs -= 2; g.font = '700 ' + fs + 'px Avenir Next, Avenir, system-ui, sans-serif'; }
         g.fillStyle = '#fff'; g.fillText(clip(g, title, lw), PAD, nr ? r2 : r1 + 30);
       }
+      g.font = '14px Avenir Next, Avenir, system-ui, sans-serif';
+      var credTxt = credits.join(' \u00B7 '), credX = W - PAD - g.measureText(credTxt).width;
+      var lwB = Math.max(260, Math.min(lw, credX - PAD - 24));      // regels vlak boven de bronvermelding mogen er niet overheen lopen
       g.font = '30px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.88)';
       var ay = [r3, r4];
       if (two) {
         // meerdere locaties: één regel per locatie, met nummer en eventueel label. Past het volledige adres niet op alle regels, dan nemen ze alleen straat en nummer.
         var three = LS_.length > 2;
-        if (three) { g.font = '26px Avenir Next, Avenir, system-ui, sans-serif'; ay = [T + 172, T + 203, T + 234]; }
+        if (three) { g.font = '26px Avenir Next, Avenir, system-ui, sans-serif'; ay = [T + 172, T + 204, T + 236]; }
         var rowsL = LS_.map(function (L, k) {
           var pre = (k + 1) + ' \u00B7 ' + (L.label ? L.label + ' \u00B7 ' : ''), short = L.addr ? (addrLines(L.addr)[0] || L.addr) : fmt(L.lat) + ', ' + fmt(L.lon);
           return { full: pre + (L.addr && !L.label ? L.addr : short), short: pre + short };
         });
-        var useFull = rowsL.every(function (r) { return g.measureText(r.full).width <= lw; });
-        rowsL.forEach(function (r, k) { g.fillText(clip(g, useFull ? r.full : r.short, lw), PAD, ay[k]); });
+        var lim = function (k) { return ay[k] > H - 62 ? lwB : lw; };
+        var useFull = rowsL.every(function (r, k) { return g.measureText(r.full).width <= lim(k); });
+        rowsL.forEach(function (r, k) { g.fillText(clip(g, useFull ? r.full : r.short, lim(k)), PAD, ay[k]); });
       } else {
-        (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(ln, PAD, ay[k]); });
+        (addr ? addrLines(addr).reduce(function (acc, l) { return acc.concat(wrap(g, l, lw, 1)); }, []) : [fmt(lat) + ', ' + fmt(lon)]).slice(0, 2).forEach(function (ln, k) { g.fillText(k ? clip(g, ln, lwB) : ln, PAD, ay[k]); });
       }
       g.font = '14px Avenir Next, Avenir, system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.5)'; g.textAlign = 'right';
-      g.fillText(credits.join(' \u00B7 '), W - 64, H - 14);
+      g.fillText(credTxt, W - PAD, H - 22);
       // witte rand met schaduw. Gemeten in een iOS-screenshot: WhatsApp zet ~6,9% van de breedte als buitenradius en snijdt ~2,4% per zijde af,
       // dus de zichtbare rand is ~27px. Boven: binnenradius concentrisch (buiten - rand). Onder: klein, want WhatsApp laat daar met bijschrift een rechte rand.
       var M = 56, WA_R = Math.round((W + 2 * M) * 0.069), RT = Math.max(10, WA_R - 27), RB = RT, out = document.createElement('canvas'); out.width = W + 2 * M; out.height = H + 2 * M;
