@@ -26,14 +26,14 @@ const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV
   await go('51.9975, 4.4790');
   await p.fill('#addr2', 'Zuidpoort 5, 2651 AC Berkel en Rodenrijs');
   await p.evaluate(() => { document.getElementById('more').open = true; });
-  await p.selectOption('#plabel', 'Inrit werkterrein'); await p.selectOption('#plabel2', 'Meldpunt');
+  await p.fill('#plabel', 'Inrit werkterrein'); await p.fill('#plabel2', 'Meldpunt');
   await p.waitForTimeout(300);
   const t = await preview();
   const links = (t.match(/https:\/\/www\.google\.com\/maps\?q=[\d.,]+/g) || []);
   ok(links.length === 2 && links[0] !== links[1], 'bericht bevat twee verschillende Maps-links (' + links.join(' | ') + ')');
   ok(/1️⃣ Inrit werkterrein/.test(t) && /2️⃣ Meldpunt/.test(t) && /Zuidpoort 5/.test(t) && !t.includes('Locatie in Google Maps:'), 'bericht: twee genummerde blokken met label en adres, geen losse link onderaan');
   ok(/Inrit werkterrein\*?\nOudelandselaan 1\n2651 AB Berkel en Rodenrijs\nhttps:\/\/www\.google\.com\/maps\?q=51\.995961,4\.476169\n\n/.test(t), 'bericht: adres en link van locatie 1 staan bij elkaar met een lege regel erna (' + JSON.stringify(t.slice(0, 160)) + ')');
-  ok(await p.locator('#addr2f').isVisible() && await p.locator('#plabel2f').isVisible(), 'adres- en labelveld voor locatie 2 zichtbaar');
+  ok(await p.locator('#addr2').isVisible() && await p.locator('#plabel2').isVisible() && await p.locator('#plabel').isVisible(), 'adres- en labelveld voor locatie 2, en het label van locatie 1, zijn zichtbaar zonder iets uit te klappen');
   const pn = await p.evaluate(() => [...document.querySelectorAll('.leaflet-marker-icon .pin .pn')].map(e => e.textContent));
   ok(pn.sort().join() === '1,2', 'kaart toont twee genummerde pins (' + pn.join(',') + ')');
 
@@ -96,7 +96,7 @@ const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV
   ok(await p.evaluate(() => document.querySelectorAll('.leaflet-marker-icon .pin .pn').length === 2) && await p.inputValue('#plabel2') === 'Meldpunt', 'bewaard project zet beide locaties en labels terug');
   await p.click('#p2del'); await p.waitForTimeout(300);
   const t3 = await preview();
-  ok(!(await p.locator('#addr2f').isVisible()) && t3.includes('Locatie in Google Maps:') && !t3.includes('2️⃣'), 'Locatie 2 weghalen: bericht is weer het gewone met één link');
+  ok(!(await p.locator('#addr2').isVisible()) && t3.includes('Locatie in Google Maps:') && !t3.includes('2️⃣'), 'Locatie 2 weghalen: bericht is weer het gewone met één link');
   ok(p.errs.length === 0, 'geen scriptfouten ' + p.errs.join('|'));
   await b.close();
 })();
