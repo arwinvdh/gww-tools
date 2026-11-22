@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visie en fundament</title>
+<meta name="theme-color" content="#001f38">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="icons/start-icon-192.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Visiedocument: een gewone leespagina in dezelfde stijl. Gedeelde stijl staat in shared.css. */
+@layer components {
+  .wrap { padding-bottom: 3rem; --wrap-max: 46rem; }
+  .doc { display: grid; gap: 1rem; }
+  .doc h2 { margin: 0; min-height: 0; display: block; }
+  .doc p, .doc li { margin: 0; line-height: 1.5; }
+  .doc ul, .doc ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .3rem; }
+  .tw { overflow-x: auto; }
+  .tw table { border-collapse: collapse; width: 100%; font-size: .875rem; min-width: 28rem; }
+  .tw th, .tw td { text-align: left; vertical-align: top; padding: .45rem .55rem; border-bottom: 1px solid var(--line); }
+  .tw th { color: var(--ink-2); font-weight: 600; }
+  .status { padding: .6rem .75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: .875rem; }
+  .doc .hint { font-size: .8125rem; }
+}
+</style>
+</head>
+<body>
+<header class="brand"><div class="in"><span class="dot"></span><h1>Visie en fundament</h1></div></header>
+<div class="wrap">
+<div class="doc">
+  <p class="status"><b>Werkdocument, niet af.</b> Wat hier staat is bedoeld om later geen herbouw nodig te hebben. Wat nu gebouwd is, staat onder <a class="lnk" href="#nu">Wat er nu staat</a>; wat een idee is, staat onder <a class="lnk" href="#open">Open vragen</a>. Deze pagina is openbaar (de site staat in een publieke repo): zet hier geen bedrijfsgegevens in.</p>
+
+  <div class="card">
+    <h2>Waar dit voor is</h2>
+    <p>Kleine, snelle tools voor de uitvoering: een locatie delen, een route voor de knijperwagen samenstellen, en straks een logboek voor werkzaamheden, onderaannemers, uren en materieel. Ze moeten op een telefoon in één hand werken, ook met slecht bereik.</p>
+    <p>Nu is het één gebruiker die aan het klooien is. Een uitrol naar anderen, ook naar andere bedrijven, is een mogelijkheid, geen plan. Dit document zorgt ervoor dat die mogelijkheid open blijft zonder dat we nu al een groot systeem bouwen.</p>
+  </div>
+
+  <div class="card" id="nu">
+    <h2>Wat er nu staat</h2>
+    <ul>
+      <li><b>Locatie delen</b>: tot drie locaties, bericht en afbeelding voor WhatsApp.</li>
+      <li><b>Route knijperwagen</b>: stops, voorstellen uit eerder gebruik, bericht voor WhatsApp.</li>
+      <li><b>Mijn tools</b>: één startpagina voor alles, ook als app op het beginscherm.</li>
+      <li><b>Gedeelde opmaak</b> (<code>shared.css</code>): kleuren en vormen staan als instellingen, niet door de pagina's heen.</li>
+      <li><b>Synchroniseren</b> via een eigen privérepo op GitHub, met pincode of token. Dat is bedoeld voor eigen gebruik.</li>
+      <li><b>Tests</b> die alle tools doorlopen, zodat een wijziging niets stilletjes kapotmaakt.</li>
+      <li>Elke tool is één bestand zonder bouwstap. Dat houdt het simpel en snel.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Wat een uitrol later nodig heeft</h2>
+    <p class="hint">Dit komt uit jouw antwoorden. Het is wat het fundament moet kunnen dragen, niet wat er nu is.</p>
+    <ul>
+      <li><b>Meerdere bedrijven</b>, gescheiden van elkaar.</li>
+      <li><b>Een eigen beheerder per bedrijf</b>, die zelf mensen uitnodigt en gegevens beheert.</li>
+      <li><b>Per project een eigen logboek met toegang</b>: mensen zien alleen de projecten waar ze bij horen.</li>
+      <li><b>Een eigen huisstijl per bedrijf</b> (kleuren en logo), ook in de PDF's.</li>
+      <li><b>Gedeelde gegevens tussen tools</b>: projecten en locaties, personen, onderaannemers en leveranciers, materieel.</li>
+      <li><b>Foto's</b> bij logregels.</li>
+      <li><b>Uitvoer</b>: dagrapport per project (PDF), urenoverzicht per week of maand (Excel), materieeloverzicht (Excel).</li>
+      <li><b>Meestal online</b>, een poos zonder bereik moet kunnen.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>De gegevens: één keer vastleggen, overal gebruiken</h2>
+    <p>Als alle tools dezelfde soorten gegevens gebruiken, is koppelen later geen ombouw. Dit zijn de soorten.</p>
+    <div class="tw"><table>
+      <tr><th>Soort</th><th>Wat het is</th><th>Voorbeeldvelden</th></tr>
+      <tr><td>Bedrijf</td><td>De organisatie waar alles onder valt</td><td>naam, huisstijl (kleuren, logo)</td></tr>
+      <tr><td>Gebruiker</td><td>Iemand die inlogt</td><td>naam, e-mail, rol (beheerder of gebruiker), bij welk bedrijf</td></tr>
+      <tr><td>Project</td><td>Een werk</td><td>nummer, naam, bedrijf, wie er toegang toe heeft</td></tr>
+      <tr><td>Locatie</td><td>Een punt bij een project</td><td>coördinaten, adres, label (bijvoorbeeld Inrit)</td></tr>
+      <tr><td>Persoon</td><td>Uitvoerder, voorman, contactpersoon</td><td>naam, functie, telefoon</td></tr>
+      <tr><td>Onderaannemer of leverancier</td><td>Een ander bedrijf waarmee je werkt</td><td>bedrijf, contactpersoon, telefoon, wat ze doen</td></tr>
+      <tr><td>Materieel</td><td>Machine of voertuig</td><td>naam, kenteken of nummer, soort</td></tr>
+      <tr><td>Logregel</td><td>Wat er op een dag gebeurde</td><td>datum, project, werkzaamheden, wie of welke onderaannemer, uren, materieel</td></tr>
+      <tr><td>Bijlage</td><td>Foto of document bij een logregel</td><td>bestand, bij welke regel</td></tr>
+    </table></div>
+    <p><b>Regels voor elk gegeven:</b></p>
+    <ul>
+      <li>Een <b>vast id</b> dat nooit verandert. Nu staat een project nog onder "nummer en naam"; dat breekt zodra een naam wijzigt of twee bedrijven hetzelfde nummer gebruiken. Het logboek moet projecten daarom via een id aanwijzen.</li>
+      <li>Het <b>bedrijf</b> waartoe het hoort, op elk gegeven, ook al is er nu één bedrijf.</li>
+      <li>Een <b>tijdstip van aanmaken en wijzigen</b>, zodat synchroniseren de nieuwste kiest.</li>
+      <li>Een <b>versienummer van het formaat</b>, zodat een oude telefoon een nieuwe vorm niet stukmaakt.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Fasen</h2>
+    <div class="tw"><table>
+      <tr><th>Fase</th><th>Wat</th><th>Wat er voor nodig is</th></tr>
+      <tr><td><b>Nu</b></td><td>Losse tools voor één gebruiker. Logboek als nieuwe tool.</td><td>Het huidige fundament. Het logboek krijgt direct vaste id's en bedrijf-velden, en haalt Excel en PDF uit dezelfde gegevens.</td></tr>
+      <tr><td><b>Daarna</b></td><td>Projecten, personen, bedrijven en materieel één keer vastleggen en in alle tools gebruiken.</td><td>Een gedeeld stuk "stamgegevens" in de opslag, dat de tools lezen.</td></tr>
+      <tr><td><b>Meer gebruikers</b></td><td>Inloggen, rollen, toegang per project, foto's.</td><td>Een echte database met inloggen, bijvoorbeeld een beheerde dienst. Dit is het punt waar GitHub niet meer genoeg is, zie hieronder.</td></tr>
+      <tr><td><b>Meer bedrijven</b></td><td>Gescheiden bedrijven, eigen huisstijl en beheerder.</td><td>Alles hierboven, plus instellingen en uitnodigingen per bedrijf, en afspraken over privacy en kosten.</td></tr>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h2>Waar GitHub genoeg is en waar niet</h2>
+    <p><b>Genoeg voor nu:</b> pagina's hosten, en tekstgegevens synchroniseren tussen jouw apparaten (en die van een paar mensen die je zelf koppelt). Gratis, werkt, en de gegevens staan in je eigen privérepo.</p>
+    <p><b>Niet genoeg voor een uitrol:</b></p>
+    <ul>
+      <li><b>Geen inloggen per persoon</b>: koppelen gaat met een token van één GitHub-account.</li>
+      <li><b>Geen rechten per project</b>: wie gekoppeld is, ziet alles in die repo.</li>
+      <li><b>Foto's passen niet</b>: een repo is niet gemaakt voor veel bestanden en heeft grenzen aan de grootte.</li>
+      <li>De pincode-oplossing (een versleutelde token in de publieke site) is <b>bewust alleen voor eigen gebruik</b>. Een korte pincode is met de juiste middelen te raden.</li>
+    </ul>
+    <p>Daarom is het logische moment om te verhuizen naar een beheerde dienst (bijvoorbeeld Cloudflare of Supabase) het moment dat er <b>een tweede persoon zonder GitHub-account</b> of <b>foto's</b> bij komen. Niet eerder.</p>
+  </div>
+
+  <div class="card">
+    <h2>Huisstijl per bedrijf</h2>
+    <p>De kleuren staan al als instellingen (<code>--accent</code>, <code>--brand-dark</code>, <code>--brand-green</code> en de rest in <code>shared.css</code>). Per bedrijf wisselen kan dus door die waarden te vervangen, zonder de pagina's om te bouwen. Nog te regelen: een logo, en dat PDF en Excel dezelfde instellingen gebruiken. Het lettertype is nu een systeemlettertype.</p>
+  </div>
+
+  <div class="card">
+    <h2>Privacy en veiligheid</h2>
+    <ul>
+      <li><b>Persoonsgegevens</b>: namen, telefoonnummers en uren van mensen vallen onder de AVG. Bij een uitrol zijn afspraken nodig over wie de gegevens verwerkt, hoe lang ze bewaard blijven en wie ze mag zien.</li>
+      <li><b>Een externe dienst</b> betekent meestal een verwerkersovereenkomst met die dienst.</li>
+      <li><b>Scheiding</b>: gegevens van het ene bedrijf mogen voor een ander bedrijf nooit zichtbaar zijn. Dat moet in de database zelf afgedwongen worden, niet alleen in de schermen.</li>
+      <li><b>Minimaal opslaan</b>: alleen wat de tool nodig heeft.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Kosten (indicatief)</h2>
+    <p>Nu €0. Beheerde diensten zijn gratis tot een bepaalde grootte, daarna ongeveer $5 tot $25 per maand per dienst. Een eigen domeinnaam kost rond €5 per jaar. Dit komt uit onderzoek in november 2026; prijzen en grenzen veranderen, controleer ze op de site van de dienst voordat je kiest.</p>
+  </div>
+
+  <div class="card">
+    <h2>Afspraken voor het bouwen</h2>
+    <p class="hint">Zo houden we het fundament goed zonder nu al een groot systeem te bouwen.</p>
+    <ol>
+      <li>Nieuwe tools gebruiken <code>shared.css</code> en de bestaande koppeling, en komen als tegel op de startpagina.</li>
+      <li>Nieuwe gegevens krijgen vanaf het begin een id, een bedrijf-veld, tijdstippen en een versienummer.</li>
+      <li>De tools praten met de opslag via één laag, niet met GitHub rechtstreeks. Verhuizen betekent dan één laag vervangen.</li>
+      <li>Uitvoer (Excel en PDF) komt uit de gegevens, niet uit losse invoer.</li>
+      <li>Elke tool heeft tests voor wat telt, en een wijziging gaat pas live als alles slaagt.</li>
+      <li>Geen bedrijfsgegevens in de publieke repo of op de publieke site.</li>
+    </ol>
+  </div>
+
+  <div class="card" id="open">
+    <h2>Open vragen</h2>
+    <ul>
+      <li>Wie is de eerste andere gebruiker, en wanneer?</li>
+      <li>Hoe moeten onderaannemers vastgelegd worden: alleen als bedrijf, of ook hun medewerkers met uren?</li>
+      <li>Welke indeling moeten Excel en PDF hebben (administratie, opdrachtgever)? Hebben jullie een bestaand formulier?</li>
+      <li>Moeten uren of werk ergens door iemand goedgekeurd worden, en zo ja met welke bewijskracht?</li>
+      <li>Welke AVG-afspraken gelden bij jullie, en wie is daarvoor verantwoordelijk?</li>
+      <li>Wie betaalt een betaalde dienst als die er ooit komt?</li>
+      <li>Hoe heet het geheel, als er ooit meer bedrijven bij komen?</li>
+    </ul>
+  </div>
+
+  <p class="hint"><a class="lnk" href="start.html">Terug naar Mijn tools</a></p>
+</div>
+</div>
+</body>
+</html>

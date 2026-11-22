@@ -28,5 +28,15 @@ const fs = require('fs'), path = require('path');
   ok(['start.html', 'start.webmanifest', 'shared.css'].every(f => local.includes(f)), 'service worker bewaart start.html, manifest en shared.css');
   // links terug naar de startpagina in beide tools
   for (const f of ['index.html', 'route.html']) ok(fs.readFileSync(path.join(root, f), 'utf8').includes('href="start.html"'), `${f}: link "Alle tools" naar de startpagina`);
+  // visiepagina: bestaat, staat in de service worker, bereikbaar vanaf start, geen zijwaartse scroll
+  ok(local.includes('visie.html'), 'service worker bewaart visie.html');
+  ok(fs.readFileSync(path.join(root, 'start.html'), 'utf8').includes('href="visie.html"'), 'start.html: link naar visie.html');
+  for (const [name, dev] of [['iPhone SE', devices['iPhone SE']], ['desktop', { viewport: { width: 1180, height: 900 } }]]) {
+    const p = await offlinePage(b, dev, 'visie.html');
+    const r = await p.evaluate(() => ({ sw: document.scrollingElement.scrollWidth, vw: document.documentElement.clientWidth, h1: document.querySelector('h1').textContent }));
+    ok(r.sw <= r.vw, `visie op ${name}: geen zijwaartse scroll (${r.sw} van ${r.vw})`);
+    ok(p.errs.length === 0, `visie op ${name}: geen scriptfouten`);
+    await p.context().close();
+  }
   await b.close();
 })();

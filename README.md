@@ -7,6 +7,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Locatie delen** | https://arwinvdh.github.io/locatie/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
 | **Route knijperwagen** | https://arwinvdh.github.io/locatie/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **Mijn tools** (startpagina) | https://arwinvdh.github.io/locatie/start.html | Tegels naar alle tools. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
+| **Visie en fundament** | https://arwinvdh.github.io/locatie/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
 
@@ -41,6 +42,7 @@ route.html              Route knijperwagen
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
 start.html              startpagina met tegels naar de tools
+visie.html              visie en fundament: wat later nodig is voor een uitrol (werkdocument)
 start.webmanifest       installatiegegevens van de startpagina
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
