@@ -26,23 +26,23 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg: #EEF3F8; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0E2236; --ink-2: #566879; --line: #D0DAE5;
+    --bg: #F3F6F9; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0A1B2C; --ink-2: #435568; --line: #C3CFDB;
     --accent: #014983; --on-accent: #FFFFFF; --warn: #B42318; --ok: #3F7D0A; --focus: #014983;
     --scrim: rgba(0, 31, 56, 0.5); --brand-dark: #001f38; --brand-green: #76b720;
     --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #027EB5;
     --font: 'Avenir Next', 'Avenir Next LT Pro', Avenir, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    --shadow: 0 12px 20px 0 rgba(0, 31, 56, 0.08);
+    --shadow: 0 1px 2px rgba(0, 31, 56, 0.06);
     --wrap-max: 64rem;      /* de pagina kan dit aanpassen */
     --dialog-w: 24rem;
   }
   /* de vaste actiebalk onderaan mag een gefocust veld niet bedekken */
   html { scroll-padding-bottom: calc(7rem + var(--nav-h, 0px)); }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 0.9375rem; line-height: 1.4; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 1rem; line-height: 1.45; }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { -webkit-tap-highlight-color: transparent; }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  h1 { margin: 0; font-size: 1.125rem; font-weight: 600; }
-  h2 { margin: 0 0 0.5rem; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+  h2 { margin: 0 0 0.5rem; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
   a.lnk { color: var(--accent); font-weight: 600; }
 }
 
@@ -59,21 +59,21 @@
 
   /* kaarten en velden */
   .grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.875rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; box-shadow: var(--shadow); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; box-shadow: var(--shadow); }
   .card h2 { margin: 0; min-height: 32px; display: flex; align-items: center; }
   .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.15rem; min-width: 0; }
-  .field > label { font-size: 0.8125rem; color: var(--ink-2); }
-  .inp { width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font-size: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
+  .field > label { font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
+  .inp { width: 100%; min-height: 52px; padding: 0.5rem 0.9rem; border: 1.5px solid var(--line); border-radius: 12px; background: var(--field); color: var(--ink); font-size: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
   .inp:focus-visible { border-color: var(--accent); outline: 2px solid var(--focus); outline-offset: 0; }
-  .hint { font-size: 0.8125rem; color: var(--ink-2); margin: 0; }
+  .hint { font-size: 0.875rem; color: var(--ink-2); margin: 0; }
   .hint.err { color: var(--warn); }
   .hint.ok { color: var(--ok); }
 
   /* knoppen */
-  .btn { min-height: 44px; padding: 0.35rem 1.1rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
+  .btn { min-height: 52px; padding: 0.35rem 1.1rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
   .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:disabled { opacity: 0.5; cursor: default; }
-  .btn.sm { min-height: 36px; padding: 0.2rem 0.75rem; font-size: 0.875rem; }
+  .btn.sm { min-height: 40px; padding: 0.2rem 0.75rem; font-size: 0.875rem; }
   .btn.danger { border-color: var(--warn); color: var(--warn); }
   .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
@@ -112,10 +112,10 @@
 
 /* onderbalk (nav.js): Home en een knop per tool. De hoogte staat in --nav-h zodat de actiebalk, meldingen en padding erboven blijven. */
 @layer components {
-  html.has-nav { --nav-h: calc(3.5rem + env(safe-area-inset-bottom, 0px)); --bar-safe: 0px; }
+  html.has-nav { --nav-h: calc(3.75rem + env(safe-area-inset-bottom, 0px)); --bar-safe: 0px; }
   .appnav { position: fixed; inset: auto 0 0; z-index: 600; display: flex; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--surface); border-top: 1px solid var(--line); }
-  .appnav a { flex: 1; min-width: 0; min-height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; color: var(--ink-2); font-size: 0.6875rem; font-weight: 600; text-decoration: none; -webkit-tap-highlight-color: transparent; }
-  .appnav a[aria-current="page"] { color: var(--accent); }
+  .appnav a { flex: 1; min-width: 0; min-height: 3.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; color: var(--ink-2); font-size: 0.75rem; font-weight: 600; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  .appnav a[aria-current="page"] { color: var(--accent); box-shadow: inset 0 3px 0 var(--brand-green); }
   .appnav svg { width: 24px; height: 24px; }
 }
 

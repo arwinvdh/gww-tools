@@ -66,15 +66,15 @@
   .proj-main b, .proj-main span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .proj-main span { color: var(--ink-2); font-size: .8125rem; }
   .seg button, .results button, .proj-main { transition: background-color .15s, border-color .15s, color .15s, transform .12s, box-shadow .15s, opacity .15s; }
-  .check { display: flex; gap: .5rem; align-items: center; min-height: 36px; }
+  .check { display: flex; gap: .5rem; align-items: center; min-height: 36px; min-width: 0; overflow-wrap: anywhere; }
   .check input { width: 20px; height: 20px; }
-  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .75rem; }
+  .opts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 .75rem; }
   .chips { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .15rem; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip { flex: none; min-height: 36px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--field); cursor: pointer; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .recent { display: grid; gap: .3rem; min-width: 0; }
-  .recent .rl { flex: none; font-size: .8125rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+  .recent .rl { flex: none; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
   .recent .chips { min-width: 0; padding-bottom: 0; }
   @media (hover: hover) {
     .results button:hover { border-color: var(--accent); }
