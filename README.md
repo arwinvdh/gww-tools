@@ -8,7 +8,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, recente projecten en routes onder hun tool (alleen lezen; een tik laadt het item direct in de tool) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
 | **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project en uitvoerder, telefoon en notitie; neemt de projecten uit Locatie delen over. Vanuit een project open je Locatie delen of Route met dat project ingevuld (`#gp=<id>`). |
-| **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | Per project en dag werkzaamheden en materieel vastleggen; bewaart vanzelf. |
+| **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | Per project en dag werkzaamheden, materieel en foto's met stempel (tijd, locatie, kaartje) vastleggen; bewaart vanzelf. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
@@ -130,6 +130,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
   - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Staat alleen op het apparaat (nog niet gesynchroniseerd).
+  - Foto's (sinds 1.10.0): IndexedDB-database `gww-photos`, store `photos`, records `{ v, id, projectId, date, day, blob, w, h, lat, lon, created }` (`day` is `projectId|datum`). Alleen op het apparaat.
 - Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
 
@@ -157,7 +158,7 @@ In `tests/` staan automatische controles die de tools in een echte (onzichtbare)
 
 | Dienst | Gebruikt voor |
 |---|---|
-| PDOK Locatieserver | adres zoeken en het dichtstbijzijnde adres bij een pin (Nederland) |
+| PDOK Locatieserver | adres zoeken en het dichtstbijzijnde adres bij een pin (Nederland), ook voor het adres op logboekfoto's |
 | PDOK luchtfoto (`luchtfotorgb`), BRT-achtergrondkaart, kadastrale kaart, bestuurlijke gebieden | luchtfoto, kaart, perceelgrenzen en gemeentegrens |
 | Esri World Imagery en Transportation | luchtfoto buiten Nederland en straatnamen op de luchtfoto |
 | GitHub API (alleen als je synchroniseren aanzet) | je gegevens bewaren in je eigen privérepo |
@@ -168,6 +169,7 @@ Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzend
 
 ## Bekende beperkingen
 
+- Foto's in het logboek staan alleen op het toestel (niet gesynchroniseerd). Een webapp mag niet rechtstreeks in Foto's schrijven: bewaar een foto via het deelmenu ("Bewaar afbeelding") als je hem ook in Foto's wilt. Locatie en tijd op de stempel komen van het toestel; zonder locatietoestemming staat er "Locatie onbekend", en zonder bereik ontbreken het adres en het kaartje.
 - Zonder synchronisatie worden gegevens per apparaat en per browser bewaard. Op een iPhone zijn Safari en de app op het beginscherm gescheiden; gebruik daarom altijd de app op het beginscherm.
 - Korte Google Maps-links (`maps.app.goo.gl`) kunnen alleen worden gelezen met behulp van gratis tussendiensten van derden en werken daarom niet altijd. Een volledige link, de coördinaten of het adres werken altijd.
 - Delen van de afbeelding gebruikt het deelmenu van het toestel. Wordt dat geblokkeerd, dan wordt de afbeelding opgeslagen en het bericht gekopieerd.

@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.10.0] - 2026-11-22
+
+- Foto's in het logboek: Foto maken opent de camera; de foto krijgt een stempel met project, datum en tijd, adres, coördinaten en (online) een kaartje. De bewerkte foto staat op het toestel (IndexedDB `gww-photos`), per project en dag. Tik op een foto om hem te bekijken, in Foto's te bewaren via het deelmenu, of te verwijderen.
+
 ## [1.9.0] - 2026-11-22
 
 - Nieuwe tegel Logboek: per project en dag werkzaamheden en materieel vastleggen. Het bewaart vanzelf, stelt eerder gebruikt materieel voor en toont de eerdere dagen van het project (`gww.log`, verwijst met het project-id naar de projectlijst). Te openen vanuit een project met de knop Logboek.
