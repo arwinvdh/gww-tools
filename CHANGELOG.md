@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.1.1] - 2026-11-22
+
+- Startpagina: de uitklapper heeft nu een pijltje en een kaartvorm, zodat zichtbaar is dat hij uitklapt.
+
 ## [1.1.0] - 2026-11-22
 
 - Startpagina: de tools staan bovenaan, daaronder een lijst met recente projecten en routes (alleen lezen uit de bestaande opslag).
