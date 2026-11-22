@@ -58,7 +58,14 @@ node start.test.js   # één testbestand (elk bestand eindigend op .test.js werk
 
 ## Versies en caching
 
-- `VERSION` (een constante in het script) bestaat alleen in `index.html`, `route.html` en `start.html`. Verhoog hem in de pagina die je wijzigt. `vault.html`, `visie.html`, `sync.js` en `shared.css` hebben geen eigen versienummer.
+- Het appversienummer staat alleen in `version.js` (`APP_VERSION`, SemVer). `index.html`, `route.html` en `start.html` tonen het; geen pagina heeft een eigen versienummer. Een wijziging met gevolgen voor de app krijgt een nieuwe versie, een sectie in `CHANGELOG.md` en een hoger `CACHE`; docs- of testwijzigingen niet. Een nummer wordt nooit hergebruikt.
 - `sw.js` heeft `CACHE` en `LOCAL`. Volgens de README verhoog je `CACHE` na een wijziging aan `index.html`, `route.html`, `sync.js`, `shared.css`, iconen of manifesten, en bij een nieuw bestand in `LOCAL`. De README noemt `start.html`, `vault.html` en `visie.html` daarbij niet: beoordeel dan eerst hoe de cache voor die wijziging werkt voordat je `CACHE` wel of niet verhoogt.
 - Pagina's, manifesten, scripts en stijl worden eerst via het netwerk geladen en vallen na 4 seconden of zonder verbinding terug op de bewaarde kopie. Het effect van een vergeten `CACHE` merk je dus vooral offline of bij slecht bereik.
 - Een nieuw bestand moet in `LOCAL` in `sw.js`; de checklist voor een nieuwe tool staat in de README.
+
+## Conventies voor commits en branches
+
+- Commits volgens Conventional Commits: Engelse type (`feat`, `fix`, `docs`, `test`, `chore`, `refactor`) met een Nederlandse omschrijving, bijvoorbeeld `fix(sw): beperk cacheopruiming tot de eigen app`.
+- Korte taakbranches met een beschrijvende naam, geen projectnaam en geen branch per tool.
+- Wijzigingen gaan via een pull request naar `main`; niet rechtstreeks pushen.
+- Maak geen tag (`vX.Y.Z`) zonder opdracht van de eigenaar.

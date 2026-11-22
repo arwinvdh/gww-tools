@@ -121,11 +121,11 @@ const until = async (fn, ms = 15000) => { const t = Date.now(); while (Date.now(
     const p2 = await open(ctx, 'gww-tools/start.html'); await waitControlled(p2);
     let c = await listCaches(p2);
     ok(Object.keys(c).join() === 'locatie-v36' && owners(c['locatie-v36']).join() === 'gww-tools,locatie', 'twee workers met dezelfde cachenaam geven één gemengde cache (verwacht, niet schadelijk)');
-    ok(await titleOffline(ctx, 'locatie/start.html') === 'Mijn tools' && await titleOffline(ctx, 'gww-tools/start.html') === 'Mijn tools', 'beide paden werken offline met de gedeelde cachenaam');
+    ok(await titleOffline(ctx, 'locatie/start.html') === 'GWW Tools' && await titleOffline(ctx, 'gww-tools/start.html') === 'GWW Tools', 'beide paden werken offline met de gedeelde cachenaam');
     await releaseOn(p2, 'gww-tools', 'locatie-v37');
     c = await listCaches(p2);
     ok('locatie-v37' in c && 'locatie-v36' in c && owners(c['locatie-v36']).join() === 'gww-tools,locatie', 'na een release op het nieuwe pad blijft de gemengde cache met beide paden staan (restcache, handmatig op te ruimen)');
-    ok(await titleOffline(ctx, 'locatie/start.html') === 'Mijn tools' && await titleOffline(ctx, 'gww-tools/start.html') === 'Mijn tools', 'beide paden werken offline na die release');
+    ok(await titleOffline(ctx, 'locatie/start.html') === 'GWW Tools' && await titleOffline(ctx, 'gww-tools/start.html') === 'GWW Tools', 'beide paden werken offline na die release');
   });
 
   await scenario('verschillende namen', async (ctx) => {
@@ -135,7 +135,7 @@ const until = async (fn, ms = 15000) => { const t = Date.now(); while (Date.now(
     const p2 = await open(ctx, 'gww-tools/start.html'); await waitControlled(p2);
     let c = await listCaches(p2);
     ok(Object.keys(c).join() === 'locatie-v36,locatie-v37' && owners(c['locatie-v36']).join() === 'locatie' && owners(c['locatie-v37']).join() === 'gww-tools', 'verschillende cachenamen blijven per pad gescheiden en onaangeroerd');
-    ok(await titleOffline(ctx, 'locatie/start.html') === 'Mijn tools', 'de oude app op het verdwenen pad start offline vanuit zijn cache');
+    ok(await titleOffline(ctx, 'locatie/start.html') === 'GWW Tools', 'de oude app op het verdwenen pad start offline vanuit zijn cache');
     const upd = await p1.evaluate(async (scope) => { try { const r = await navigator.serviceWorker.getRegistration(scope); await r.update(); return 'update ok'; } catch (e) { return 'update fout'; } }, BASE + 'locatie/');
     const st = await p1.evaluate(async (scope) => { const r = await navigator.serviceWorker.getRegistration(scope); return { active: r && r.active && r.active.state, controls: !!navigator.serviceWorker.controller }; }, BASE + 'locatie/');
     ok(upd === 'update fout' && st.active === 'activated' && st.controls, 'een mislukte update laat de actieve worker op het oude pad actief en besturend (' + upd + ', ' + st.active + ')');
@@ -148,7 +148,7 @@ const until = async (fn, ms = 15000) => { const t = Date.now(); while (Date.now(
     sw.locatie = withCache('locatie-v36');
     const pages = ['locatie/start.html', 'locatie/index.html', 'locatie/route.html'];
     const ps = []; for (const f of pages) { const p = await open(ctx, f); await waitControlled(p); ps.push(p); }
-    const want = ['Mijn tools', 'Locatie delen', 'Route Knijperwagen'];
+    const want = ['GWW Tools', 'Locatie delen', 'Route Knijperwagen'];
     const got = []; for (const f of pages) got.push(await titleOffline(ctx, f));
     ok(got.join() === want.join(), 'startpagina en beide tools openen offline (' + got.join(' / ') + ')');
     await releaseOn(ps[0], 'locatie', 'locatie-v37');

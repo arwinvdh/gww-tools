@@ -1,13 +1,13 @@
-# Locatie delen en Route knijperwagen
+# GWW Tools
 
 Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze draaien volledig in de browser, hebben geen account of server nodig en zijn te installeren op het beginscherm.
 
 | Tool | Adres | Wat het doet |
 |---|---|---|
-| **Locatie delen** | https://arwinvdh.github.io/locatie/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
-| **Route knijperwagen** | https://arwinvdh.github.io/locatie/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
-| **Mijn tools** (startpagina) | https://arwinvdh.github.io/locatie/start.html | Tegels naar alle tools. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
-| **Visie en fundament** | https://arwinvdh.github.io/locatie/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
+| **Locatie delen** | https://arwinvdh.github.io/gww-tools/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
+| **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
+| **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
+| **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
 
@@ -45,6 +45,8 @@ start.html              startpagina met tegels naar de tools
 visie.html              visie en fundament: wat later nodig is voor een uitrol (werkdocument)
 start.webmanifest       installatiegegevens van de startpagina
 sw.js                   service worker: opent de tools ook zonder of met slecht bereik
+version.js              het appversienummer (APP_VERSION), enige bron
+CHANGELOG.md            wijzigingen per versie
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
 shared.css              gedeelde stijl (kleuren, knoppen, velden, kaarten, kopband) voor beide tools
 icons/                  iconen voor het beginscherm
@@ -96,12 +98,38 @@ Goed om te weten:
 
 1. Pas het bestand aan en test het lokaal in een browser.
 2. Draai de tests (zie hieronder). Alles moet op "Alles goed" eindigen.
-3. Verhoog `VERSION` in het script van de betreffende tool. Het versienummer staat in de instellingen (tandwiel).
-4. Heb je `index.html`, `route.html`, `sync.js`, iconen of manifesten aangepast, verhoog dan ook `CACHE` bovenin `sw.js`. Anders blijft de oude kopie bewaard.
-5. Push naar `main`. GitHub Pages publiceert binnen ongeveer een minuut (Settings, Pages: deploy from branch `main`, map `/`).
+3. Heeft de wijziging gevolgen voor de app, kies dan een nieuw versienummer in `version.js` en zet een nieuwe sectie bovenaan `CHANGELOG.md`.
+4. Verhoog `CACHE` bovenin `sw.js` (ook bij een nieuw bestand in `LOCAL`).
+5. Open een pull request naar `main`. Na samenvoegen publiceert GitHub Pages binnen ongeveer een minuut (Settings, Pages: deploy from branch `main`, map `/`). De eigenaar maakt daarna, na controle, de tag `vX.Y.Z`.
 6. Op een telefoon: sluit de app helemaal en open hem opnieuw. Bij een nieuw icoon moet je de app van het beginscherm verwijderen en opnieuw toevoegen.
 
 De tools bestaan alleen als deze website. Er is geen aparte Claude-versie meer.
+
+### Releaseregels
+
+- Eén pull request met gevolgen voor de app is één release: een nieuwe versie in `version.js`, een sectie in `CHANGELOG.md` en een hoger `CACHE` in `sw.js`.
+- Alleen docs- of testwijzigingen krijgen geen nieuwe versie.
+- Een versienummer wordt nooit hergebruikt.
+- Een migratie is niet automatisch een major: toets of het contract hieronder incompatibel verandert.
+- De tag `vX.Y.Z` maakt de eigenaar na samenvoegen en controle.
+
+## Ondersteund contract (1.0.0)
+
+Dit valt eronder en blijft dus werken zoals het werkt:
+
+- De pagina's `index.html`, `route.html`, `start.html` en `vault.html`, de manifesten en de iconen.
+- De opslagsleutels in de browser (localStorage):
+  - Locatie delen: `locdelen.draft`, `locdelen.draftT`, `locdelen.projects`, `locdelen.range`, `locdelen.layer`, `locdelen.regio`, `locdelen.link`, `locdelen.opt.labels`, `locdelen.opt.parcel`, `locdelen.opt.mini`, `locdelen.who`, `locdelen.role`, `locdelen.phone`, `locdelen.useWho`, `locdelen.usePhone`, `locdelen.profileT`, `locdelen.lastExport`, `locdelen.tipX`. In de code zijn ook `locdelen.base` en `locdelen.share` benoemd, maar die worden niet gebruikt.
+  - Route knijperwagen: `knijperwagen-route-v2`, `knijperwagen-mem-v2`, `knijperwagen-routes-v2`, `knijperwagen-draftT`, `knijperwagen-tipX`, en de oudere `knijperwagen-route-v1` en `knijperwagen-items-v1` (alleen gelezen voor migratie).
+  - Startpagina: `start.tipX`.
+  - Synchronisatie: `gh-sync-config`.
+- Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
+- De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
+
+Dit valt er niet onder: interne code en CSS, teksten en layout, de tests, `visie.html`, het cache-id, de weergave van het versienummer en externe diensten.
+
+- **Adres:** het Pages-adres volgt de reponaam en wordt niet als blijvend contract vastgelegd. Een adreswijziging is een aparte migratie.
+- **Compatibiliteit:** nieuwe versies blijven bestaande gegevens (formaat v1) ondersteunen. Er is geen belofte dat oude apps toekomstige schema's veilig verwerken; schrijven blokkeren bij een onbekende schemaversie is een aparte, latere wijziging.
 
 ## Tests
 

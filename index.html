@@ -273,11 +273,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="sync.js"></script>
+<script src="version.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var VERSION = '2026.12.04-a'
   function calm() { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
   if (typeof L === 'undefined') {
     var wn = document.createElement('div'); wn.className = 'tip'; wn.style.margin = '1rem'; wn.textContent = 'De kaartbibliotheek is niet geladen. Controleer je verbinding en ververs de pagina.';
@@ -1345,7 +1345,7 @@
   var rsT = 0;
   window.addEventListener('resize', function () { clearTimeout(rsT); rsT = setTimeout(function () { if (map) map.invalidateSize(); }, 200); });
   window.addEventListener('online', function () { state.failed = {}; applyLayers(); toast('Weer online'); });
-  $('ver').textContent = 'Versie ' + VERSION;
+  $('ver').textContent = 'Versie ' + APP_VERSION;
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
   /* synchroniseren via een eigen privérepo op GitHub (alleen als verbonden, zie sync.js) */
   var gh = null, lastPull = 0, draftTimer = 0;
