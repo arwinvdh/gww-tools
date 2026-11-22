@@ -1,11 +1,12 @@
 // Service worker: de app opent ook zonder of met slecht bereik.
 // Pagina en manifest: eerst het netwerk (altijd de nieuwste versie), na 4 s of zonder netwerk de bewaarde kopie.
 // Kaartbibliotheek en iconen: uit de cache.
-const CACHE = 'locatie-v44';
-const LOCAL = ['./', 'index.html', 'route.html', 'start.html', 'vault.html', 'visie.html', 'sync.js', 'version.js', 'nav.js', 'shared.css', 'manifest.webmanifest', 'route.webmanifest', 'start.webmanifest',
+const CACHE = 'locatie-v45';
+const LOCAL = ['./', 'index.html', 'route.html', 'start.html', 'vault.html', 'visie.html', 'sync.js', 'version.js', 'nav.js', 'projecten.html', 'shared.css', 'manifest.webmanifest', 'route.webmanifest', 'start.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/start-icon-180.png', 'icons/start-icon-192.png', 'icons/start-icon-512.png',
-  'icons/route-icon-180.png', 'icons/route-icon-192.png', 'icons/route-icon-512.png'];
+  'icons/route-icon-180.png', 'icons/route-icon-192.png', 'icons/route-icon-512.png',
+  'icons/projecten-icon-180.png', 'icons/projecten-icon-192.png', 'icons/projecten-icon-512.png'];
 const CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
