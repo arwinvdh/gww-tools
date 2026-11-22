@@ -27,6 +27,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Hernoem of vertaal bestaande code niet alleen om de taal gelijk te trekken.
 - Hernoem of vertaal opslagsleutels, JSON-velden en externe koppelingen niet zonder expliciet akkoord. Dit komt bovenop de regel over opslag en gegevensformaten onder Werkwijze.
 
+## Bouwprincipes
+
+Deze principes gelden voor nieuwe en gewijzigde code. Ze zijn geen opdracht om bestaande code preventief te verbouwen.
+
+- Voeg geen framework, dependency of extra architectuurlaag toe zonder concrete noodzaak en overleg.
+- Dit is een statische site: publiek uitgeleverde bestanden mogen geen onversleutelde geheimen bevatten. Behandel versleutelde bestanden niet automatisch als veilig; bespreek wijzigingen aan de beveiligingsopzet vooraf.
+- Bekijk bij wijzigingen aan opgeslagen gegevens ook de gevolgen voor bestaande data, synchronisatie en oudere appversies. Spreek zo nodig eerst een migratie af (dit vult de regel over opslag onder Werkwijze aan).
+- Houd nieuwe en gewijzigde code overzichtelijk: geef functies een duidelijke verantwoordelijkheid en scheid weergave, inhoudelijke logica en opslag waar dat praktisch helpt. Dit verplicht niet tot aparte bestanden of een buildstap.
+- Gebruik voor nieuwe gegevens waarnaar blijvend wordt verwezen een stabiele id, onafhankelijk van wijzigbare namen. Dit verandert geen bestaande projectsleutels en bepaalt niet of tools een projectlijst delen.
+- Leg het waarom van niet-vanzelfsprekende keuzes kort vast (in comments, zie Taal in de code). Houd `README.md` actueel bij wijzigingen aan gebruik, synchronisatie of installatie.
+
 ## Tests
 
 Er is geen build en geen lint. Elke tool is één HTML-bestand plus `shared.css`; de tests zijn de controle.
