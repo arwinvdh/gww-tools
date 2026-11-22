@@ -1,6 +1,6 @@
 {
-  "name": "Mijn tools",
-  "short_name": "Tools",
+  "name": "GWW Tools",
+  "short_name": "GWW Tools",
   "start_url": "start.html",
   "scope": "./",
   "display": "standalone",

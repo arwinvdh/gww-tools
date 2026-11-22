@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mijn tools</title>
+<title>GWW Tools</title>
 <meta name="theme-color" content="#001f38">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -37,7 +37,7 @@
 </style>
 </head>
 <body>
-<header class="brand"><div class="in"><span class="dot"></span><h1>Mijn tools</h1></div></header>
+<header class="brand"><div class="in"><span class="dot"></span><h1>GWW Tools</h1></div></header>
 <div class="wrap">
   <div class="tip" id="tip" hidden><span>Tip: tik in Safari op het deelicoon en kies <b>Zet op beginscherm</b>. Dan staat deze pagina als app op je telefoon en kun je van hieruit alle tools openen.</span><button class="btn sm" id="tipX" type="button">Ok</button></div>
   <h2>Tools</h2>
@@ -59,12 +59,12 @@
   <p class="hint foot">Zonder koppeling blijven je gegevens op dit apparaat. <a class="lnk" href="visie.html">Visie en fundament</a>. <span id="ver"></span></p>
 </div>
 <script src="sync.js"></script>
+<script src="version.js"></script>
 <script>
 (function () {
-  var VERSION = '2026.12.05-a';
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* geen opslag */ } }
-  document.getElementById('ver').textContent = 'Versie ' + VERSION + '.';
+  document.getElementById('ver').textContent = 'Versie ' + APP_VERSION + '.';
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('start.tipX') !== '1') document.getElementById('tip').hidden = false;

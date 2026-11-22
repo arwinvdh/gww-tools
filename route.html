@@ -299,6 +299,7 @@
 <div id="status" class="sr" role="status" aria-live="polite"></div>
 
 <script src="sync.js"></script>
+<script src="version.js"></script>
 <script>
 
 /*LOGIC*/
@@ -483,7 +484,6 @@ function check(stops) {
         pasteMsg = $('paste-msg'), sheet = $('sheet'), histList = $('hist-list'),
         syncNote = $('sync-note'), histOpen = $('hist-open'), tabN = $('tab-n');
   const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const VERSION = '2026.11.27-a';
 
   /* meldingen en vangnet: een fout wordt zichtbaar in plaats van stil te falen */
   let toastT = null, lastErr = '';
@@ -1423,7 +1423,7 @@ function check(stops) {
   $('gear').addEventListener('click', function () { syncText(); if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', ''); });
   $('settingsOk').addEventListener('click', function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-  $('ver').textContent = 'Versie ' + VERSION;
+  $('ver').textContent = 'Versie ' + APP_VERSION;
   $('exp').addEventListener('click', function () {
     flushRoute();
     const blob = new Blob([JSON.stringify({ v: 1, t: Date.now(), mem: mem, routes: routes }, null, 2)], { type: 'application/json' });
