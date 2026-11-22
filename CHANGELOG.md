@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.6.0] - 2026-11-22
+
+- Nieuwe tegel Projecten: een gedeelde projectlijst met een vast id per project (`gww.projects`). De eerste keer worden de projecten uit Locatie delen gekopieerd; Locatie delen zelf is niet gewijzigd. De tools kiezen later uit deze lijst.
+
 ## [1.5.0] - 2026-11-22
 
 - Nieuwe look voor alle pagina's, bedoeld voor gebruik buiten: meer contrast, grotere tekst, hogere velden en knoppen (52 px), kopjes in gewone letters in plaats van kleine hoofdletters, vlakkere kaarten met grotere hoeken, onderbalk met groene markering voor de actieve tool.

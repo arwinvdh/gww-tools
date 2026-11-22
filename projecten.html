@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projecten</title>
+<meta name="theme-color" content="#001f38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Projecten">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/projecten-icon-180.png">
+<link rel="icon" type="image/png" href="icons/projecten-icon-192.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Projecten: de gedeelde projectlijst met een vast id per project. Gedeelde stijl staat in shared.css. */
+@layer base {
+  :root { padding-top: env(safe-area-inset-top, 0px); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
+}
+@layer components {
+  .wrap { padding-bottom: calc(2rem + var(--nav-h, 0px)); display: grid; gap: 1rem; }
+  .two { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 30rem) { .two { grid-template-columns: 10rem minmax(0, 1fr); } }
+  .list { display: grid; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
+  .row b { font-weight: 600; overflow-wrap: anywhere; }
+  .row::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
+  .row .txt { display: grid; min-width: 0; }
+  .row small { color: var(--ink-2); }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .empty { margin: 0; color: var(--ink-2); }
+}
+</style>
+</head>
+<body>
+<header class="brand"><div class="in"><span class="dot"></span><h1>Projecten</h1></div></header>
+<div class="wrap">
+  <div class="card">
+    <h2>Nieuw project</h2>
+    <div class="two">
+      <div class="field"><label for="nr">Projectnummer</label><input class="inp" id="nr" autocomplete="off" autocapitalize="characters"></div>
+      <div class="field"><label for="name">Naam</label><input class="inp" id="name" autocomplete="off"></div>
+    </div>
+    <button class="btn primary" id="add" type="button">Toevoegen</button>
+  </div>
+  <div>
+    <h2>Mijn projecten</h2>
+    <input class="inp" id="filter" type="search" placeholder="Zoeken" hidden>
+    <div class="list" id="list"></div>
+    <p class="empty" id="empty" hidden>Nog geen projecten. Voeg er een toe of haal ze op uit Locatie delen.</p>
+  </div>
+  <div class="card">
+    <h2>Ophalen uit Locatie delen</h2>
+    <p class="hint">Kopieert de projecten uit Locatie delen naar deze lijst. Locatie delen zelf verandert niet en projecten die er al staan komen niet dubbel.</p>
+    <div class="actions"><button class="btn" id="import" type="button">Ophalen</button></div>
+    <p class="hint" id="msg" role="status"></p>
+  </div>
+  <p class="hint"><span id="ver"></span></p>
+</div>
+<dialog id="dlg">
+  <h2>Project</h2>
+  <div class="field"><label for="enr">Projectnummer</label><input class="inp" id="enr" autocomplete="off" autocapitalize="characters"></div>
+  <div class="field"><label for="ename">Naam</label><input class="inp" id="ename" autocomplete="off"></div>
+  <div class="actions">
+    <button class="btn primary" id="esave" type="button">Opslaan</button>
+    <button class="btn" id="ecancel" type="button">Annuleren</button>
+    <button class="btn danger" id="edel" type="button">Verwijderen</button>
+  </div>
+</dialog>
+<script src="version.js"></script>
+<script src="nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'gww.projects';          /* gedeelde projectlijst: [{ v, id, nr, name, created, modified }] */
+  var SRC = 'locdelen.projects';     /* lijst van Locatie delen: hier alleen gelezen */
+  var $ = function (id) { return document.getElementById(id); };
+  $('ver').textContent = 'Versie ' + APP_VERSION + '.';
+
+  /* opslag: elke fout (geen opslag, kapotte JSON) valt terug op een lege lijst */
+  function readJson(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : d; } catch (e) { return d; } }
+  function load() { return readJson(KEY, []); }
+  function save(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) { say('Opslaan lukt niet op dit apparaat.'); } }
+  function say(t) { $('msg').textContent = t; }
+
+  /* vast id: wijzigt nooit, ook niet als nummer of naam verandert */
+  function newId() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* oudere browser */ }
+    return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+  function sameKey(a, b) { return ((a.nr || '') + '|' + (a.name || '')).toLowerCase() === ((b.nr || '') + '|' + (b.name || '')).toLowerCase(); }
+  function label(p) { return [p.nr, p.name].filter(Boolean).join(' · '); }
+
+  function importFromLocatie() {
+    var src = readJson(SRC, []), cur = load(), n = 0, now = Date.now();
+    src.forEach(function (s) {
+      if (!s || (!s.nr && !s.name)) return;
+      var rec = { nr: String(s.nr || ''), name: String(s.name || '') };
+      if (cur.some(function (p) { return sameKey(p, rec); })) return;
+      cur.push({ v: 1, id: newId(), nr: rec.nr, name: rec.name, created: now, modified: now }); n++;
+    });
+    if (n) save(cur);
+    return n;
+  }
+
+  function render() {
+    var all = load().sort(function (a, b) { return b.modified - a.modified; });
+    var f = $('filter').value.trim().toLowerCase();
+    $('filter').hidden = all.length < 6;
+    var shown = all.filter(function (p) { return !f || label(p).toLowerCase().indexOf(f) !== -1; });
+    var box = $('list'); box.textContent = '';
+    shown.forEach(function (p) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'row'; b.dataset.id = p.id;
+      var t = document.createElement('span'); t.className = 'txt';
+      var s = document.createElement('b'); s.textContent = label(p) || 'Zonder naam'; t.appendChild(s);
+      b.appendChild(t); box.appendChild(b);
+    });
+    $('empty').hidden = all.length > 0;
+  }
+
+  $('add').onclick = function () {
+    var nr = $('nr').value.trim(), name = $('name').value.trim();
+    if (!nr && !name) { say('Geef een nummer of een naam.'); return; }
+    var cur = load(), rec = { nr: nr, name: name };
+    if (cur.some(function (p) { return sameKey(p, rec); })) { say('Dit project staat er al.'); return; }
+    var now = Date.now();
+    cur.push({ v: 1, id: newId(), nr: nr, name: name, created: now, modified: now });
+    save(cur); $('nr').value = ''; $('name').value = ''; say('Project toegevoegd.'); render();
+  };
+  $('import').onclick = function () {
+    var n = importFromLocatie();
+    say(n ? n + (n === 1 ? ' project opgehaald.' : ' projecten opgehaald.') : 'Er is niets nieuws om op te halen.'); render();
+  };
+  $('filter').oninput = render;
+
+  /* bewerken in een dialoog; het id blijft gelijk */
+  var editId = null, dlg = $('dlg');
+  $('list').onclick = function (e) {
+    var b = e.target.closest('.row'); if (!b) return;
+    var p = load().filter(function (x) { return x.id === b.dataset.id; })[0]; if (!p) return;
+    editId = p.id; $('enr').value = p.nr; $('ename').value = p.name;
+    $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen';
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  };
+  function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); editId = null; }
+  $('ecancel').onclick = closeDlg;
+  $('esave').onclick = function () {
+    var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
+    if (!p) { closeDlg(); return; }
+    var nr = $('enr').value.trim(), name = $('ename').value.trim();
+    if (!nr && !name) return;
+    p.nr = nr; p.name = name; p.modified = Date.now();
+    save(cur); closeDlg(); render();
+  };
+  $('edel').onclick = function () {
+    if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten?'; return; }
+    save(load().filter(function (x) { return x.id !== editId; })); closeDlg(); render();
+  };
+
+  /* eerste keer: neem de projecten uit Locatie delen over (alleen kopiëren) */
+  var first = false; try { first = localStorage.getItem(KEY) === null; } catch (e) { /* geen opslag */ }
+  if (first) { var n0 = importFromLocatie(); if (n0) say(n0 + (n0 === 1 ? ' project overgenomen uit Locatie delen.' : ' projecten overgenomen uit Locatie delen.')); }
+  render();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>

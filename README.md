@@ -7,6 +7,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Locatie delen** | https://arwinvdh.github.io/gww-tools/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, recente projecten en routes onder hun tool (alleen lezen; een tik laadt het item direct in de tool) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
+| **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project; neemt de projecten uit Locatie delen over. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
@@ -39,6 +40,8 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 ```
 index.html              Locatie delen
 route.html              Route knijperwagen
+projecten.html          gedeelde projectlijst met een vast id per project
+nav.js                  onderbalk en lijst met tools (een nieuwe tool komt hier als één regel bij)
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
 start.html              startpagina met tegels naar de tools
@@ -122,6 +125,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Locatie delen: `locdelen.draft`, `locdelen.draftT`, `locdelen.projects`, `locdelen.range`, `locdelen.layer`, `locdelen.regio`, `locdelen.link`, `locdelen.opt.labels`, `locdelen.opt.parcel`, `locdelen.opt.mini`, `locdelen.who`, `locdelen.role`, `locdelen.phone`, `locdelen.useWho`, `locdelen.usePhone`, `locdelen.profileT`, `locdelen.lastExport`, `locdelen.tipX`. In de code zijn ook `locdelen.base` en `locdelen.share` benoemd, maar die worden niet gebruikt.
   - Route knijperwagen: `knijperwagen-route-v2`, `knijperwagen-mem-v2`, `knijperwagen-routes-v2`, `knijperwagen-draftT`, `knijperwagen-tipX`, en de oudere `knijperwagen-route-v1` en `knijperwagen-items-v1` (alleen gelezen voor migratie).
   - Startpagina: `start.tipX`.
+  - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, created, modified }]`. Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd.
   - Synchronisatie: `gh-sync-config`.
 - Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
@@ -174,6 +178,6 @@ Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzend
 ## Een nieuwe tool toevoegen aan de startpagina
 
 1. Maak het bestand (bijvoorbeeld `nieuw.html`) met `shared.css` erin, zoals `route.html`.
-2. Zet er een tegel bij in `start.html` (kopieer een bestaande `<a class="tile">`).
+2. Zet een regel bij in `TOOLS` in `nav.js`: de tool komt dan vanzelf in de onderbalk en op de startpagina. Laad `version.js` en `nav.js` in de pagina, zoals in `projecten.html`.
 3. Zet het bestand en eventuele iconen in `LOCAL` in `sw.js` en verhoog `CACHE`.
-4. Voeg een regel toe aan `tests/start.test.js` bij de verwachte tegels.
+4. Voeg de pagina toe aan `tests/nav.test.js` (`want`) en de verwachte tegels in `tests/start.test.js`.

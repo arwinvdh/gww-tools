@@ -31,6 +31,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `route-invullen.test.js` | Ruwe route plakken, Enter-toets tussen velden, uurchips uit eigen gebruik |
 | `layout.test.js` | Smalle telefoons (320 en 390 px): geen zijwaartse scroll, knoppen minstens 44px, actiebalk, recente projecten |
 | `nav.test.js` | Onderbalk in alle drie de pagina's: Home en een knop per tool, de juiste knop actief, de actiebalk van de tools blijft zichtbaar boven de onderbalk, de terugknop in de kop |
+| `projecten.test.js` | Projectlijst: kopiëren uit Locatie delen zonder daar iets te wijzigen, vast id, bewerken, dubbelen en verwijderen |
 | `version.test.js` | Eén appversie: SemVer-syntaxis, bovenste CHANGELOG-sectie gelijk aan `version.js`, `version.js` in `LOCAL`, geen eigen `VERSION =` in de pagina's, `Versie 1.0.0` zichtbaar in alle drie |
 
 `mock-github.js` is de nagebootste GitHub; die wordt door de sync-tests gebruikt. De tests gebruiken je echte GitHub of je token nergens.

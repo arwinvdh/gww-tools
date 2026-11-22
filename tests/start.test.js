@@ -11,7 +11,7 @@ const fs = require('fs'), path = require('path');
       return { hrefs: tiles.map(t => t.getAttribute('href')), heights: tiles.map(t => Math.round(t.getBoundingClientRect().height)),
         sw: document.scrollingElement.scrollWidth, vw: document.documentElement.clientWidth, title: document.title };
     });
-    ok(r.hrefs.join() === 'index.html,route.html', `start op ${name}: tegels verwijzen naar beide tools (${r.hrefs.join(', ')})`);
+    ok(r.hrefs.join() === 'index.html,route.html,projecten.html', `start op ${name}: tegels verwijzen naar alle tools (${r.hrefs.join(', ')})`);
     ok(r.heights.every(h => h >= 44), `start op ${name}: tegels minstens 44px hoog (${r.heights.join(', ')})`);
     ok(r.sw <= r.vw, `start op ${name}: geen zijwaartse scroll (${r.sw} van ${r.vw})`);
     ok(p.errs.length === 0, `start op ${name}: geen scriptfouten ${p.errs.join('|')}`);
