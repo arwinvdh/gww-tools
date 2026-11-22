@@ -125,7 +125,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Locatie delen: `locdelen.draft`, `locdelen.draftT`, `locdelen.projects`, `locdelen.range`, `locdelen.layer`, `locdelen.regio`, `locdelen.link`, `locdelen.opt.labels`, `locdelen.opt.parcel`, `locdelen.opt.mini`, `locdelen.who`, `locdelen.role`, `locdelen.phone`, `locdelen.useWho`, `locdelen.usePhone`, `locdelen.profileT`, `locdelen.lastExport`, `locdelen.tipX`. In de code zijn ook `locdelen.base` en `locdelen.share` benoemd, maar die worden niet gebruikt.
   - Route knijperwagen: `knijperwagen-route-v2`, `knijperwagen-mem-v2`, `knijperwagen-routes-v2`, `knijperwagen-draftT`, `knijperwagen-tipX`, en de oudere `knijperwagen-route-v1` en `knijperwagen-items-v1` (alleen gelezen voor migratie).
   - Startpagina: `start.tipX`.
-  - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, created, modified }]`. Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd.
+  - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, created, modified }]`. Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
 - Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
