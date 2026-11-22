@@ -31,6 +31,11 @@
   .foot { margin-top: 1.5rem; }
   .sync-h { margin-top: 1.5rem; }
   .couple { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
+  .recent { display: grid; gap: 0.5rem; }
+  .recent a { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; min-height: 2.75rem; padding: 0.55rem 0.9rem; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; }
+  .recent a b { font-weight: 600; overflow-wrap: anywhere; }
+  .recent a span { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
+  .more > summary { cursor: pointer; min-height: 2.75rem; display: flex; align-items: center; font-weight: 600; }
   @media (hover: hover) { .tile:hover { border-color: var(--accent); } }
   @media (min-width: 40rem) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 }
@@ -45,18 +50,25 @@
     <a class="tile" href="index.html"><img src="icons/icon-192.png" alt="" width="56" height="56"><div><b>Locatie delen</b><span>Van een Maps-link of adres een WhatsApp-bericht met luchtfoto maken.</span></div></a>
     <a class="tile" href="route.html"><img src="icons/route-icon-192.png" alt="" width="56" height="56"><div><b>Route knijperwagen</b><span>Een route met stops samenstellen en delen als bericht.</span></div></a>
   </nav>
-  <h2 class="sync-h">Apparaten koppelen</h2>
-  <div class="card">
-    <p class="hint">Koppel één keer: daarna synchroniseren al je tools op dit apparaat. Je gegevens komen in je eigen privérepo op GitHub.</p>
-    <div id="syncBox"></div>
-    <ol class="hint couple" id="couple" hidden>
-      <li>Tik hierboven op <b>Koppellink voor ander apparaat</b>.</li>
-      <li>Stuur de link naar jezelf (AirDrop of WhatsApp aan jezelf).</li>
-      <li>Open de link op het andere apparaat en tik op <b>Koppelen</b>. Verwijder het bericht daarna.</li>
-    </ol>
-    <p class="hint"><a class="lnk" href="vault.html">Pincode instellen of wijzigen</a></p>
-  </div>
-  <p class="hint foot">Zonder koppeling blijven je gegevens op dit apparaat. <a class="lnk" href="visie.html">Visie en fundament</a>. <span id="ver"></span></p>
+  <section id="recent" hidden>
+    <h2 class="sync-h">Recent</h2>
+    <div class="recent" id="recentList"></div>
+  </section>
+  <details class="more sync-h" id="more">
+    <summary>Apparaten koppelen en meer</summary>
+    <div class="card">
+      <p class="hint">Koppel één keer: daarna synchroniseren al je tools op dit apparaat. Je gegevens komen in je eigen privérepo op GitHub.</p>
+      <div id="syncBox"></div>
+      <ol class="hint couple" id="couple" hidden>
+        <li>Tik hierboven op <b>Koppellink voor ander apparaat</b>.</li>
+        <li>Stuur de link naar jezelf (AirDrop of WhatsApp aan jezelf).</li>
+        <li>Open de link op het andere apparaat en tik op <b>Koppelen</b>. Verwijder het bericht daarna.</li>
+      </ol>
+      <p class="hint"><a class="lnk" href="vault.html">Pincode instellen of wijzigen</a> · <a class="lnk" href="visie.html">Visie en fundament</a></p>
+      <p class="hint">Zonder koppeling blijven je gegevens op dit apparaat.</p>
+    </div>
+  </details>
+  <p class="hint foot"><span id="ver"></span></p>
 </div>
 <script src="sync.js"></script>
 <script src="version.js"></script>
@@ -69,9 +81,33 @@
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('start.tipX') !== '1') document.getElementById('tip').hidden = false;
   document.getElementById('tipX').onclick = function () { lsSet('start.tipX', '1'); document.getElementById('tip').hidden = true; };
+  /* recent: leest de bestaande opslag van de tools, alleen lezen; schrijft niets en verandert geen formaat */
+  function lsJson(k, d) { try { var v = JSON.parse(lsGet(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function addRecent(box, href, title, meta) {
+    var a = document.createElement('a'); a.href = href;
+    var b = document.createElement('b'); b.textContent = title; a.appendChild(b);
+    if (meta) { var m = document.createElement('span'); m.textContent = meta; a.appendChild(m); }
+    box.appendChild(a);
+  }
+  (function () {
+    var box = document.getElementById('recentList');
+    var projects = lsJson('locdelen.projects', []);
+    (Array.isArray(projects) ? projects : []).slice(0, 3).forEach(function (p) {
+      var t = [p && p.nr, p && p.name].filter(Boolean).join(' \u00B7 ');
+      if (t) addRecent(box, 'index.html', t, 'Locatie delen');
+    });
+    var routes = lsJson('knijperwagen-routes-v2', {});
+    Object.keys(routes || {}).sort().reverse().slice(0, 3).forEach(function (d) {
+      var r = routes[d], n = r && Array.isArray(r.stops) ? r.stops.length : 0;
+      addRecent(box, 'route.html', 'Route ' + d, n + (n === 1 ? ' stop' : ' stops'));
+    });
+    document.getElementById('recent').hidden = !box.children.length;
+  })();
   /* koppelen: de verbinding geldt voor alle tools, ze delen dezelfde opslag in deze browser */
   if (window.GhSync) {
     var couple = document.getElementById('couple');
+    /* zolang er nog niet gekoppeld is, staat het koppelen open: dat is dan de eerste stap */
+    if (!window.GhSync.getConfig()) document.getElementById('more').open = true;
     window.GhSync.mountSettings(document.getElementById('syncBox'));
     window.GhSync.syncNow = function () {
       return Promise.all([window.GhSync.create('locatie.json').pull(), window.GhSync.create('route.json').pull()]);

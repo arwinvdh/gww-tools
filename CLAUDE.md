@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Behoud bestaande functionaliteit en bestaande gebruikersgegevens.
 - Wijzig opslag, synchronisatie (`sync.js`) of gegevensformaten niet zonder eerst de gevolgen en een eventuele migratie te bespreken.
 - Gebruik de bestaande aanpak, tenzij de opdracht een wijziging vereist.
-- Geen commit of push zonder expliciete opdracht van de eigenaar.
+- Na een bouwopdracht doe je zelf het git-werk: committen, pushen, pull request openen en samenvoegen naar `main`, zonder te vragen. De eigenaar is niet technisch en wil snel resultaat. Meld alleen het nieuwe versienummer en wat er veranderd is. Tags maak je alleen op verzoek.
 - Zet geen tokens, pincodes of andere geheimen in bestanden of antwoorden.
 
 ## Waar staat wat
@@ -67,5 +67,5 @@ node start.test.js   # één testbestand (elk bestand eindigend op .test.js werk
 
 - Commits volgens Conventional Commits: Engelse type (`feat`, `fix`, `docs`, `test`, `chore`, `refactor`) met een Nederlandse omschrijving, bijvoorbeeld `fix(sw): beperk cacheopruiming tot de eigen app`.
 - Korte taakbranches met een beschrijvende naam, geen projectnaam en geen branch per tool.
-- Wijzigingen gaan via een pull request naar `main`; niet rechtstreeks pushen.
+- Wijzigingen gaan via een pull request naar `main`; niet rechtstreeks pushen. Voeg zelf samen als de tests groen zijn.
 - Maak geen tag (`vX.Y.Z`) zonder opdracht van de eigenaar.

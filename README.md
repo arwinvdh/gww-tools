@@ -6,7 +6,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 |---|---|---|
 | **Locatie delen** | https://arwinvdh.github.io/gww-tools/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
-| **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
+| **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, een lijst met recente projecten en routes (alleen lezen) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
