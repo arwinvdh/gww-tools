@@ -20,20 +20,17 @@
   body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
 }
 @layer components {
-  .wrap { padding-bottom: 3rem; }
-  .tiles { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
-  .tile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.9rem; min-height: 5rem; padding: 0.8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color 0.15s, transform 0.12s; }
-  .tile:active { transform: scale(0.98); }
-  .tile img { width: 56px; height: 56px; border-radius: 14px; display: block; }
-  .tile b { display: block; font-size: 1.0625rem; font-weight: 600; }
-  .tile span { display: block; margin-top: 0.1rem; font-size: 0.875rem; color: var(--ink-2); }
-  .tile::after { content: "\203A"; font-size: 1.6rem; line-height: 1; color: var(--ink-2); }
-  .foot { margin-top: 1.5rem; }
-  .sync-h { margin-top: 1.5rem; }
+  .wrap { padding-bottom: calc(1.5rem + var(--nav-h, 0px)); }
+  /* beginscherm: grote app-iconen met de naam eronder, geen kaarten */
+  .launcher { display: grid; grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); gap: 0.5rem; margin: 0.75rem 0 1.25rem; }
+  .tile { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; min-height: 6.5rem; padding: 0.5rem 0.25rem; color: inherit; text-decoration: none; text-align: center; -webkit-tap-highlight-color: transparent; }
+  .tile img { width: 68px; height: 68px; border-radius: 17px; display: block; transition: transform 0.12s; }
+  .tile:active img { transform: scale(0.93); }
+  .tile b { font-size: 0.8125rem; font-weight: 600; line-height: 1.2; }
+  .foot { margin-top: 1rem; }
   .couple { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
-  .tool .tile { margin-bottom: 0.5rem; }
   .recent { margin: 0 0 1rem; }
-  .recent h3 { margin: 0.5rem 0 0.35rem; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .recent h2 { margin: 0 0 0.15rem; font-size: 1rem; font-weight: 700; color: var(--ink); text-transform: none; letter-spacing: 0; }
   .recent a { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; min-height: 2.75rem; padding: 0.4rem 0.25rem; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
   .recent a b { font-weight: 500; overflow-wrap: anywhere; }
   .recent a span { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
@@ -43,8 +40,6 @@
   .more > summary::-webkit-details-marker { display: none; }
   .more > summary::after { content: ""; width: 0.45rem; height: 0.45rem; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform 0.15s; }
   .more[open] > summary::after { transform: rotate(-135deg); }
-  @media (hover: hover) { .tile:hover { border-color: var(--accent); } }
-  @media (min-width: 40rem) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 }
 </style>
 </head>
@@ -52,17 +47,9 @@
 <header class="brand"><div class="in"><span class="dot"></span><h1>GWW Tools</h1></div></header>
 <div class="wrap">
   <div class="tip" id="tip" hidden><span>Tip: tik in Safari op het deelicoon en kies <b>Zet op beginscherm</b>. Dan staat deze pagina als app op je telefoon en kun je van hieruit alle tools openen.</span><button class="btn sm" id="tipX" type="button">Ok</button></div>
-  <h2>Tools</h2>
-  <div class="tiles">
-    <section class="tool" aria-label="Locatie delen">
-      <a class="tile" href="index.html"><img src="icons/icon-192.png" alt="" width="56" height="56"><div><b>Locatie delen</b><span>Van een Maps-link of adres een WhatsApp-bericht met luchtfoto maken.</span></div></a>
-      <div class="recent" id="recentProjects" hidden><h3>Laatste projecten</h3></div>
-    </section>
-    <section class="tool" aria-label="Route knijperwagen">
-      <a class="tile" href="route.html"><img src="icons/route-icon-192.png" alt="" width="56" height="56"><div><b>Route knijperwagen</b><span>Een route met stops samenstellen en delen als bericht.</span></div></a>
-      <div class="recent" id="recentRoutes" hidden><h3>Laatste routes</h3></div>
-    </section>
-  </div>
+  <nav class="launcher" id="launcher" aria-label="Tools"></nav>
+  <section class="recent" id="recentProjects" hidden><h2>Laatste projecten</h2></section>
+  <section class="recent" id="recentRoutes" hidden><h2>Laatste routes</h2></section>
   <details class="more" id="more">
     <summary>Apparaten koppelen en meer</summary>
     <div class="card">
@@ -81,6 +68,7 @@
 </div>
 <script src="sync.js"></script>
 <script src="version.js"></script>
+<script src="nav.js"></script>
 <script>
 (function () {
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -90,6 +78,14 @@
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('start.tipX') !== '1') document.getElementById('tip').hidden = false;
   document.getElementById('tipX').onclick = function () { lsSet('start.tipX', '1'); document.getElementById('tip').hidden = true; };
+  /* beginscherm: de tools komen uit nav.js, zodat een nieuwe tool maar op één plek wordt toegevoegd */
+  (window.GWW_TOOLS || []).forEach(function (t) {
+    var a = document.createElement('a'); a.className = 'tile'; a.href = t.href;
+    var img = document.createElement('img'); img.src = t.icon; img.alt = ''; img.width = 68; img.height = 68;
+    var b = document.createElement('b'); b.textContent = t.name;
+    a.appendChild(img); a.appendChild(b);
+    document.getElementById('launcher').appendChild(a);
+  });
   /* recent: leest de bestaande opslag van de tools, alleen lezen; schrijft niets en verandert geen formaat */
   function lsJson(k, d) { try { var v = JSON.parse(lsGet(k)); return v == null ? d : v; } catch (e) { return d; } }
   function addRecent(box, href, title, meta) {

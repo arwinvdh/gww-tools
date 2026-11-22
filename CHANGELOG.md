@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.3.0] - 2026-11-22
+
+- Onderbalk met Home en een knop per tool in alle drie de pagina's (`nav.js`); de actiebalk en meldingen staan erboven.
+- Startpagina als beginscherm: grote app-iconen met de naam eronder in plaats van kaarten, daaronder de laatste projecten en routes.
+
 ## [1.2.1] - 2026-11-22
 
 - Startpagina overzichtelijker: recente projecten staan onder Locatie delen en recente routes onder Route knijperwagen, met een leesbare datum. De uitklapper voor koppelen is een stille tekstregel in plaats van een kaart.

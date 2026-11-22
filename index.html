@@ -108,8 +108,8 @@
     .ibtn { flex-direction: column; gap: .15rem; padding: .3rem .1rem; justify-content: center; min-height: 56px; border-radius: 18px; }
     .ibtn .lbl { font-size: .6875rem; font-weight: 600; line-height: 1.1; white-space: nowrap; }
     .ibtn .lbl .x { display: none; }
-    .toast { bottom: 6.5rem; }
-    .wrap { padding-bottom: 6.5rem; }
+    .toast { bottom: calc(6.5rem + var(--nav-h, 0px)); }
+    .wrap { padding-bottom: calc(6.5rem + var(--nav-h, 0px)); }
   }
   /* bezig: het label verdwijnt achter een draaiende ring */
   .btn.busy { position: relative; color: transparent; pointer-events: none; }
@@ -274,6 +274,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="sync.js"></script>
 <script src="version.js"></script>
+<script src="nav.js"></script>
 <script>
 (function () {
   'use strict';
