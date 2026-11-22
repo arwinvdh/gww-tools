@@ -19,6 +19,15 @@ const { chromium, launchOptions, offlinePage, ok } = require('./helpers.js');
     ok(r.minH >= 44, `${f}: knoppen van de onderbalk minstens 44px hoog (${Math.round(r.minH)})`);
     ok(r.barOk, `${f}: de actiebalk staat boven de onderbalk`);
     ok(r.sw <= r.vw && p.errs.length === 0, `${f}: geen zijwaartse scroll en geen scriptfouten ${p.errs.join('|')}`);
+    const hasBack = await p.evaluate(() => !!document.querySelector('.brand .back'));
+    ok(hasBack === (f !== 'start.html'), `${f}: terugknop ${f === 'start.html' ? 'ontbreekt' : 'staat'} in de kop`);
+    if (f !== 'start.html') {
+      // zoals in gebruik: eerst vanaf Home naar de tool, dan terug
+      await p.goto(p.url().replace(/[^/]*$/, 'start.html')); await p.waitForTimeout(300);
+      await p.click(`.appnav a[href="${f}"]`); await p.waitForTimeout(500);
+      await p.click('.brand .back'); await p.waitForTimeout(500);
+      ok(/start\.html$/.test(p.url()), `${f}: terugknop gaat terug naar de vorige pagina (${p.url().split('/').pop()})`);
+    }
     await p.context().close();
   }
   await b.close();

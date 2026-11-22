@@ -118,3 +118,10 @@
   .appnav a[aria-current="page"] { color: var(--accent); }
   .appnav svg { width: 24px; height: 24px; }
 }
+
+/* terugknop in de kop (nav.js) */
+@layer components {
+  .brand .back { flex: none; width: 44px; height: 44px; margin: -0.4rem 0 -0.4rem -0.6rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; }
+  .brand .back + .dot { display: none; }
+  .brand .back:active { background: rgba(255, 255, 255, 0.14); }
+}
