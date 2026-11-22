@@ -1366,6 +1366,23 @@
       history.replaceState(null, '', location.pathname + location.search);
     }
   } catch (e) {}
+  /* openen vanuit de tegel Projecten: #gp=<id> start een lege locatie met dit project ingevuld.
+     Uitvoerder en telefoon staan alleen in de velden (geen invoergebeurtenis), dus je eigen gegevens in het tandwiel blijven bewaard zoals ze waren. */
+  try {
+    var hg = /^#gp=(.+)$/.exec(location.hash || '');
+    if (hg) {
+      var gid = decodeURIComponent(hg[1]), gl = [];
+      try { gl = JSON.parse(localStorage.getItem('gww.projects')) || []; } catch (e2) { gl = []; }
+      var gp = (Array.isArray(gl) ? gl : []).filter(function (p) { return p && p.id === gid; })[0];
+      if (gp) {
+        resetAll();
+        $('nr').value = gp.nr || ''; $('name').value = gp.name || ''; if (gp.note) $('note').value = gp.note;
+        if (gp.who) $('myName').value = gp.who; if (gp.phone) $('myPhone').value = gp.phone;
+        openMore(); update(); toast('Project ' + pl(gp) + ' ingevuld. Zoek nu de locatie.');
+      }
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  } catch (e) {}
   var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('locdelen.tipX', '0') !== '1') $('tip').hidden = false;

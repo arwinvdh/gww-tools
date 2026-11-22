@@ -909,6 +909,8 @@ function check(stops) {
       .slice(0, 5)
       .map(function (k) { return pool[k]; });
   }
+  /* gekozen vanuit de tegel Projecten (#gp=<id>): dit project staat eerst bij de projectvoorstellen; wordt nergens bewaard */
+  let preferredProject = null;
   function projectList() {
     try { const l = JSON.parse(localStorage.getItem('gww.projects')); return Array.isArray(l) ? l.slice().sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).filter(function (p) { return p && clean(p.nr); }) : []; }
     catch (e) { return []; }
@@ -917,6 +919,7 @@ function check(stops) {
     const q = cur.trim().toUpperCase();
     const out = [], label = {};
     function add(p, plaats) { p = clean(p).toUpperCase(); if (!p) return; if (!label[p] && plaats) label[p] = clean(plaats); if (out.indexOf(p) === -1) out.push(p); }
+    if (preferredProject) add(preferredProject.nr, preferredProject.name);
     const here = mem.places[clean(s.plaats).toLowerCase()];
     if (here) add(here.pr, here.p);
     else {   /* nog geen plaats: het project van de plek die er meestal op volgt */
@@ -1480,6 +1483,16 @@ function check(stops) {
   renderStops();
   renderPreview();
   autosize(noteEl);
+
+  /* openen vanuit de tegel Projecten: #gp=<id> */
+  (function () {
+    const m = /^#gp=(.+)$/.exec(location.hash || '');
+    if (!m) return;
+    const id = decodeURIComponent(m[1]);
+    preferredProject = projectList().filter(function (p) { return p.id === id; })[0] || null;
+    if (preferredProject) toast('Project ' + clean(preferredProject.nr) + ' staat bovenaan bij de projectvoorstellen.');
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ }
+  })();
 
   /* openen vanaf de startpagina: #route=<datum> opent die bewaarde route, net als Openen in Eerdere routes */
   (function () {

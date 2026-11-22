@@ -30,6 +30,8 @@
   .row small { color: var(--ink-2); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .empty { margin: 0; color: var(--ink-2); }
+  .launch { display: grid; gap: 0.5rem; }
+  dialog { max-height: calc(100dvh - 2rem); overflow: auto; }
 }
 </style>
 </head>
@@ -59,12 +61,20 @@
   <p class="hint"><span id="ver"></span></p>
 </div>
 <dialog id="dlg">
-  <h2>Project</h2>
+  <h2 id="etitle">Project</h2>
+  <div class="launch">
+    <a class="btn primary" id="goLoc" href="index.html">Locatie delen</a>
+    <a class="btn primary" id="goRoute" href="route.html">Route knijperwagen</a>
+  </div>
+  <p class="hint">De tool opent met dit project al ingevuld.</p>
   <div class="field"><label for="enr">Projectnummer</label><input class="inp" id="enr" autocomplete="off" autocapitalize="characters"></div>
   <div class="field"><label for="ename">Naam</label><input class="inp" id="ename" autocomplete="off"></div>
+  <div class="field"><label for="ewho">Uitvoerder</label><input class="inp" id="ewho" autocomplete="off"></div>
+  <div class="field"><label for="ephone">Telefoon</label><input class="inp" id="ephone" type="tel" autocomplete="off"></div>
+  <div class="field"><label for="enote">Notitie</label><textarea class="inp" id="enote" rows="2"></textarea></div>
   <div class="actions">
-    <button class="btn primary" id="esave" type="button">Opslaan</button>
-    <button class="btn" id="ecancel" type="button">Annuleren</button>
+    <button class="btn" id="esave" type="button">Opslaan</button>
+    <button class="btn" id="ecancel" type="button">Sluiten</button>
     <button class="btn danger" id="edel" type="button">Verwijderen</button>
   </div>
 </dialog>
@@ -139,7 +149,9 @@
   $('list').onclick = function (e) {
     var b = e.target.closest('.row'); if (!b) return;
     var p = load().filter(function (x) { return x.id === b.dataset.id; })[0]; if (!p) return;
-    editId = p.id; $('enr').value = p.nr; $('ename').value = p.name;
+    editId = p.id; $('enr').value = p.nr; $('ename').value = p.name; $('ewho').value = p.who || ''; $('ephone').value = p.phone || ''; $('enote').value = p.note || '';
+    $('etitle').textContent = label(p) || 'Project';
+    $('goLoc').href = 'index.html#gp=' + encodeURIComponent(p.id); $('goRoute').href = 'route.html#gp=' + encodeURIComponent(p.id);
     $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen';
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   };
@@ -148,11 +160,23 @@
   $('esave').onclick = function () {
     var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
     if (!p) { closeDlg(); return; }
-    var nr = $('enr').value.trim(), name = $('ename').value.trim();
-    if (!nr && !name) return;
-    p.nr = nr; p.name = name; p.modified = Date.now();
-    save(cur); closeDlg(); render();
+    if (!storeEdit(cur, p)) return;
+    closeDlg(); render();
   };
+  /* schrijft de ingevulde gegevens naar het project; het id blijft gelijk */
+  function storeEdit(cur, p) {
+    var nr = $('enr').value.trim(), name = $('ename').value.trim();
+    if (!nr && !name) return false;
+    p.nr = nr; p.name = name; p.who = $('ewho').value.trim(); p.phone = $('ephone').value.trim(); p.note = $('enote').value.trim();
+    p.modified = Date.now(); save(cur); return true;
+  }
+  /* een tool openen bewaart eerst wat er is ingevuld, zodat de tool de nieuwste gegevens ziet */
+  ['goLoc', 'goRoute'].forEach(function (id) {
+    $(id).addEventListener('click', function () {
+      var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
+      if (p) storeEdit(cur, p);
+    });
+  });
   $('edel').onclick = function () {
     if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten?'; return; }
     save(load().filter(function (x) { return x.id !== editId; })); closeDlg(); render();
