@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.9.0] - 2026-11-22
+
+- Nieuwe tegel Logboek: per project en dag werkzaamheden en materieel vastleggen. Het bewaart vanzelf, stelt eerder gebruikt materieel voor en toont de eerdere dagen van het project (`gww.log`, verwijst met het project-id naar de projectlijst). Te openen vanuit een project met de knop Logboek.
+
 ## [1.8.0] - 2026-11-22
 
 - Werken vanuit Projecten: tik op een project en open Locatie delen of Route knijperwagen er direct mee. Een project heeft nu ook uitvoerder, telefoon en notitie (extra velden in `gww.projects`, bestaande projecten blijven geldig).

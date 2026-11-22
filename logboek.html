@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logboek</title>
+<meta name="theme-color" content="#001f38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Logboek">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/logboek-icon-180.png">
+<link rel="icon" type="image/png" href="icons/logboek-icon-192.png">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Logboek: per project en dag werkzaamheden en materieel. Gedeelde stijl staat in shared.css. */
+@layer base {
+  :root { padding-top: env(safe-area-inset-top, 0px); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
+}
+@layer components {
+  .wrap { padding-bottom: calc(2rem + var(--nav-h, 0px)); display: grid; gap: 1rem; }
+  .two { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 30rem) { .two { grid-template-columns: minmax(0, 1fr) 12rem; } }
+  textarea.inp { min-height: 8rem; resize: vertical; line-height: 1.4; }
+  .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0.2rem 0.9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 600; cursor: pointer; font: inherit; font-weight: 600; }
+  .chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .chip.sug { font-weight: 500; color: var(--ink-2); border-style: dashed; }
+  .state { min-height: 1.25rem; }
+  .list { display: grid; }
+  .day { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
+  .day .txt { display: grid; min-width: 0; }
+  .day b { font-weight: 600; }
+  .day small { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .day::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
+  .day.sel { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .empty { margin: 0; color: var(--ink-2); }
+}
+</style>
+</head>
+<body>
+<header class="brand"><div class="in"><span class="dot"></span><h1>Logboek</h1></div></header>
+<div class="wrap">
+  <div id="noProj" class="card" hidden>
+    <h2>Eerst een project</h2>
+    <p class="hint">Het logboek werkt per project. Maak er een aan bij Projecten.</p>
+    <a class="btn primary" href="projecten.html">Naar Projecten</a>
+  </div>
+  <div id="main" hidden>
+    <div class="card">
+      <div class="two">
+        <div class="field"><label for="proj">Project</label><select class="inp" id="proj"></select></div>
+        <div class="field"><label for="date">Datum</label><input class="inp" id="date" type="date"></div>
+      </div>
+      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan?"></textarea></div>
+      <div class="field">
+        <label for="eqin">Materieel</label>
+        <div class="addrow"><input class="inp" id="eqin" placeholder="Bijv. Graafmachine 14 ton" autocomplete="off"><button class="btn" id="eqadd" type="button">Toevoegen</button></div>
+      </div>
+      <div class="chips" id="eqlist" aria-label="Materieel op deze dag"></div>
+      <div class="chips" id="eqsug" aria-label="Eerder gebruikt materieel"></div>
+      <p class="hint state" id="state" role="status"></p>
+    </div>
+    <div style="margin-top:1rem">
+      <h2>Eerdere dagen van dit project</h2>
+      <div class="list" id="history"></div>
+      <p class="empty" id="noHist" hidden>Nog geen dagen vastgelegd.</p>
+    </div>
+  </div>
+  <p class="hint"><span id="ver"></span></p>
+</div>
+<script src="version.js"></script>
+<script src="nav.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'gww.log';            /* [{ v, id, projectId, date, work, equipment:[naam], created, modified }]: één regel per project en dag */
+  var PKEY = 'gww.projects';      /* gedeelde projectlijst: hier alleen gelezen */
+  var $ = function (id) { return document.getElementById(id); };
+  $('ver').textContent = 'Versie ' + APP_VERSION + '.';
+
+  function readJson(k) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function loadLog() { return readJson(KEY); }
+  function saveLog(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch (e) { setState('Opslaan lukt niet op dit apparaat.'); return false; } }
+  function projects() { return readJson(PKEY).filter(function (p) { return p && p.id; }); }
+  function setState(t) { $('state').textContent = t; }
+  function newId() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* oudere browser */ }
+    return 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function dayLabel(iso) {
+    var p = iso.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2], 12);
+    return isNaN(d) ? iso : d.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '');
+  }
+  function plabel(p) { return [p.nr, p.name].filter(Boolean).join(' · ') || 'Zonder naam'; }
+
+  var equipment = [];   /* materieel van de dag die nu open staat */
+  /* project en datum van de dag die nu open staat: opslaan gebruikt deze, niet de keuzevelden. Bij een wisseling is het keuzeveld al veranderd voordat er opgeslagen wordt, en dan zou de inhoud bij het verkeerde project belanden. */
+  var curPid = '', curDate = '';
+
+  function find(a, pid, date) { return a.filter(function (e) { return e.projectId === pid && e.date === date; })[0]; }
+
+  /* velden vullen vanuit de opgeslagen regel van dit project en deze dag */
+  function loadDay() {
+    curPid = $('proj').value; curDate = $('date').value;
+    var e = find(loadLog(), curPid, curDate);
+    $('work').value = e ? e.work : '';
+    equipment = e ? e.equipment.slice() : [];
+    setState(e ? 'Opgeslagen.' : '');
+    renderEquipment(); renderHistory();
+  }
+
+  /* opslaan: een lege dag wordt niet bewaard; het id van een bestaande regel blijft gelijk */
+  var timer = null;
+  function saveNow() {
+    clearTimeout(timer); timer = null;
+    var pid = curPid, date = curDate;
+    if (!pid || !date) return;
+    var work = $('work').value.trim(), a = loadLog(), e = find(a, pid, date), now = Date.now();
+    if (!work && !equipment.length) {
+      if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); }
+      setState(''); renderHistory(); return;
+    }
+    if (e) { e.work = work; e.equipment = equipment.slice(); e.modified = now; }
+    else a.push({ v: 1, id: newId(), projectId: pid, date: date, work: work, equipment: equipment.slice(), created: now, modified: now });
+    if (saveLog(a)) setState('Opgeslagen.');
+    renderHistory(); renderEquipment();
+  }
+  function saveSoon() { setState('Bezig met opslaan…'); clearTimeout(timer); timer = setTimeout(saveNow, 500); }
+
+  /* materieel: chips van deze dag, daaronder voorstellen uit eerdere dagen (alle projecten) */
+  function renderEquipment() {
+    var box = $('eqlist'); box.textContent = '';
+    equipment.forEach(function (name, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip on'; b.dataset.i = i;
+      b.setAttribute('aria-label', name + ' verwijderen'); b.textContent = name + ' ×'; box.appendChild(b);
+    });
+    var cnt = {};
+    loadLog().forEach(function (e) { (e.equipment || []).forEach(function (n) { cnt[n] = (cnt[n] || 0) + 1; }); });
+    var sug = Object.keys(cnt).filter(function (n) { return equipment.indexOf(n) === -1; })
+      .sort(function (x, y) { return cnt[y] - cnt[x] || x.localeCompare(y); }).slice(0, 6);
+    var sb = $('eqsug'); sb.textContent = '';
+    sug.forEach(function (n) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip sug'; b.dataset.n = n; b.textContent = '+ ' + n; sb.appendChild(b);
+    });
+  }
+  function addEquipment(name) {
+    name = String(name || '').replace(/\s+/g, ' ').trim();
+    if (!name || equipment.some(function (n) { return n.toLowerCase() === name.toLowerCase(); })) return;
+    equipment.push(name); renderEquipment(); saveNow();
+  }
+  $('eqadd').onclick = function () { addEquipment($('eqin').value); $('eqin').value = ''; $('eqin').focus(); };
+  $('eqin').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('eqadd').click(); } });
+  $('eqin').addEventListener('blur', function () { if ($('eqin').value.trim()) { addEquipment($('eqin').value); $('eqin').value = ''; } });
+  $('eqlist').onclick = function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    equipment.splice(+b.dataset.i, 1); renderEquipment(); saveNow();
+  };
+  $('eqsug').onclick = function (e) { var b = e.target.closest('.chip'); if (b) addEquipment(b.dataset.n); };
+
+  /* eerdere dagen van het gekozen project */
+  function renderHistory() {
+    var pid = $('proj').value;
+    var rows = loadLog().filter(function (e) { return e.projectId === pid; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var box = $('history'); box.textContent = '';
+    rows.forEach(function (e) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'day' + (e.date === $('date').value ? ' sel' : ''); b.dataset.date = e.date;
+      var t = document.createElement('span'); t.className = 'txt';
+      var s = document.createElement('b'); s.textContent = dayLabel(e.date); t.appendChild(s);
+      var line = (e.work || '').split('\n')[0] || (e.equipment || []).join(', ');
+      var sm = document.createElement('small'); sm.textContent = line; t.appendChild(sm);
+      b.appendChild(t); box.appendChild(b);
+    });
+    $('noHist').hidden = rows.length > 0;
+  }
+  $('history').onclick = function (e) {
+    var b = e.target.closest('.day'); if (!b) return;
+    saveNow(); $('date').value = b.dataset.date; loadDay(); window.scrollTo({ top: 0 });
+  };
+
+  $('work').addEventListener('input', saveSoon);
+  $('date').addEventListener('change', function () { if (!$('date').value) $('date').value = todayIso(); saveNow(); loadDay(); });
+  $('proj').addEventListener('change', function () { saveNow(); loadDay(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
+  window.addEventListener('pagehide', saveNow);
+
+  /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
+  var list = projects();
+  if (!list.length) { $('noProj').hidden = false; }
+  else {
+    var sel = $('proj');
+    list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
+      var o = document.createElement('option'); o.value = p.id; o.textContent = plabel(p); sel.appendChild(o);
+    });
+    var m = /^#gp=(.+)$/.exec(location.hash || ''), want = m ? decodeURIComponent(m[1]) : '';
+    if (!want) { var last = loadLog().sort(function (a, b) { return b.modified - a.modified; })[0]; want = last ? last.projectId : ''; }
+    if (want && list.some(function (p) { return p.id === want; })) sel.value = want;
+    if (m) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ } }
+    $('date').value = todayIso();
+    $('main').hidden = false;
+    loadDay();
+  }
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>

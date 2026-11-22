@@ -7,7 +7,9 @@
     { href: 'route.html', name: 'Route knijperwagen', label: 'Route', icon: 'icons/route-icon-192.png',
       svg: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>' },
     { href: 'projecten.html', name: 'Projecten', label: 'Projecten', icon: 'icons/projecten-icon-192.png',
-      svg: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h6"/>' }
+      svg: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h6"/>' },
+    { href: 'logboek.html', name: 'Logboek', label: 'Logboek', icon: 'icons/logboek-icon-192.png',
+      svg: '<path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M10 8h5M10 12h5"/>' }
   ];
   var HOME = { href: 'start.html', label: 'Home', svg: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>' };
   window.GWW_TOOLS = TOOLS;

@@ -65,6 +65,7 @@
   <div class="launch">
     <a class="btn primary" id="goLoc" href="index.html">Locatie delen</a>
     <a class="btn primary" id="goRoute" href="route.html">Route knijperwagen</a>
+    <a class="btn primary" id="goLog" href="logboek.html">Logboek</a>
   </div>
   <p class="hint">De tool opent met dit project al ingevuld.</p>
   <div class="field"><label for="enr">Projectnummer</label><input class="inp" id="enr" autocomplete="off" autocapitalize="characters"></div>
@@ -151,7 +152,7 @@
     var p = load().filter(function (x) { return x.id === b.dataset.id; })[0]; if (!p) return;
     editId = p.id; $('enr').value = p.nr; $('ename').value = p.name; $('ewho').value = p.who || ''; $('ephone').value = p.phone || ''; $('enote').value = p.note || '';
     $('etitle').textContent = label(p) || 'Project';
-    $('goLoc').href = 'index.html#gp=' + encodeURIComponent(p.id); $('goRoute').href = 'route.html#gp=' + encodeURIComponent(p.id);
+    $('goLoc').href = 'index.html#gp=' + encodeURIComponent(p.id); $('goRoute').href = 'route.html#gp=' + encodeURIComponent(p.id); $('goLog').href = 'logboek.html#gp=' + encodeURIComponent(p.id);
     $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen';
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   };
@@ -171,7 +172,7 @@
     p.modified = Date.now(); save(cur); return true;
   }
   /* een tool openen bewaart eerst wat er is ingevuld, zodat de tool de nieuwste gegevens ziet */
-  ['goLoc', 'goRoute'].forEach(function (id) {
+  ['goLoc', 'goRoute', 'goLog'].forEach(function (id) {
     $(id).addEventListener('click', function () {
       var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
       if (p) storeEdit(cur, p);
