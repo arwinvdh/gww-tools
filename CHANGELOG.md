@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.2.1] - 2026-11-22
+
+- Startpagina overzichtelijker: recente projecten staan onder Locatie delen en recente routes onder Route knijperwagen, met een leesbare datum. De uitklapper voor koppelen is een stille tekstregel in plaats van een kaart.
+
 ## [1.2.0] - 2026-11-22
 
 - Een tik op een recent project of een recente route op de startpagina laadt dat project of die route direct in de tool (via `#project=` en `#route=` in de link; alleen lezen).
