@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.4.0] - 2026-11-22
+
+- Terugknop links in de kop van de tools: terug in de geschiedenis, zonder geschiedenis naar Home.
+- De losse link "Alle tools" onderaan de tools is weggehaald; de Home-knop in de onderbalk vervangt hem.
+
 ## [1.3.0] - 2026-11-22
 
 - Onderbalk met Home en een knop per tool in alle drie de pagina's (`nav.js`); de actiebalk en meldingen staan erboven.

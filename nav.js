@@ -23,5 +23,15 @@
     nav.appendChild(a);
   });
   document.body.appendChild(nav);
+
+  // terugknop links in de kop van de tools (niet op Home): terug in de geschiedenis, anders naar Home
+  var inner = document.querySelector('.brand .in');
+  if (inner && here !== 'start.html') {
+    var back = document.createElement('button');
+    back.type = 'button'; back.className = 'back'; back.setAttribute('aria-label', 'Terug'); back.title = 'Terug';
+    back.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    back.onclick = function () { if (history.length > 1) history.back(); else location.href = 'start.html'; };
+    inner.insertBefore(back, inner.firstChild);
+  }
   document.documentElement.classList.add('has-nav');
 })();
