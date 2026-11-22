@@ -37,6 +37,11 @@
   .day::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
   .day.sel { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .empty { margin: 0; color: var(--ink-2); }
+  .thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
+  .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #pdlg img { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 10px; background: #000; }
+  #pdlg .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 }
 </style>
 </head>
@@ -61,6 +66,12 @@
       </div>
       <div class="chips" id="eqlist" aria-label="Materieel op deze dag"></div>
       <div class="chips" id="eqsug" aria-label="Eerder gebruikt materieel"></div>
+      <div class="field">
+        <label>Foto's</label>
+        <button class="btn" id="shotBtn" type="button">Foto maken</button>
+        <input id="shot" type="file" accept="image/*" capture="environment" hidden>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
       <p class="hint state" id="state" role="status"></p>
     </div>
     <div style="margin-top:1rem">
@@ -71,6 +82,15 @@
   </div>
   <p class="hint"><span id="ver"></span></p>
 </div>
+<dialog id="pdlg">
+  <img id="pimg" alt="Foto met stempel">
+  <p class="hint" id="pinfo"></p>
+  <div class="actions">
+    <button class="btn primary" id="psave" type="button">Bewaar in Foto's</button>
+    <button class="btn" id="pclose" type="button">Sluiten</button>
+    <button class="btn danger" id="pdel" type="button">Verwijderen</button>
+  </div>
+</dialog>
 <script src="version.js"></script>
 <script src="nav.js"></script>
 <script>
@@ -99,18 +119,18 @@
 
   var equipment = [];   /* materieel van de dag die nu open staat */
   /* project en datum van de dag die nu open staat: opslaan gebruikt deze, niet de keuzevelden. Bij een wisseling is het keuzeveld al veranderd voordat er opgeslagen wordt, en dan zou de inhoud bij het verkeerde project belanden. */
-  var curPid = '', curDate = '';
+  var curPid = '', curDate = '', curPhotoCount = null;
 
   function find(a, pid, date) { return a.filter(function (e) { return e.projectId === pid && e.date === date; })[0]; }
 
   /* velden vullen vanuit de opgeslagen regel van dit project en deze dag */
   function loadDay() {
-    curPid = $('proj').value; curDate = $('date').value;
+    curPid = $('proj').value; curDate = $('date').value; curPhotoCount = null;
     var e = find(loadLog(), curPid, curDate);
     $('work').value = e ? e.work : '';
     equipment = e ? e.equipment.slice() : [];
     setState(e ? 'Opgeslagen.' : '');
-    renderEquipment(); renderHistory();
+    renderEquipment(); renderHistory(); renderPhotos();
   }
 
   /* opslaan: een lege dag wordt niet bewaard; het id van een bestaande regel blijft gelijk */
@@ -120,7 +140,7 @@
     var pid = curPid, date = curDate;
     if (!pid || !date) return;
     var work = $('work').value.trim(), a = loadLog(), e = find(a, pid, date), now = Date.now();
-    if (!work && !equipment.length) {
+    if (!work && !equipment.length && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
       if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); }
       setState(''); renderHistory(); return;
     }
@@ -170,7 +190,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'day' + (e.date === $('date').value ? ' sel' : ''); b.dataset.date = e.date;
       var t = document.createElement('span'); t.className = 'txt';
       var s = document.createElement('b'); s.textContent = dayLabel(e.date); t.appendChild(s);
-      var line = (e.work || '').split('\n')[0] || (e.equipment || []).join(', ');
+      var line = (e.work || '').split('\n')[0] || (e.equipment || []).join(', ') || 'Foto\u2019s';
       var sm = document.createElement('small'); sm.textContent = line; t.appendChild(sm);
       b.appendChild(t); box.appendChild(b);
     });
@@ -186,6 +206,175 @@
   $('proj').addEventListener('change', function () { saveNow(); loadDay(); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
   window.addEventListener('pagehide', saveNow);
+
+  /* ---------- foto's met stempel ----------
+     De foto wordt bij het maken bewerkt: project, datum en tijd, adres en coördinaten, en (online) een kaartje.
+     Bewaard wordt de bewerkte foto, in IndexedDB op dit apparaat (niet gesynchroniseerd: een repo is er niet voor gemaakt).
+     Bewaren in Foto's van de iPhone gaat via het deelmenu ("Bewaar afbeelding"); een webapp mag niet rechtstreeks in Foto's schrijven. */
+  var PDB = 'gww-photos', PSTORE = 'photos', thumbUrls = [], openPhoto = null;
+  function openDb() {
+    return new Promise(function (res, rej) {
+      if (!window.indexedDB) { rej(new Error('geen opslag')); return; }
+      var r = indexedDB.open(PDB, 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore(PSTORE, { keyPath: 'id' }).createIndex('day', 'day'); };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+    });
+  }
+  function dbDo(mode, fn) {
+    return openDb().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction(PSTORE, mode), out = fn(tx.objectStore(PSTORE));
+        tx.oncomplete = function () { db.close(); res(out && out.result !== undefined ? out.result : undefined); };
+        tx.onerror = tx.onabort = function () { db.close(); rej(tx.error); };
+      });
+    });
+  }
+  function dayKey(pid, date) { return pid + '|' + date; }
+  function photosOfDay(pid, date) { return dbDo('readonly', function (st) { return st.index('day').getAll(dayKey(pid, date)); }).then(function (a) { return (a || []).sort(function (x, y) { return x.created - y.created; }); }); }
+
+  function getPos() {
+    return new Promise(function (res) {
+      if (!navigator.geolocation) { res(null); return; }
+      var done = false, fin = function (v) { if (!done) { done = true; res(v); } };
+      setTimeout(function () { fin(null); }, 9000);
+      navigator.geolocation.getCurrentPosition(function (p) { fin({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }); }, function () { fin(null); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 });
+    });
+  }
+  function timeoutFetch(url, ms) {
+    var c = new AbortController(), t = setTimeout(function () { c.abort(); }, ms);
+    return fetch(url, { signal: c.signal }).then(function (r) { clearTimeout(t); return r.ok ? r.json() : null; }, function () { clearTimeout(t); return null; });
+  }
+  /* adres bij de positie (PDOK, Nederland); zonder bereik of buiten Nederland blijft het leeg */
+  function addressOf(pos) {
+    if (!pos) return Promise.resolve('');
+    return timeoutFetch('https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?type=adres&rows=1&fl=weergavenaam&lat=' + pos.lat + '&lon=' + pos.lon, 4000)
+      .then(function (j) { var d = j && j.response && j.response.docs && j.response.docs[0]; return d ? String(d.weergavenaam || '') : ''; }).catch(function () { return ''; });
+  }
+  /* kaartje: 2x2 tegels van PDOK rond de positie, bijgesneden tot een vierkant; mislukt het, dan geen kaartje */
+  function loadTile(url) {
+    return new Promise(function (res) {
+      var im = new Image(), t = setTimeout(function () { res(null); }, 4500); im.crossOrigin = 'anonymous';
+      im.onload = function () { clearTimeout(t); res(im); }; im.onerror = function () { clearTimeout(t); res(null); }; im.src = url;
+    });
+  }
+  function miniMap(pos, size) {
+    if (!pos) return Promise.resolve(null);
+    var z = 17, n = Math.pow(2, z), s = Math.sin(pos.lat * Math.PI / 180);
+    var wx = (pos.lon + 180) / 360 * n * 256, wy = (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n * 256;
+    var half = 128, x0 = Math.floor((wx - half) / 256), x1 = Math.floor((wx + half) / 256), y0 = Math.floor((wy - half) / 256), y1 = Math.floor((wy + half) / 256);
+    var jobs = [];
+    for (var ty = y0; ty <= y1; ty++) for (var tx = x0; tx <= x1; tx++) (function (tx, ty) {
+      jobs.push(loadTile('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/' + z + '/' + tx + '/' + ty + '.png').then(function (im) { return { im: im, tx: tx, ty: ty }; }));
+    })(tx, ty);
+    return Promise.all(jobs).then(function (tiles) {
+      if (!tiles.some(function (t) { return t.im; })) return null;
+      var c = document.createElement('canvas'); c.width = c.height = size; var g = c.getContext('2d'), k = size / (half * 2);
+      g.fillStyle = '#e8eef3'; g.fillRect(0, 0, size, size);
+      tiles.forEach(function (t) { if (t.im) g.drawImage(t.im, (t.tx * 256 - (wx - half)) * k, (t.ty * 256 - (wy - half)) * k, 256 * k + 1, 256 * k + 1); });
+      g.beginPath(); g.arc(size / 2, size / 2, size * 0.055, 0, 7); g.fillStyle = '#e5322d'; g.fill(); g.lineWidth = size * 0.02; g.strokeStyle = '#fff'; g.stroke();
+      return c;
+    }).catch(function () { return null; });
+  }
+  function loadImage(file) {
+    if (window.createImageBitmap) { return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return loadImgEl(file); }); }
+    return loadImgEl(file);
+  }
+  function loadImgEl(file) {
+    return new Promise(function (res, rej) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { URL.revokeObjectURL(u); res(im); }; im.onerror = function () { rej(new Error('geen afbeelding')); }; im.src = u; });
+  }
+  function fitText(g, text, maxW, size, weight) {
+    var px = size; g.font = weight + ' ' + px + 'px system-ui, -apple-system, sans-serif';
+    while (g.measureText(text).width > maxW && px > size * 0.6) { px -= 1; g.font = weight + ' ' + px + 'px system-ui, -apple-system, sans-serif'; }
+    if (g.measureText(text).width > maxW) { while (text.length > 4 && g.measureText(text + '…').width > maxW) text = text.slice(0, -1); text += '…'; }
+    return text;
+  }
+  /* de stempel: donkere balk onderaan met tekst links en het kaartje rechts */
+  function stamp(img, o) {
+    var maxEdge = 1600, sc = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    var w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+    var c = document.createElement('canvas'); c.width = w; c.height = h; var g = c.getContext('2d');
+    g.drawImage(img, 0, 0, w, h);
+    var pad = Math.round(Math.min(w, h) * 0.02), fs = Math.max(13, Math.round(Math.min(w, h) * 0.029));
+    var lines = [{ t: o.title, b: true }, { t: o.when, b: false }];
+    if (o.addr) lines.push({ t: o.addr, b: false });
+    lines.push({ t: o.coords, b: false });
+    var textH = lines.length * Math.round(fs * 1.3), mapSize = o.map ? Math.round(Math.min(w, h) * 0.17) : 0;
+    var barH = Math.max(textH, mapSize) + pad * 2;
+    g.fillStyle = 'rgba(0,0,0,0.58)'; g.fillRect(0, h - barH, w, barH);
+    var textW = w - pad * 3 - (mapSize ? mapSize + pad : 0), y = h - barH + pad + Math.round(fs * 1.0);
+    g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
+    lines.forEach(function (l) { g.fillText(fitText(g, l.t, textW, fs, l.b ? 700 : 500), pad, y); y += Math.round(fs * 1.3); });
+    if (o.map) { g.drawImage(o.map, w - pad - mapSize, h - barH + (barH - mapSize) / 2, mapSize, mapSize); g.lineWidth = 2; g.strokeStyle = '#fff'; g.strokeRect(w - pad - mapSize, h - barH + (barH - mapSize) / 2, mapSize, mapSize); }
+    return new Promise(function (res) { c.toBlob(function (b) { res({ blob: b, w: w, h: h }); }, 'image/jpeg', 0.86); });
+  }
+  function whenLabel(d) {
+    return d.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '') + ' · ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  var posPromise = null;
+  $('shotBtn').onclick = function () { posPromise = getPos(); $('shot').click(); };
+  $('shot').onchange = function () {
+    var file = this.files && this.files[0]; this.value = '';
+    if (!file) return;
+    var pid = curPid, date = curDate, proj = projects().filter(function (p) { return p.id === pid; })[0], taken = new Date();
+    setState('Foto verwerken…');
+    var pos = null;
+    (posPromise || getPos()).then(function (p) { pos = p; return Promise.all([addressOf(p), miniMap(p, 220), loadImage(file)]); })
+      .then(function (r) {
+        var coords = pos ? pos.lat.toFixed(5) + ', ' + pos.lon.toFixed(5) + ' (±' + Math.round(pos.acc) + ' m)' : 'Locatie onbekend';
+        return stamp(r[2], { title: proj ? plabel(proj) : 'Project', when: whenLabel(taken), addr: r[0], coords: coords, map: r[1] }).then(function (s) {
+          var rec = { v: 1, id: newId(), projectId: pid, date: date, day: dayKey(pid, date), blob: s.blob, w: s.w, h: s.h, lat: pos ? pos.lat : null, lon: pos ? pos.lon : null, created: taken.getTime() };
+          return dbDo('readwrite', function (st) { return st.put(rec); });
+        });
+      })
+      .then(function () {
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) { /* niet beschikbaar */ }
+        /* de dag staat nu in het logboek, ook zonder tekst */
+        var a = loadLog();
+        if (!find(a, pid, date)) { a.push({ v: 1, id: newId(), projectId: pid, date: date, work: '', equipment: [], created: Date.now(), modified: Date.now() }); saveLog(a); }
+        setState('Foto bewaard. Tik erop om hem in Foto’s te bewaren.');
+        if (curPid === pid && curDate === date) renderPhotos(); renderHistory();
+      })
+      .catch(function () { setState('De foto kon niet worden verwerkt of bewaard.'); });
+  };
+
+  function renderPhotos() {
+    return photosOfDay(curPid, curDate).then(function (list) {
+      curPhotoCount = list.length;
+      thumbUrls.forEach(function (u) { URL.revokeObjectURL(u); }); thumbUrls = [];
+      var box = $('thumbs'); box.textContent = '';
+      list.forEach(function (p) {
+        var b = document.createElement('button'); b.type = 'button'; b.dataset.id = p.id; b.setAttribute('aria-label', 'Foto openen');
+        var im = document.createElement('img'), u = URL.createObjectURL(p.blob); thumbUrls.push(u); im.src = u; im.alt = ''; b.appendChild(im); box.appendChild(b);
+      });
+      box._list = list;
+    }).catch(function () { curPhotoCount = 0; });
+  }
+  $('thumbs').onclick = function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var rec = ($('thumbs')._list || []).filter(function (p) { return p.id === b.dataset.id; })[0]; if (!rec) return;
+    openPhoto = rec; if ($('pimg')._u) URL.revokeObjectURL($('pimg')._u);
+    $('pimg')._u = URL.createObjectURL(rec.blob); $('pimg').src = $('pimg')._u;
+    $('pinfo').textContent = new Date(rec.created).toLocaleString('nl-NL');
+    $('pdel').dataset.armed = ''; $('pdel').textContent = 'Verwijderen';
+    if ($('pdlg').showModal) $('pdlg').showModal(); else $('pdlg').setAttribute('open', '');
+  };
+  function closePhoto() { if ($('pdlg').close) $('pdlg').close(); else $('pdlg').removeAttribute('open'); openPhoto = null; }
+  $('pclose').onclick = closePhoto;
+  $('psave').onclick = function () {
+    if (!openPhoto) return;
+    var name = 'foto-' + new Date(openPhoto.created).toISOString().slice(0, 19).replace(/[:T]/g, '') + '.jpg';
+    var file = new File([openPhoto.blob], name, { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(function () { /* geannuleerd */ }); return; }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(openPhoto.blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+  $('pdel').onclick = function () {
+    if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten?'; return; }
+    var id = openPhoto && openPhoto.id; closePhoto();
+    if (id) dbDo('readwrite', function (st) { return st.delete(id); }).then(function () { return renderPhotos(); }).then(function () { saveNow(); });
+  };
 
   /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
   var list = projects();
