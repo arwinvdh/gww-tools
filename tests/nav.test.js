@@ -2,7 +2,7 @@
 const { chromium, launchOptions, offlinePage, ok } = require('./helpers.js');
 (async () => {
   const b = await chromium.launch(launchOptions());
-  const want = { 'start.html': 'Home', 'index.html': 'Locatie', 'route.html': 'Route', 'projecten.html': 'Projecten' };
+  const want = { 'start.html': 'Home', 'index.html': 'Locatie', 'route.html': 'Route', 'projecten.html': 'Projecten', 'logboek.html': 'Logboek' };
   for (const f of Object.keys(want)) {
     const p = await offlinePage(b, { viewport: { width: 390, height: 800 } }, f);
     const r = await p.evaluate(() => {
@@ -14,7 +14,7 @@ const { chromium, launchOptions, offlinePage, ok } = require('./helpers.js');
         minH: Math.min(...links.map(a => a.getBoundingClientRect().height)),
         barOk: !bar || (bar.getBoundingClientRect().bottom <= n.top + 1), sw: document.scrollingElement.scrollWidth, vw: document.documentElement.clientWidth };
     });
-    ok(r.hrefs.join() === 'start.html,index.html,route.html,projecten.html' && r.labels.join() === 'Home,Locatie,Route,Projecten', `${f}: onderbalk met Home, Locatie, Route en Projecten (${r.labels.join(', ')})`);
+    ok(r.hrefs.join() === 'start.html,index.html,route.html,projecten.html,logboek.html' && r.labels.join() === 'Home,Locatie,Route,Projecten,Logboek', `${f}: onderbalk met Home en alle tools (${r.labels.join(', ')})`);
     ok(r.current.join() === want[f], `${f}: alleen ${want[f]} is actief (${r.current.join(', ')})`);
     ok(r.minH >= 44, `${f}: knoppen van de onderbalk minstens 44px hoog (${Math.round(r.minH)})`);
     ok(r.barOk, `${f}: de actiebalk staat boven de onderbalk`);

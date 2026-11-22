@@ -8,6 +8,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, recente projecten en routes onder hun tool (alleen lezen; een tik laadt het item direct in de tool) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
 | **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project en uitvoerder, telefoon en notitie; neemt de projecten uit Locatie delen over. Vanuit een project open je Locatie delen of Route met dat project ingevuld (`#gp=<id>`). |
+| **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | Per project en dag werkzaamheden en materieel vastleggen; bewaart vanzelf. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
@@ -41,6 +42,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 index.html              Locatie delen
 route.html              Route knijperwagen
 projecten.html          gedeelde projectlijst met een vast id per project
+logboek.html            logboek per project en dag: werkzaamheden en materieel
 nav.js                  onderbalk en lijst met tools (een nieuwe tool komt hier als één regel bij)
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
@@ -127,6 +129,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Startpagina: `start.tipX`.
   - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
+  - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Staat alleen op het apparaat (nog niet gesynchroniseerd).
 - Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
 
