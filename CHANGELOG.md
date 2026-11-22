@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.8.0] - 2026-11-22
+
+- Werken vanuit Projecten: tik op een project en open Locatie delen of Route knijperwagen er direct mee. Een project heeft nu ook uitvoerder, telefoon en notitie (extra velden in `gww.projects`, bestaande projecten blijven geldig).
+- Locatie delen opent dan met nummer, naam en notitie ingevuld en de uitvoerder en telefoon van het project in de velden; je eigen bewaarde gegevens blijven ongewijzigd. Route toont het project bovenaan de projectvoorstellen.
+
 ## [1.7.0] - 2026-11-22
 
 - Project kiezen uit de lijst van de tegel Projecten: in Locatie delen met "Project kiezen" (vult projectnummer en naam in), in Route knijperwagen als voorstel bij het projectveld. Alleen lezen; er wordt niets extra bewaard en de bestaande gegevens blijven zoals ze waren.
