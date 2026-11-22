@@ -20,6 +20,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `tests/README.md`: wat de tests controleren en hoe je ze toevoegt.
 - `visie.html` beschrijft de projectrichting en mogelijke uitbreidingen. De pagina bevat zowel uitgangspunten als onbevestigde voorstellen. Behandel een voorstel niet automatisch als goedgekeurde eis. Vraag bij twijfel om bevestiging voordat je erop voortbouwt.
 
+## Taal in de code
+
+- Nieuwe functie- en variabelenamen in het Engels, in camelCase. Volg bij bestaande code de naamgeving die er staat.
+- Comments en documentatie in het Nederlands. Teksten op het scherm in het Nederlands.
+- Hernoem of vertaal bestaande code niet alleen om de taal gelijk te trekken.
+- Hernoem of vertaal opslagsleutels, JSON-velden en externe koppelingen niet zonder expliciet akkoord. Dit komt bovenop de regel over opslag en gegevensformaten onder Werkwijze.
+
 ## Tests
 
 Er is geen build en geen lint. Elke tool is één HTML-bestand plus `shared.css`; de tests zijn de controle.
