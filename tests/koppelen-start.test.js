@@ -15,6 +15,8 @@ const { createMock } = require('./mock-github.js');
   ok(await A.locator('#gh-repo').isVisible() && !(await A.locator('#couple').isVisible()), 'startpagina toont het koppelformulier, nog zonder stappen voor een tweede apparaat');
   await A.fill('#gh-repo', REPO); await A.fill('#gh-token', TOKEN); await A.click('#gh-go'); await A.waitForTimeout(1700);
   ok(await A.evaluate(() => !!JSON.parse(localStorage.getItem('gh-sync-config') || 'null')), 'A: verbonden via de startpagina');
+  // na het verbinden laadt de pagina opnieuw en staat de uitklapper dicht: eerst openen
+  if (!(await A.locator('#gh-now').isVisible())) { await A.click('#more > summary'); await A.waitForTimeout(200); }
   ok(await A.locator('#couple').isVisible() && await A.locator('#gh-linkbtn').isVisible(), 'A: stappen voor een tweede apparaat en de koppellinkknop zichtbaar');
   await A.click('#gh-now'); await A.waitForTimeout(800);
   ok((await A.textContent('#gh-msg')).includes('Klaar'), 'A: Nu synchroniseren werkt als verbindingstest (' + (await A.textContent('#gh-msg')) + ')');

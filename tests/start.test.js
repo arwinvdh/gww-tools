@@ -17,6 +17,25 @@ const fs = require('fs'), path = require('path');
     ok(p.errs.length === 0, `start op ${name}: geen scriptfouten ${p.errs.join('|')}`);
     await p.context().close();
   }
+  // recent: leest de bestaande opslag van de tools en verandert die niet
+  {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 800 } });
+    await ctx.addInitScript(() => {
+      if (!localStorage.getItem('locdelen.projects')) {
+        localStorage.setItem('locdelen.projects', JSON.stringify([{ nr: '123', name: 'Testproject' }]));
+        localStorage.setItem('knijperwagen-routes-v2', JSON.stringify({ '2026-11-20': { datum: '2026-11-20', stops: [{}, {}] } }));
+      }
+    });
+    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+    await p.goto(ROOT + 'start.html'); await p.waitForTimeout(400);
+    const r = await p.evaluate(() => ({ shown: !document.getElementById('recent').hidden, items: [...document.querySelectorAll('#recentList a')].map(a => a.textContent + '>' + a.getAttribute('href')),
+      before: localStorage.getItem('locdelen.projects') }));
+    ok(r.shown && r.items.length === 2 && r.items[0].startsWith('123 · Testproject') && r.items[1].startsWith('Route 2026-11-20') && r.items[1].includes('2 stops'), 'start: recent toont project en route uit de bestaande opslag (' + r.items.join(' | ') + ')');
+    ok(r.before === JSON.stringify([{ nr: '123', name: 'Testproject' }]) && p.errs.length === 0, 'start: recent wijzigt de opslag niet en geeft geen scriptfouten');
+    const empty = await b.newContext(); const pe = await empty.newPage(); await pe.goto(ROOT + 'start.html'); await pe.waitForTimeout(300);
+    ok(await pe.evaluate(() => document.getElementById('recent').hidden), 'start: zonder gegevens blijft recent verborgen');
+    await ctx.close(); await empty.close();
+  }
   // manifest en bestanden die de service worker bewaart bestaan echt
   const root = path.resolve(__dirname, '..');
   const man = JSON.parse(fs.readFileSync(path.join(root, 'start.webmanifest'), 'utf8'));
