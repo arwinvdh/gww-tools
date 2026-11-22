@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.7.0] - 2026-11-22
+
+- Project kiezen uit de lijst van de tegel Projecten: in Locatie delen met "Project kiezen" (vult projectnummer en naam in), in Route knijperwagen als voorstel bij het projectveld. Alleen lezen; er wordt niets extra bewaard en de bestaande gegevens blijven zoals ze waren.
+
 ## [1.6.0] - 2026-11-22
 
 - Nieuwe tegel Projecten: een gedeelde projectlijst met een vast id per project (`gww.projects`). De eerste keer worden de projecten uit Locatie delen gekopieerd; Locatie delen zelf is niet gewijzigd. De tools kiezen later uit deze lijst.

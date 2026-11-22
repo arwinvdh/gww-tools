@@ -179,6 +179,7 @@
       </div>
       <div class="card" id="card-project">
         <h2>2 &middot; Project</h2>
+        <div class="field" id="pickBox" hidden><label for="pick">Project kiezen</label><select class="inp" id="pick"><option value="">Kies uit Projecten</option></select></div>
         <div class="row">
           <div class="field" style="width:7.5rem"><label for="nr">Projectnr.</label><input class="inp" id="nr" list="dl-nr" placeholder="24-017" autocomplete="off" autocapitalize="characters"></div>
           <div class="field grow"><label for="name">Projectnaam</label><input class="inp" id="name" list="dl-name" placeholder="Bijv. Nieuwbouw Zuidpoort" autocomplete="off"></div>
@@ -1268,6 +1269,23 @@
       update();
     };
   }
+  /* project kiezen uit de gedeelde lijst (tegel Projecten): vult alleen Projectnr. en Projectnaam in, er wordt niets extra bewaard */
+  function fillPick() {
+    var list = []; try { list = JSON.parse(localStorage.getItem('gww.projects')) || []; } catch (e) { list = []; }
+    if (!Array.isArray(list)) list = [];
+    var sel = $('pick'); while (sel.options.length > 1) sel.remove(1);
+    list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
+      var t = [p.nr, p.name].filter(Boolean).join(' \u00B7 '); if (!t) return;
+      var o = document.createElement('option'); o.value = p.id; o.textContent = t; o.dataset.nr = p.nr || ''; o.dataset.name = p.name || ''; sel.appendChild(o);
+    });
+    $('pickBox').hidden = sel.options.length < 2;
+  }
+  $('pick').addEventListener('change', function () {
+    var o = this.options[this.selectedIndex];
+    if (o && o.value) { $('nr').value = o.dataset.nr; $('name').value = o.dataset.name; update(); }
+    this.selectedIndex = 0;
+  });
+  fillPick(); window.addEventListener('pageshow', fillPick);
   $('nr').addEventListener('change', suggestPick('nr'));
   $('name').addEventListener('change', suggestPick('name'));
   // instellingen

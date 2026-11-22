@@ -909,6 +909,10 @@ function check(stops) {
       .slice(0, 5)
       .map(function (k) { return pool[k]; });
   }
+  function projectList() {
+    try { const l = JSON.parse(localStorage.getItem('gww.projects')); return Array.isArray(l) ? l.slice().sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).filter(function (p) { return p && clean(p.nr); }) : []; }
+    catch (e) { return []; }
+  }
   function projectSuggestions(s, cur) {
     const q = cur.trim().toUpperCase();
     const out = [], label = {};
@@ -921,6 +925,8 @@ function check(stops) {
       if (top && mem.places[top]) add(mem.places[top].pr, mem.places[top].p);
     }
     stops.slice().reverse().forEach(function (o) { if (o !== s) add(o.project, o.plaats); });   /* het project van de vorige stop eerst */
+    /* de gedeelde projectlijst (tegel Projecten): na de stops hierboven, vóór wat het geheugen nog weet; alleen gelezen */
+    projectList().forEach(function (p) { add(p.nr, p.name); });
     Object.keys(mem.places).sort(function (a, b) { return (mem.places[b].t || 0) - (mem.places[a].t || 0); })
       .forEach(function (k) { add(mem.places[k].pr, mem.places[k].p); });
     /* bij elk project de plaats waar je het het laatst gebruikte, zodat je ziet welk project het is */
