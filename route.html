@@ -1475,6 +1475,20 @@ function check(stops) {
   renderPreview();
   autosize(noteEl);
 
+  /* openen vanaf de startpagina: #route=<datum> opent die bewaarde route, net als Openen in Eerdere routes */
+  (function () {
+    const m = /^#route=(\d{4}-\d{2}-\d{2})$/.exec(location.hash || '');
+    if (!m) return;
+    const r = routes[m[1]];
+    if (r && Array.isArray(r.stops)) {
+      const prev = snapshot();
+      adopt(r.stops); note = r.note || ''; datum.value = r.datum; noteEl.value = note;
+      renderStops(); update(); autosize(noteEl); setView('stops');
+      offerUndo('Route van ' + datumLabel(r.datum) + ' geopend.', function () { restore(prev); });
+    }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ }
+  })();
+
   /* synchroniseren via een eigen privérepo op GitHub */
   var ghdb = null, ghDraftTimer = 0, ghLastPull = 0;
   function dT() { try { return +localStorage.getItem(DKEY) || 0; } catch (e) { return 0; } }

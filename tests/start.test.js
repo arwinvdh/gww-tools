@@ -1,5 +1,5 @@
 // Startpagina: tegels naar de tools, manifest en offline.
-const { chromium, launchOptions, offlinePage, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, offlinePage, ok, ROOT, LEAFLET_JS, LEAFLET_CSS } = require('./helpers.js');
 const { devices } = require('playwright');
 const fs = require('fs'), path = require('path');
 (async () => {
@@ -26,12 +26,22 @@ const fs = require('fs'), path = require('path');
         localStorage.setItem('knijperwagen-routes-v2', JSON.stringify({ '2026-11-20': { datum: '2026-11-20', stops: [{}, {}] } }));
       }
     });
+    await ctx.route(u => !u.href.startsWith('file:'), r => r.abort());
+    await ctx.route('**/leaflet.min.*', r => r.fulfill({ path: r.request().url().endsWith('.js') ? LEAFLET_JS : LEAFLET_CSS }));
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
     await p.goto(ROOT + 'start.html'); await p.waitForTimeout(400);
     const r = await p.evaluate(() => ({ shown: !document.getElementById('recent').hidden, items: [...document.querySelectorAll('#recentList a')].map(a => a.textContent + '>' + a.getAttribute('href')),
       before: localStorage.getItem('locdelen.projects') }));
     ok(r.shown && r.items.length === 2 && r.items[0].startsWith('123 · Testproject') && r.items[1].startsWith('Route 2026-11-20') && r.items[1].includes('2 stops'), 'start: recent toont project en route uit de bestaande opslag (' + r.items.join(' | ') + ')');
     ok(r.before === JSON.stringify([{ nr: '123', name: 'Testproject' }]) && p.errs.length === 0, 'start: recent wijzigt de opslag niet en geeft geen scriptfouten');
+    // een tik laadt het project of de route direct in de tool
+    const links = await p.evaluate(() => [...document.querySelectorAll('#recentList a')].map(a => a.getAttribute('href')));
+    const pi = await ctx.newPage(); await pi.goto(ROOT + 'index.html' + links[0].replace('index.html', '')); await pi.waitForTimeout(800);
+    const nm = await pi.evaluate(() => ({ nr: document.getElementById('nr').value, name: document.getElementById('name').value }));
+    ok(nm.nr === '123' && nm.name === 'Testproject', 'start: tik op een recent project laadt het in Locatie delen (' + nm.nr + ' ' + nm.name + ')');
+    const pr = await ctx.newPage(); await pr.goto(ROOT + 'route.html' + links[1].replace('route.html', '')); await pr.waitForTimeout(800);
+    const rt = await pr.evaluate(() => ({ d: document.getElementById('datum').value, undo: document.getElementById('undo-label').textContent, hash: location.hash }));
+    ok(rt.d === '2026-11-20' && /geopend/.test(rt.undo) && rt.hash === '', 'start: tik op een recente route opent die route in Route knijperwagen (' + rt.d + ', ' + rt.undo + ')');
     const empty = await b.newContext(); const pe = await empty.newPage(); await pe.goto(ROOT + 'start.html'); await pe.waitForTimeout(300);
     ok(await pe.evaluate(() => document.getElementById('recent').hidden), 'start: zonder gegevens blijft recent verborgen');
     await ctx.close(); await empty.close();

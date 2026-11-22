@@ -1338,6 +1338,16 @@
       setStatus('Vorige locatie hersteld. Tik op Nieuw voor een lege start.');
     } else $('q').focus();
   } catch (e) {}
+  /* openen vanaf de startpagina: #project=<nr|naam in kleine letters> laadt dat project; leest alleen, wijzigt niets */
+  try {
+    var hp = /^#project=(.+)$/.exec(location.hash || '');
+    if (hp) {
+      var want = decodeURIComponent(hp[1]);
+      var found = getP().filter(function (p) { return ((p.nr || '') + '|' + p.name).toLowerCase() === want; })[0];
+      if (found) loadProject(found);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  } catch (e) {}
   var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('locdelen.tipX', '0') !== '1') $('tip').hidden = false;
