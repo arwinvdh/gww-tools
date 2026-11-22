@@ -98,12 +98,12 @@
     var projects = lsJson('locdelen.projects', []);
     (Array.isArray(projects) ? projects : []).slice(0, 3).forEach(function (p) {
       var t = [p && p.nr, p && p.name].filter(Boolean).join(' \u00B7 ');
-      if (t) addRecent(box, 'index.html', t, 'Locatie delen');
+      if (t) addRecent(box, 'index.html#project=' + encodeURIComponent(((p.nr || '') + '|' + (p.name || '')).toLowerCase()), t, 'Locatie delen');
     });
     var routes = lsJson('knijperwagen-routes-v2', {});
     Object.keys(routes || {}).sort().reverse().slice(0, 3).forEach(function (d) {
       var r = routes[d], n = r && Array.isArray(r.stops) ? r.stops.length : 0;
-      addRecent(box, 'route.html', 'Route ' + d, n + (n === 1 ? ' stop' : ' stops'));
+      addRecent(box, 'route.html#route=' + encodeURIComponent(d), 'Route ' + d, n + (n === 1 ? ' stop' : ' stops'));
     });
     document.getElementById('recent').hidden = !box.children.length;
   })();
