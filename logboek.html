@@ -81,6 +81,7 @@
       <p class="empty" id="noHist" hidden>Nog geen dagen vastgelegd.</p>
     </div>
   </div>
+  <p class="hint" id="syncmsg"></p>
   <p class="hint"><span id="ver"></span></p>
 </div>
 <dialog id="pdlg">
@@ -92,6 +93,8 @@
     <button class="btn danger" id="pdel" type="button">Verwijderen</button>
   </div>
 </dialog>
+<script src="sync.js"></script>
+<script src="datasync.js"></script>
 <script src="version.js"></script>
 <script src="nav.js"></script>
 <script>
@@ -104,7 +107,7 @@
 
   function readJson(k) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
   function loadLog() { return readJson(KEY); }
-  function saveLog(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch (e) { setState('Opslaan lukt niet op dit apparaat.'); return false; } }
+  function saveLog(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); if (window.GwwData) GwwData.changed(); return true; } catch (e) { setState('Opslaan lukt niet op dit apparaat.'); return false; } }
   function projects() { return readJson(PKEY).filter(function (p) { return p && p.id; }); }
   function setState(t) { $('state').textContent = t; }
   function newId() {
@@ -142,11 +145,14 @@
     if (!pid || !date) return;
     var work = $('work').value.trim(), a = loadLog(), e = find(a, pid, date), now = Date.now();
     if (!work && !equipment.length && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
-      if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); }
+      if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
       setState(''); renderHistory(); return;
     }
+    /* alleen schrijven bij een echte wijziging: een nieuw tijdstip zonder wijziging zou bij synchroniseren de stand van een ander apparaat overschrijven */
+    if (e && e.work === work && JSON.stringify(e.equipment) === JSON.stringify(equipment)) { setState('Opgeslagen.'); renderHistory(); renderEquipment(); return; }
     if (e) { e.work = work; e.equipment = equipment.slice(); e.modified = now; }
     else a.push({ v: 1, id: newId(), projectId: pid, date: date, work: work, equipment: equipment.slice(), created: now, modified: now });
+    if (window.GwwData) GwwData.revived('log/' + pid + '/' + date);
     if (saveLog(a)) setState('Opgeslagen.');
     renderHistory(); renderEquipment();
   }
@@ -333,7 +339,7 @@
         try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) { /* niet beschikbaar */ }
         /* de dag staat nu in het logboek, ook zonder tekst */
         var a = loadLog();
-        if (!find(a, pid, date)) { a.push({ v: 1, id: newId(), projectId: pid, date: date, work: '', equipment: [], created: Date.now(), modified: Date.now() }); saveLog(a); }
+        if (!find(a, pid, date)) { a.push({ v: 1, id: newId(), projectId: pid, date: date, work: '', equipment: [], created: Date.now(), modified: Date.now() }); if (window.GwwData) GwwData.revived('log/' + pid + '/' + date); saveLog(a); }
         setState('Foto bewaard. Tik erop om hem in Foto’s te bewaren.');
         if (curPid === pid && curDate === date) renderPhotos(); renderHistory();
       })
@@ -458,21 +464,41 @@
       .then(function () { btn.disabled = false; });
   };
 
-  /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
-  var list = projects();
-  if (!list.length) { $('noProj').hidden = false; }
-  else {
-    var sel = $('proj');
+  /* projectkeuze vullen uit de gedeelde lijst; geeft het aantal projecten. De huidige keuze blijft staan als het project er nog is. */
+  function fillProjects() {
+    var list = projects(), sel = $('proj'), keep = sel.value;
+    sel.textContent = '';
     list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
       var o = document.createElement('option'); o.value = p.id; o.textContent = plabel(p); sel.appendChild(o);
     });
-    var m = /^#gp=(.+)$/.exec(location.hash || ''), want = m ? decodeURIComponent(m[1]) : '';
+    if (keep && list.some(function (p) { return p.id === keep; })) sel.value = keep;
+    $('noProj').hidden = list.length > 0; $('main').hidden = list.length === 0;
+    return list;
+  }
+
+  /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
+  var m = /^#gp=(.+)$/.exec(location.hash || ''), want = m ? decodeURIComponent(m[1]) : '';
+  var list = fillProjects();
+  if (list.length) {
     if (!want) { var last = loadLog().sort(function (a, b) { return b.modified - a.modified; })[0]; want = last ? last.projectId : ''; }
-    if (want && list.some(function (p) { return p.id === want; })) sel.value = want;
+    if (want && list.some(function (p) { return p.id === want; })) $('proj').value = want;
     if (m) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ } }
     $('date').value = todayIso();
-    $('main').hidden = false;
     loadDay();
+  }
+
+  /* synchroniseren (als er gekoppeld is): na het ophalen de keuze en de open dag verversen, behalve als je net iets typt */
+  if (window.GwwData) {
+    GwwData.onChange(function () {
+      if (timer) return;
+      var had = !!curPid, l = fillProjects();
+      if (!l.length) return;
+      if (!$('date').value) $('date').value = todayIso();
+      if (!had && !$('proj').value) $('proj').selectedIndex = 0;
+      loadDay();
+    });
+    if (window.GhSync) GhSync.onStatus(function (s) { $('syncmsg').textContent = s.state === 'ok' ? 'Gesynchroniseerd (foto\u2019s blijven op dit toestel).' : s.state === 'fout' ? 'Synchroniseren mislukt: ' + s.msg : ''; });
+    GwwData.run();
   }
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
