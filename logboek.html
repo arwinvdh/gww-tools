@@ -49,6 +49,13 @@
   .secbody { display: grid; gap: 0.6rem; padding-bottom: 1rem; }
   .addgrid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .addgrid .wide { grid-column: 1 / -1; }
+  .rows { display: grid; }
+  .rowitem { display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+  .rowitem .t { display: grid; min-width: 0; flex: 1; }
+  .rowitem .t b { font-weight: 600; overflow-wrap: anywhere; }
+  .rowitem .t small { color: var(--ink-2); font-size: 0.875rem; }
+  .rowitem .del { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; }
+  .rowitem .del:active { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
   .check { display: flex; gap: 0.7rem; align-items: center; min-height: 44px; font-weight: 600; }
   .check input { width: 24px; height: 24px; flex: none; }
   textarea.inp.small { min-height: 5rem; }
@@ -172,18 +179,22 @@
     crew: { title: 'Personeel (partners)', open: true, key: function (r) { return (r.partner || '').toLowerCase(); },
       fields: [{ k: 'partner', ph: 'Partner (bedrijf)', req: true, wide: true }, { k: 'count', ph: 'Aantal', num: true }, { k: 'hours', ph: 'Uren', num: true }],
       text: function (r) { return join([r.partner, r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
+      parts: function (r) { return [r.partner, join([r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : ''])]; },
       sum: function (l) { var n = 0; l.forEach(function (r) { n += +r.count || 0; }); return l.length ? (n ? n + ' pers' : l.length + '×') : ''; } },
     machines: { title: 'Materieel (partners)', open: true, key: function (r) { return ((r.item || '') + '|' + (r.partner || '')).toLowerCase(); },
       fields: [{ k: 'item', ph: 'Materieel, bijv. Graafmachine 14 ton', req: true, wide: true }, { k: 'partner', ph: 'Partner (bedrijf)' }, { k: 'hours', ph: 'Uren', num: true }],
       text: function (r) { return join([r.item, r.partner, r.hours ? r.hours + ' u' : '']); },
+      parts: function (r) { return [r.item, join([r.partner, r.hours ? r.hours + ' u' : ''])]; },
       sum: function (l) { return l.length ? l.length + '×' : ''; } },
     stagnation: { title: 'Stagnatie', key: null,
       fields: [{ k: 'cause', ph: 'Oorzaak', select: CAUSES, req: true, wide: true }, { k: 'hours', ph: 'Uren', num: true }, { k: 'note', ph: 'Toelichting' }],
       text: function (r) { return join([r.cause, r.hours ? r.hours + ' u' : '', r.note]); },
+      parts: function (r) { return [r.cause, join([r.hours ? r.hours + ' u' : '', r.note])]; },
       sum: function (l) { var h = 0; l.forEach(function (r) { h += +r.hours || 0; }); return l.length ? (h ? h + ' u' : l.length + '×') : 'geen'; } },
     deliveries: { title: 'Leveringen', key: function (r) { return (r.what || '').toLowerCase(); },
       fields: [{ k: 'what', ph: 'Wat is geleverd', req: true, wide: true }, { k: 'qty', ph: 'Hoeveelheid, bijv. 24 ton' }, { k: 'bon', ph: 'Bonnummer' }],
       text: function (r) { return join([r.what, r.qty, r.bon ? 'bon ' + r.bon : '']); },
+      parts: function (r) { return [r.what, join([r.qty, r.bon ? 'bon ' + r.bon : ''])]; },
       sum: function (l) { return l.length ? l.length + '×' : ''; } }
   };
   var LISTS = Object.keys(SECS);
@@ -257,7 +268,7 @@
     LISTS.forEach(function (name) {
       var s = SECS[name], d = document.createElement('details'); d.className = 'sec'; d.id = 'sec-' + name; if (s.open) d.open = true;
       d.innerHTML = '<summary><span>' + s.title + '</span><span class="sum" id="sum-' + name + '"></span></summary>' +
-        '<div class="secbody"><div class="chips" id="list-' + name + '"></div><div class="addgrid" id="grid-' + name + '"></div>' +
+        '<div class="secbody"><div class="rows" id="list-' + name + '"></div><div class="addgrid" id="grid-' + name + '"></div>' +
         '<button class="btn" type="button" id="add-' + name + '">Toevoegen</button><div class="chips" id="sug-' + name + '"></div></div>';
       host.appendChild(d);
       var grid = d.querySelector('#grid-' + name);
@@ -271,7 +282,7 @@
       });
       $('add-' + name).onclick = function () { addRow(name); };
       $('list-' + name).onclick = function (ev) {
-        var b = ev.target.closest('.chip'); if (!b) return;
+        var b = ev.target.closest('.del'); if (!b) return;
         day[name].splice(+b.dataset.i, 1); renderAll(); saveNow();
       };
       $('sug-' + name).onclick = function (ev) {
@@ -312,7 +323,15 @@
   function renderAll() {
     LISTS.forEach(function (name) {
       var s = SECS[name], box = $('list-' + name), sb = $('sug-' + name); box.textContent = ''; sb.textContent = '';
-      day[name].forEach(function (r, i) { var t = s.text(r); box.appendChild(chip('on', t + ' ×', { 'data-i': i, 'aria-label': t + ' verwijderen' })); });
+      day[name].forEach(function (r, i) {
+        var p = s.parts(r), row = document.createElement('div'); row.className = 'rowitem';
+        var t = document.createElement('span'); t.className = 't';
+        var b1 = document.createElement('b'); b1.textContent = p[0] || ''; t.appendChild(b1);
+        if (p[1]) { var sm = document.createElement('small'); sm.textContent = p[1]; t.appendChild(sm); }
+        var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.dataset.i = i; del.setAttribute('aria-label', s.text(r) + ' verwijderen');
+        del.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        row.appendChild(t); row.appendChild(del); box.appendChild(row);
+      });
       suggestions(name).forEach(function (r) { sb.appendChild(chip('sug', '+ ' + s.text(r), { 'data-row': JSON.stringify(r) })); });
       $('sum-' + name).textContent = s.sum(day[name]);
       var d = $('sec-' + name); if (day[name].length && !d.open) d.open = true;

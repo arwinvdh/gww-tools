@@ -44,7 +44,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   r = await rec(today);
   ok(r.crew.length === 1 && r.crew[0].partner === 'Bouwpartner BV' && r.crew[0].count === 3 && r.crew[0].hours === 8, 'personeel: partner, aantal en uren bewaard');
   ok(r.machines[0].item === 'Graafmachine 14 ton' && r.machines[0].partner === 'Machineverhuur NV' && r.machines[0].hours === 7.5 && r.equipment.join() === 'Graafmachine 14 ton', 'materieel: item, partner en uren bewaard; namen ook in het oude veld');
-  ok(/3 pers/.test(await p.textContent('#sum-crew')) && /Bouwpartner BV · 3 pers · 8 u/.test(await p.textContent('#list-crew')), 'personeel: samenvatting en chip kloppen');
+  ok(/3 pers/.test(await p.textContent('#sum-crew')) && /Bouwpartner BV.*3 pers · 8 u/.test(await p.textContent('#list-crew')), 'personeel: samenvatting en chip kloppen');
 
   // 4. zelfde als vorige dag
   await p.fill('#date', '2026-12-31'); await p.waitForTimeout(400);
@@ -56,7 +56,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
 
   // oud formaat blijft werken
   await p.fill('#date', '2026-01-02'); await p.waitForTimeout(400);
-  ok(await p.locator('#list-machines .chip', { hasText: 'Dumper' }).count() === 1, 'een regel uit het oude formaat (alleen materieelnamen) wordt gewoon getoond');
+  ok(await p.locator('#list-machines .rowitem', { hasText: 'Dumper' }).count() === 1, 'een regel uit het oude formaat (alleen materieelnamen) wordt gewoon getoond');
 
   // 5 t/m 9: stagnatie, leveringen, meerwerk, veiligheid, overig
   await p.fill('#date', '2026-12-31'); await p.waitForTimeout(400);
@@ -72,7 +72,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   ok(r.safety.toolbox && r.safety.lmra && r.safety.incident && r.safety.note === 'Bijna-ongeval met kraan' && /incident/.test(await p.textContent('#sum-safety')), 'veiligheid: toolbox, LMRA, incident en toelichting');
   ok(r.other === 'Opdrachtgever op bezoek', 'overig wordt bewaard');
   // verwijderen van een regel
-  await p.click('#list-stagnation .chip'); await p.waitForTimeout(700);
+  await p.click('#list-stagnation .del'); await p.waitForTimeout(700);
   ok((await rec('2026-12-31')).stagnation.length === 0 && /geen/.test(await p.textContent('#sum-stagnation')), 'een regel verwijderen werkt (stagnatie staat weer op geen)');
   await p.fill('#date', '2026-01-02'); await p.waitForTimeout(300); await p.fill('#date', '2026-12-31'); await p.waitForTimeout(400);
   ok(await p.inputValue('#other') === 'Opdrachtgever op bezoek' && await p.isChecked('#saInc') && await p.isChecked('#exOn'), 'terug naar de dag: alles staat er nog');
