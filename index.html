@@ -1378,11 +1378,13 @@
         resetAll();
         $('nr').value = gp.nr || ''; $('name').value = gp.name || ''; if (gp.note) $('note').value = gp.note;
         if (gp.who) $('myName').value = gp.who; if (gp.phone) $('myPhone').value = gp.phone;
-        openMore(); update(); toast('Project ' + pl(gp) + ' ingevuld. Zoek nu de locatie.');
+        var glat = gp.lat == null || gp.lat === '' ? NaN : +gp.lat, glon = gp.lon == null || gp.lon === '' ? NaN : +gp.lon, hasLoc = validLL(glat, glon);
+        if (hasLoc) setPoint(glat, glon, { addr: gp.addr || '', keepView: false });
+        openMore(); update(); toast('Project ' + pl(gp) + ' ingevuld.' + (hasLoc ? '' : ' Zoek nu de locatie.'));
       }
       history.replaceState(null, '', location.pathname + location.search);
     }
-  } catch (e) {}
+  } catch (e) { console.error('Project openen mislukt', e); }
   var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (ios && !standalone && lsGet('locdelen.tipX', '0') !== '1') $('tip').hidden = false;

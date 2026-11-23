@@ -31,6 +31,10 @@
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .empty { margin: 0; color: var(--ink-2); }
   .launch { display: grid; gap: 0.5rem; }
+  .locbox { gap: 0.5rem; }
+  .loctext { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+  .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+  #locRes .row { min-height: 3rem; }
   dialog { max-height: calc(100dvh - 2rem); overflow: auto; }
 }
 </style>
@@ -74,6 +78,18 @@
   <div class="field"><label for="ewho">Uitvoerder</label><input class="inp" id="ewho" autocomplete="off"></div>
   <div class="field"><label for="ephone">Telefoon</label><input class="inp" id="ephone" type="tel" autocomplete="off"></div>
   <div class="field"><label for="enote">Notitie</label><textarea class="inp" id="enote" rows="2"></textarea></div>
+  <div class="field locbox">
+    <label>Locatie van het project</label>
+    <p class="loctext" id="locText">Nog geen locatie</p>
+    <div class="actions">
+      <button class="btn sm" id="locHere" type="button">Huidige locatie</button>
+      <button class="btn sm" id="locFromLd" type="button">Uit Locatie delen</button>
+      <button class="btn sm danger" id="locClear" type="button" hidden>Wissen</button>
+    </div>
+    <div class="addrow"><input class="inp" id="locQ" type="search" placeholder="Adres of plaats zoeken" autocomplete="off"><button class="btn" id="locGo" type="button">Zoeken</button></div>
+    <div class="list" id="locRes"></div>
+    <p class="hint" id="locMsg" role="status"></p>
+  </div>
   <div class="actions">
     <button class="btn" id="esave" type="button">Opslaan</button>
     <button class="btn" id="ecancel" type="button">Sluiten</button>
@@ -113,13 +129,16 @@
   function sameKey(a, b) { return ((a.nr || '') + '|' + (a.name || '')).toLowerCase() === ((b.nr || '') + '|' + (b.name || '')).toLowerCase(); }
   function label(p) { return [p.nr, p.name].filter(Boolean).join(' · '); }
 
+  function validLL(a, b) { a = Number(a); b = Number(b); return a !== null && isFinite(a) && isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180 && !(a === 0 && b === 0); }
   function importFromLocatie() {
     var src = readJson(SRC, []), cur = load(), n = 0, now = Date.now();
     src.forEach(function (s) {
       if (!s || (!s.nr && !s.name)) return;
       var rec = { nr: String(s.nr || ''), name: String(s.name || '') };
       if (cur.some(function (p) { return sameKey(p, rec); })) return;
-      cur.push({ v: 1, id: importId(rec, cur.map(function (p) { return p.id; })), nr: rec.nr, name: rec.name, created: now, modified: now }); n++;
+      var np = { v: 1, id: importId(rec, cur.map(function (p) { return p.id; })), nr: rec.nr, name: rec.name, created: now, modified: now };
+      if (validLL(s.lat, s.lon)) { np.lat = +s.lat; np.lon = +s.lon; np.addr = String(s.addr || ''); }
+      cur.push(np); n++;
     });
     if (n) save(cur);
     return n;
@@ -161,12 +180,13 @@
     var b = e.target.closest('.row'); if (!b) return;
     var p = load().filter(function (x) { return x.id === b.dataset.id; })[0]; if (!p) return;
     editId = p.id; $('enr').value = p.nr; $('ename').value = p.name; $('ewho').value = p.who || ''; $('ephone').value = p.phone || ''; $('enote').value = p.note || '';
+    locTok++; editLoc = validLL(p.lat, p.lon) ? { lat: +p.lat, lon: +p.lon, addr: p.addr || '' } : null; renderLoc(); $('locQ').value = ''; $('locRes').textContent = ''; $('locMsg').textContent = '';
     $('etitle').textContent = label(p) || 'Project';
     $('goLoc').href = 'index.html#gp=' + encodeURIComponent(p.id); $('goRoute').href = 'route.html#gp=' + encodeURIComponent(p.id); $('goLog').href = 'logboek.html#gp=' + encodeURIComponent(p.id);
     $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen';
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   };
-  function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); editId = null; }
+  function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); editId = null; locTok++; }
   $('ecancel').onclick = closeDlg;
   $('esave').onclick = function () {
     var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
@@ -180,10 +200,70 @@
     if (!nr && !name) return false;
     var who = $('ewho').value.trim(), phone = $('ephone').value.trim(), note = $('enote').value.trim();
     /* alleen schrijven bij een echte wijziging, anders overschrijft een nieuw tijdstip bij synchroniseren de stand van een ander apparaat */
-    if (p.nr === nr && p.name === name && (p.who || '') === who && (p.phone || '') === phone && (p.note || '') === note) return true;
+    var sameLoc = editLoc ? (validLL(p.lat, p.lon) && +p.lat === editLoc.lat && +p.lon === editLoc.lon && (p.addr || '') === editLoc.addr) : !validLL(p.lat, p.lon);
+    if (p.nr === nr && p.name === name && (p.who || '') === who && (p.phone || '') === phone && (p.note || '') === note && sameLoc) return true;
     p.nr = nr; p.name = name; p.who = who; p.phone = phone; p.note = note;
+    if (editLoc) { p.lat = editLoc.lat; p.lon = editLoc.lon; p.addr = editLoc.addr; } else { delete p.lat; delete p.lon; delete p.addr; }
     p.modified = Date.now(); save(cur); return true;
   }
+  /* ---------- locatie van het project ----------
+     Eén vaste locatie per project (lat, lon, adres). Het logboek gebruikt hem voor het weer en Locatie delen start erop.
+     Instellen: huidige locatie, een adres zoeken (PDOK), of overnemen uit Locatie delen. */
+  var editLoc = null;
+  function locLabel(l) { return l ? (l.addr || l.lat.toFixed(5) + ', ' + l.lon.toFixed(5)) : 'Nog geen locatie'; }
+  function renderLoc() { $('locText').textContent = locLabel(editLoc); $('locClear').hidden = !editLoc; }
+  var locTok = 0;   /* teller: een traag antwoord van "Huidige locatie" mag een latere keuze niet overschrijven */
+  function setLoc(l, msg) {
+    locTok++; editLoc = l; renderLoc(); $('locMsg').textContent = msg || '';
+    var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0]; if (p) { storeEdit(cur, p); render(); }
+  }
+  function jfetch(url, ms) {
+    var c = typeof AbortController === 'function' ? new AbortController() : null, t = setTimeout(function () { if (c) c.abort(); }, ms);
+    return fetch(url, c ? { signal: c.signal } : undefined).then(function (r) { clearTimeout(t); return r.ok ? r.json() : null; }, function () { clearTimeout(t); return null; });
+  }
+  var LS_API = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/';
+  $('locHere').onclick = function () {
+    if (!navigator.geolocation) { $('locMsg').textContent = 'Locatie is op dit toestel niet beschikbaar.'; return; }
+    $('locMsg').textContent = 'Locatie bepalen…';
+    var tok = ++locTok;
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      if (tok !== locTok) return;
+      var l = { lat: pos.coords.latitude, lon: pos.coords.longitude, addr: '' };
+      jfetch(LS_API + 'reverse?type=adres&rows=1&fl=weergavenaam&lat=' + l.lat + '&lon=' + l.lon, 4000).then(function (j) {
+        var d = j && j.response && j.response.docs && j.response.docs[0]; if (d && d.weergavenaam) l.addr = String(d.weergavenaam);
+        if (tok === locTok) setLoc(l, 'Huidige locatie ingesteld.');
+      });
+    }, function () { $('locMsg').textContent = 'Locatie niet beschikbaar. Geef toestemming of zoek een adres.'; }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 30000 });
+  };
+  function doSearch() {
+    var q = $('locQ').value.trim(); if (!q) return;
+    $('locMsg').textContent = 'Zoeken…'; $('locRes').textContent = '';
+    jfetch(LS_API + 'free?rows=5&fq=type:(adres%20OR%20weg%20OR%20woonplaats)&fl=weergavenaam,centroide_ll&q=' + encodeURIComponent(q), 6000).then(function (j) {
+      var docs = (j && j.response && j.response.docs) || [], n = 0;
+      docs.forEach(function (d) {
+        var m = /POINT\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/.exec(d.centroide_ll || ''); if (!m) return;
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'row'; b.dataset.lat = m[2]; b.dataset.lon = m[1]; b.dataset.addr = d.weergavenaam || '';
+        var t = document.createElement('span'); t.className = 'txt'; var x = document.createElement('b'); x.textContent = d.weergavenaam || ''; t.appendChild(x); b.appendChild(t);
+        $('locRes').appendChild(b); n++;
+      });
+      $('locMsg').textContent = n ? '' : (j ? 'Niets gevonden.' : 'Zoeken lukt nu niet. Controleer de verbinding.');
+    });
+  }
+  $('locGo').onclick = doSearch;
+  $('locQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  $('locRes').onclick = function (e) {
+    var b = e.target.closest('.row'); if (!b) return;
+    $('locRes').textContent = ''; $('locQ').value = '';
+    setLoc({ lat: +b.dataset.lat, lon: +b.dataset.lon, addr: b.dataset.addr }, 'Locatie ingesteld.');
+  };
+  $('locFromLd').onclick = function () {
+    var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0]; if (!p) return;
+    var hit = readJson(SRC, []).filter(function (s) { return s && sameKey(s, { nr: $('enr').value.trim(), name: $('ename').value.trim() }) && validLL(s.lat, s.lon); })[0];
+    if (!hit) { $('locMsg').textContent = 'Geen locatie gevonden in Locatie delen voor dit project.'; return; }
+    setLoc({ lat: +hit.lat, lon: +hit.lon, addr: String(hit.addr || '') }, 'Locatie overgenomen uit Locatie delen.');
+  };
+  $('locClear').onclick = function () { setLoc(null, 'Locatie gewist.'); };
+
   /* een tool openen bewaart eerst wat er is ingevuld, zodat de tool de nieuwste gegevens ziet */
   ['goLoc', 'goRoute', 'goLog'].forEach(function (id) {
     $(id).addEventListener('click', function () {

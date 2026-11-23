@@ -54,8 +54,9 @@ const { devices } = require('playwright');
   const ol = await p.evaluate(() => { const c = getComputedStyle(document.getElementById('q')); return [c.outlineStyle, c.outlineWidth]; });
   ok(ol[0] === 'solid' && ol[1] === '2px', 'focusring op invoerveld is een outline van 2px (' + ol.join(' ') + ')');
   // melding staat gecentreerd, ook na de animatie
-  await p.evaluate(() => window.dispatchEvent(new ErrorEvent('error', { message: 'test' }))); await p.waitForTimeout(600);
-  const c = await p.evaluate(() => { const r = document.getElementById('toast').getBoundingClientRect(); return [Math.round(r.left + r.width / 2), Math.round(innerWidth / 2)]; });
+  await p.evaluate(() => window.dispatchEvent(new ErrorEvent('error', { message: 'test' })));
+  // meten in de pagina zelf na de animatie: een wachttijd vanuit de test kan onder belasting te lang duren, en dan is de melding al weg
+  const c = await p.evaluate(() => new Promise(res => setTimeout(() => { const r = document.getElementById('toast').getBoundingClientRect(); res([Math.round(r.left + r.width / 2), Math.round(innerWidth / 2)]); }, 450)));
   ok(Math.abs(c[0] - c[1]) <= 2, 'melding staat gecentreerd (' + c.join(' vs ') + ')');
   await p.context().close();
   // weinig beweging: bezig-knop blijft leesbaar en geen soepel scrollen
