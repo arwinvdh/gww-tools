@@ -24,6 +24,7 @@
   .secbody .check { font-weight: 600; }
   .state { min-height: 1.25rem; }
   .bkrow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  #delDay { margin-top: 1.5rem; }   /* ruimte tussen de laatste sectie en de verwijderknop */
   .day { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
   .day .txt { display: grid; min-width: 0; }
   .day b { font-weight: 600; }
@@ -121,7 +122,7 @@
           <p class="hint info" id="wxInfo"></p>
         </div>
       </div>
-      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan?"></textarea></div>
+      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan? Elke regel wordt een opsommingspunt."></textarea><div class="chips" id="workSugg" hidden></div></div>
       <button class="btn copyprev" id="copyPrev" type="button" hidden></button>
       <div class="callout copynote" id="copyNote" role="status" hidden><span id="copyNoteTxt"></span><button class="btn sm" id="undoCopy" type="button">Ongedaan maken</button></div>
       <div id="secs"></div>
@@ -130,7 +131,7 @@
         <div class="secbody">
           <label class="check"><input type="checkbox" id="exOn"> Er is meerwerk of een afwijking</label>
           <div class="secbody" id="exBox" hidden>
-            <div class="field"><label for="exWho">Opgedragen door</label><input class="inp" id="exWho" autocomplete="off" placeholder="Naam of functie"></div>
+            <div class="field"><label for="exWho">Opgedragen door</label><input class="inp" id="exWho" autocomplete="off" placeholder="Naam of functie" list="dl-who"><datalist id="dl-who"></datalist></div>
             <div class="field"><label for="exHow">Hoe opgedragen</label><select class="inp" id="exHow"><option>Schriftelijk</option><option>Mondeling</option></select></div>
             <div class="field"><label for="exNote">Omschrijving</label><textarea class="inp small" id="exNote" placeholder="Wat is het meerwerk of de afwijking?"></textarea></div>
           </div>
@@ -145,7 +146,10 @@
           <div class="field"><label for="saNote">Toelichting</label><textarea class="inp small" id="saNote" placeholder="Wat gebeurde er, wie was erbij?"></textarea></div>
         </div>
       </details>
-      <div class="field"><label for="other">Overig</label><textarea class="inp small" id="other" placeholder="Bezoek, afspraken, bijzonderheden"></textarea></div>
+      <details class="sec" id="sec-other">
+        <summary><span>Overig</span><span class="sum" id="sum-other"></span></summary>
+        <div class="secbody"><textarea class="inp small" id="other" aria-label="Overig" placeholder="Bezoek, afspraken, bijzonderheden"></textarea></div>
+      </details>
       <details class="sec" id="sec-photos" open>
         <summary><span>Foto's</span><span class="sum" id="sum-photos"></span></summary>
         <div class="secbody">
@@ -231,35 +235,46 @@
   var WX_DESC = ['Zonnig', 'Wisselend bewolkt', 'Bewolkt', 'Mist', 'Motregen', 'Regen', 'Buien', 'Sneeuw', 'Onweer'];
   var CAUSES = ['Weer', 'Opdrachtgever', 'Kabels en leidingen', 'Levering', 'Materieel', 'Overig'];
   function join(a) { return a.filter(Boolean).join(' · '); }
+  /* soort per regel bij personeel en materieel: eigen, externe inhuur of onderaannemer. Oudere regels hebben geen `kind`: dat waren partners,
+     dus onderaannemers. Bij materieel kan de hoeveelheid per uur of per dag (`unit`: 'd'; zonder `unit` is het per uur). */
+  var KINDS = { crew: { eigen: 'Eigen personeel', inhuur: 'Externe inhuur', onderaannemer: 'Onderaannemer' }, machines: { eigen: 'Eigen materieel', inhuur: 'Gehuurd (inhuur)', onderaannemer: 'Onderaannemer' } };
+  var KIND_ORDER = ['eigen', 'inhuur', 'onderaannemer'];
+  function kindOf(r) { return KIND_ORDER.indexOf(r && r.kind) > -1 ? r.kind : 'onderaannemer'; }
+  function kindOpts(name) { return KIND_ORDER.map(function (k) { return { v: k, l: KINDS[name][k] }; }); }
+  function perDay(r) { return r && r.unit === 'd'; }
+  function amountText(r) { return r.hours !== '' && r.hours !== undefined && r.hours !== null && r.hours !== 0 ? fmtH(+r.hours) + (perDay(r) ? (+r.hours === 1 ? ' dag' : ' dagen') : ' u') : ''; }
   var SECS = {
-    crew: { title: 'Personeel (partners)', open: true, key: function (r) { return (r.partner || '').toLowerCase(); },
-      fields: [{ k: 'partner', ph: 'Partner (bedrijf)', req: true, wide: true }, { k: 'count', ph: 'Aantal', num: true }, { k: 'hours', ph: 'Uren', num: true }],
-      text: function (r) { return join([r.partner, r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
-      parts: function (r) { return [r.partner, join([r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : ''])]; },
+    crew: { title: 'Personeel', open: true, key: function (r) { return ((r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
+      fields: [{ k: 'kind', ph: 'Soort', opts: kindOpts('crew'), wide: true }, { k: 'partner', ph: 'Onderaannemer (bedrijf)', wide: true, mem: 'partner' }, { k: 'count', ph: 'Aantal', num: true }, { k: 'hours', ph: 'Uren', num: true }],
+      text: function (r) { return join([r.partner, r.kind ? KINDS.crew[kindOf(r)] : '', r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
+      plain: function (r) { return join([r.partner || KINDS.crew[kindOf(r)], r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
+      parts: function (r) { return [r.partner || KINDS.crew[kindOf(r)], join([r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : ''])]; },
       nums: [{ k: 'count', u: 'pers', label: 'Aantal personen', step: '1' }, { k: 'hours', u: 'u', label: 'Uren per persoon' }],
-      sub: function () { return ''; },
-      sum: function (l) { var n = 0; l.forEach(function (r) { n += +r.count || 0; }); var mh = manuren(l); return l.length ? (join([n ? n + ' pers' : '', mh ? fmtH(mh) + ' manuren' : '']) || l.length + '×') : ''; } },
-    machines: { title: 'Materieel (partners)', open: true, key: function (r) { return ((r.item || '') + '|' + (r.partner || '')).toLowerCase(); },
-      fields: [{ k: 'item', ph: 'Materieel, bijv. Graafmachine 14 ton', req: true, wide: true }, { k: 'partner', ph: 'Partner (bedrijf)' }, { k: 'hours', ph: 'Uren', num: true }],
-      text: function (r) { return join([r.item, r.partner, r.hours ? r.hours + ' u' : '']); },
-      parts: function (r) { return [r.item, join([r.partner, r.hours ? r.hours + ' u' : ''])]; },
-      nums: [{ k: 'hours', u: 'u', label: 'Uren' }],
-      sub: function (r) { return r.partner || ''; },
-      sum: function (l) { var h = 0; l.forEach(function (r) { h += +r.hours || 0; }); return l.length ? join([l.length + (l.length === 1 ? ' machine' : ' machines'), h ? fmtH(h) + ' u' : '']) : ''; } },
+      sub: function (r) { return r.partner ? KINDS.crew[kindOf(r)] : ''; },
+      sum: function (l) { var n = 0; l.forEach(function (r) { n += +r.count || 0; }); var mh = manuren(l); return l.length ? (join([n ? n + ' pers' : '', mh ? fmtH(mh) + ' manuren' : '']) || l.length + '×') : 'geen'; } },
+    machines: { title: 'Materieel', open: true, key: function (r) { return ((r.item || '') + '|' + (r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
+      fields: [{ k: 'kind', ph: 'Soort', opts: kindOpts('machines'), wide: true }, { k: 'item', ph: 'Materieel, bijv. Graafmachine 14 ton', req: true, wide: true, mem: 'item' }, { k: 'partner', ph: 'Onderaannemer (bedrijf)', wide: true, mem: 'partner' },
+        { k: 'unit', ph: 'Per', opts: [{ v: 'u', l: 'Per uur' }, { v: 'd', l: 'Per dag' }] }, { k: 'hours', ph: 'Uren', num: true }],
+      text: function (r) { return join([r.item, r.partner, r.kind ? KINDS.machines[kindOf(r)] : '', amountText(r)]); },
+      plain: function (r) { return join([r.item, r.partner || (r.kind && r.kind !== 'eigen' ? KINDS.machines[kindOf(r)] : ''), amountText(r)]); },
+      parts: function (r) { return [r.item, join([r.partner, amountText(r)])]; },
+      nums: [{ k: 'hours', u: function (r) { return perDay(r) ? 'dag' : 'u'; }, label: function (r) { return perDay(r) ? 'Dagen' : 'Uren'; } }],
+      sub: function (r) { return join([KINDS.machines[kindOf(r)], r.partner]); },
+      sum: function (l) { var h = 0, d = 0; l.forEach(function (r) { if (perDay(r)) d += +r.hours || 0; else h += +r.hours || 0; }); return l.length ? join([l.length + (l.length === 1 ? ' machine' : ' machines'), h ? fmtH(h) + ' u' : '', d ? fmtH(d) + (d === 1 ? ' dag' : ' dagen') : '']) : 'geen'; } },
     stagnation: { title: 'Stagnatie', key: null,
-      fields: [{ k: 'cause', ph: 'Oorzaak', select: CAUSES, req: true, wide: true }, { k: 'hours', ph: 'Uren', num: true }, { k: 'note', ph: 'Toelichting' }],
+      fields: [{ k: 'cause', ph: 'Oorzaak', select: CAUSES, req: true, wide: true }, { k: 'hours', ph: 'Uren', num: true }, { k: 'note', ph: 'Toelichting', mem: 'note' }],
       text: function (r) { return join([r.cause, r.hours ? r.hours + ' u' : '', r.note]); },
       parts: function (r) { return [r.cause, join([r.hours ? r.hours + ' u' : '', r.note])]; },
       nums: [{ k: 'hours', u: 'u', label: 'Uren' }],
       sub: function (r) { return r.note || ''; },
       sum: function (l) { var h = 0; l.forEach(function (r) { h += +r.hours || 0; }); return l.length ? (h ? fmtH(h) + ' u' : l.length + '×') : 'geen'; } },
-    deliveries: { title: 'Leveringen', key: function (r) { return (r.what || '').toLowerCase(); },
-      fields: [{ k: 'what', ph: 'Wat is geleverd', req: true, wide: true }, { k: 'qty', ph: 'Hoeveelheid, bijv. 24 ton' }, { k: 'bon', ph: 'Bonnummer' }],
-      text: function (r) { return join([r.what, r.qty, r.bon ? 'bon ' + r.bon : '']); },
-      parts: function (r) { return [r.what, join([r.qty, r.bon ? 'bon ' + r.bon : ''])]; },
+    deliveries: { title: 'Leveringen', key: function (r) { return ((r.what || '') + '|' + (r.supplier || '')).toLowerCase(); },
+      fields: [{ k: 'what', ph: 'Wat is geleverd', req: true, wide: true, mem: 'what' }, { k: 'supplier', ph: 'Leverancier', wide: true, mem: 'supplier' }, { k: 'qty', ph: 'Hoeveelheid, bijv. 24 ton', mem: 'qty' }, { k: 'bon', ph: 'Bonnummer' }],
+      text: function (r) { return join([r.what, r.supplier, r.qty, r.bon ? 'bon ' + r.bon : '']); },
+      parts: function (r) { return [r.what, join([r.supplier, r.qty, r.bon ? 'bon ' + r.bon : ''])]; },
       nums: [],
-      sub: function (r) { return join([r.qty, r.bon ? 'bon ' + r.bon : '']); },
-      sum: function (l) { return l.length ? l.length + (l.length === 1 ? ' levering' : ' leveringen') : ''; } }
+      sub: function (r) { return join([r.supplier, r.qty, r.bon ? 'bon ' + r.bon : '']); },
+      sum: function (l) { return l.length ? l.length + (l.length === 1 ? ' levering' : ' leveringen') : 'geen'; } }
   };
   /* manuren zoals het weekrapport ze telt: aantal personen (minstens 1) keer uren per persoon, alleen waar uren zijn ingevuld */
   function manuren(l) { var t = 0; l.forEach(function (c) { if (c.hours !== '' && c.hours !== undefined) t += (+c.count || 1) * (+c.hours || 0); }); return t; }
@@ -280,12 +295,14 @@
     d.weather = e.weather ? copy(e.weather) : null;
     return d;
   }
+  /* een regel met alleen een opsommingspunt is leeg: die wordt niet bewaard en telt niet mee */
+  function cleanWork(w) { return String(w || '').split('\n').filter(function (l) { return !/^\s*•\s*$/.test(l); }).join('\n').trim(); }
   function fields(d) {
-    return { work: d.work.trim(), other: d.other.trim(), crew: d.crew, machines: d.machines, equipment: d.machines.map(function (m) { return m.item; }),
+    return { work: cleanWork(d.work), other: d.other.trim(), crew: d.crew, machines: d.machines, equipment: d.machines.map(function (m) { return m.item; }),
       stagnation: d.stagnation, deliveries: d.deliveries, extra: d.extra, safety: d.safety, weather: d.weather };
   }
   function hasContent(d) {
-    return !!(d.work.trim() || d.other.trim() || LISTS.some(function (k) { return d[k].length; }) || d.extra.on || d.safety.toolbox || d.safety.lmra || d.safety.incident || d.safety.note.trim());
+    return !!(cleanWork(d.work) || d.other.trim() || LISTS.some(function (k) { return d[k].length; }) || d.extra.on || d.safety.toolbox || d.safety.lmra || d.safety.incident || d.safety.note.trim());
   }
   var day = emptyDay();
   /* tijdens het typen schrijft renderAll het veld met de cursor niet opnieuw; bij een andere dag of project wel (anders blijft de oude tekst staan) */
@@ -329,7 +346,77 @@
   }
   function saveSoon() { hideCopyNote(); setState('Bezig met bewaren…'); clearTimeout(timer); timer = setTimeout(saveNow, 500); }
 
+  /* ---------- slim onthouden en voorstellen ----------
+     Alles wat je invult (bedrijven, materieel, leveranciers, hoeveelheden, toelichtingen, werkregels) wordt onthouden in `gww.logmem` en komt terug als
+     suggestie bij het typen. Bij het opstarten wordt het geheugen aangevuld met wat in het logboek staat, ook op een ander apparaat (via de gesynchroniseerde dagen).
+     Het geheugen blijft ook als je een dag verwijdert. Formaat: { v: 1, lists: { <lijst>: { <kleine letters>: { t, n, ts } } }, meta: { kind, item, last } }. */
+  var MKEY = 'gww.logmem', mem = loadMem(), memDirty = false;
+  function loadMem() {
+    try { var m = JSON.parse(localStorage.getItem(MKEY)); if (m && typeof m === 'object' && !Array.isArray(m) && m.lists && typeof m.lists === 'object' && !Array.isArray(m.lists)) { if (!m.meta || typeof m.meta !== 'object') m.meta = {}; return m; } } catch (e) { /* kapot geheugen: opnieuw beginnen */ }
+    return { v: 1, lists: {}, meta: {} };
+  }
+  function saveMem() {
+    if (!memDirty) return; memDirty = false;
+    Object.keys(mem.lists).forEach(function (n) {   /* houd het klein: de meest gebruikte en recente waarden */
+      var l = mem.lists[n]; if (!l || typeof l !== 'object') { delete mem.lists[n]; return; }
+      var ks = Object.keys(l); if (ks.length <= 300) return;
+      ks.sort(function (x, y) { return ((l[y] && l[y].n) || 0) - ((l[x] && l[x].n) || 0) || ((l[y] && l[y].ts) || 0) - ((l[x] && l[x].ts) || 0); }).slice(300).forEach(function (k) { delete l[k]; });
+    });
+    try { localStorage.setItem(MKEY, JSON.stringify(mem)); } catch (e) { /* opslag mag ontbreken */ }
+  }
+  function memEntry(list, text) {
+    text = String(text == null ? '' : text).replace(/\s+/g, ' ').trim(); if (text.length < 2 || text.length > 120) return null;
+    var l = mem.lists[list]; if (!l || typeof l !== 'object' || Array.isArray(l)) l = mem.lists[list] = {};
+    var k = text.toLowerCase(), e = l[k]; if (!e || typeof e !== 'object') e = l[k] = { t: text, n: 0, ts: 0 };
+    return e;
+  }
+  function memLearn(list, text) { var e = memEntry(list, text); if (!e) return; e.n = (+e.n || 0) + 1; e.ts = Date.now(); e.t = String(text).replace(/\s+/g, ' ').trim(); memDirty = true; }
+  function memList(list, q, limit) {
+    var l = mem.lists[list]; if (!l || typeof l !== 'object') return [];
+    q = String(q || '').toLowerCase().trim();
+    return Object.keys(l).map(function (k) { return l[k]; }).filter(function (e) { return e && typeof e.t === 'string' && (!q || e.t.toLowerCase().indexOf(q) > -1); })
+      .sort(function (x, y) { return (+y.n || 0) - (+x.n || 0) || (+y.ts || 0) - (+x.ts || 0) || x.t.localeCompare(y.t); }).slice(0, limit || 60).map(function (e) { return e.t; });
+  }
+  function workLines(w) { return String(w || '').split('\n').map(function (l) { return l.replace(/^\s*•\s*/, '').trim(); }).filter(function (l) { return l.length >= 3 && l.length <= 120; }); }
+  function seedMem() {
+    var cnt = {}, add = function (list, t) { t = String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); if (t.length < 2 || t.length > 120) return; var k = list + '\u0001' + t.toLowerCase(); (cnt[k] || (cnt[k] = { list: list, t: t, n: 0 })).n++; };
+    loadLog().forEach(function (rec) {
+      var d = fromRecord(rec);
+      d.crew.forEach(function (r) { add('partner', r.partner); });
+      d.machines.forEach(function (r) { add('item', r.item); add('partner', r.partner); });
+      d.deliveries.forEach(function (r) { add('what', r.what); add('supplier', r.supplier); add('qty', r.qty); });
+      d.stagnation.forEach(function (r) { add('note', r.note); });
+      if (d.extra && d.extra.who) add('who', d.extra.who);
+      workLines(d.work).forEach(function (l) { add('work', l); });
+    });
+    Object.keys(cnt).forEach(function (k) { var c = cnt[k], e = memEntry(c.list, c.t); if (e && (+e.n || 0) < c.n) { e.n = c.n; if (!e.ts) e.ts = 1; memDirty = true; } });
+    saveMem();
+  }
+  function fillDatalists() {
+    LISTS.forEach(function (name) { SECS[name].fields.forEach(function (f) { if (!f.mem) return; var dl = $('dl-' + name + '-' + f.k); if (!dl) return; dl.textContent = ''; memList(f.mem).forEach(function (t) { var o = document.createElement('option'); o.value = t; dl.appendChild(o); }); }); });
+    var dw = $('dl-who'); if (dw) { dw.textContent = ''; memList('who').forEach(function (t) { var o = document.createElement('option'); o.value = t; dw.appendChild(o); }); }
+  }
+  function learnRow(name, row) {
+    SECS[name].fields.forEach(function (f) { if (f.mem) memLearn(f.mem, row[f.k]); });
+    mem.meta.kind = mem.meta.kind && typeof mem.meta.kind === 'object' ? mem.meta.kind : {}; mem.meta.item = mem.meta.item && typeof mem.meta.item === 'object' ? mem.meta.item : {}; mem.meta.last = mem.meta.last && typeof mem.meta.last === 'object' ? mem.meta.last : {};
+    if (name === 'crew' && row.partner) mem.meta.kind[row.partner.toLowerCase()] = row.kind;
+    if (name === 'machines' && row.item) mem.meta.item[row.item.toLowerCase()] = { kind: row.kind, unit: row.unit === 'd' ? 'd' : 'u', partner: row.partner || '' };
+    if (row.kind) mem.meta.last[name] = row.kind;
+    if (name === 'machines') mem.meta.last.unit = row.unit === 'd' ? 'd' : 'u';
+    memDirty = true; saveMem(); fillDatalists();
+  }
+
   /* ---------- lijsten (personeel, materieel, stagnatie, leveringen) ---------- */
+  /* het formulier past zich aan de soort aan: eigen personeel heeft geen bedrijf nodig, eigen materieel geen verhuurder; per dag of per uur bij materieel */
+  function paintForm(name) {
+    var kind = $('f-' + name + '-kind') ? $('f-' + name + '-kind').value : '', p = $('f-' + name + '-partner'), ph;
+    if (name === 'crew') { ph = kind === 'eigen' ? 'Ploeg of afdeling (optioneel)' : kind === 'inhuur' ? 'Uitzendbureau of bedrijf' : 'Onderaannemer (bedrijf)'; p.placeholder = ph; p.setAttribute('aria-label', ph); }
+    if (name === 'machines') {
+      ph = kind === 'inhuur' ? 'Verhuurder (bedrijf)' : 'Onderaannemer (bedrijf)'; p.placeholder = ph; p.setAttribute('aria-label', ph);
+      if (kind === 'eigen' && !p.hidden) p.value = ''; p.hidden = kind === 'eigen';
+      var h = $('f-machines-hours'), u = $('f-machines-unit').value; h.placeholder = u === 'd' ? 'Dagen' : 'Uren'; h.setAttribute('aria-label', h.placeholder);
+    }
+  }
   function buildSections() {
     var host = $('secs');
     LISTS.forEach(function (name) {
@@ -342,14 +429,30 @@
       var grid = d.querySelector('#grid-' + name);
       s.fields.forEach(function (f) {
         var el;
-        if (f.select) { el = document.createElement('select'); f.select.forEach(function (o) { var op = document.createElement('option'); op.textContent = o; el.appendChild(op); }); }
-        else { el = document.createElement('input'); el.autocomplete = 'off'; el.placeholder = f.ph; if (f.num) { el.type = 'number'; el.inputMode = 'decimal'; el.step = '0.5'; el.min = '0'; } }
+        if (f.select || f.opts) {
+          el = document.createElement('select');
+          (f.opts || f.select.map(function (o) { return { v: o, l: o }; })).forEach(function (o) { var op = document.createElement('option'); op.value = o.v; op.textContent = o.l; el.appendChild(op); });
+        } else {
+          el = document.createElement('input'); el.autocomplete = 'off'; el.placeholder = f.ph; if (f.num) { el.type = 'number'; el.inputMode = 'decimal'; el.step = '0.5'; el.min = '0'; }
+          if (f.mem) { el.setAttribute('list', 'dl-' + name + '-' + f.k); var dl = document.createElement('datalist'); dl.id = 'dl-' + name + '-' + f.k; grid.appendChild(dl); }
+        }
         el.className = 'inp' + (f.wide ? ' wide' : ''); el.id = 'f-' + name + '-' + f.k; el.setAttribute('aria-label', f.ph);
         el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('add-' + name).click(); } });
         el.addEventListener('input', function () { pendWarn = false; updatePending(); });
         el.addEventListener('change', function () { pendWarn = false; updatePending(); });
         grid.appendChild(el);
       });
+      /* standaard de soort die je het laatst gebruikte; een bekende naam zet zelf de soort (en bij materieel de eenheid en het bedrijf) goed */
+      var kd = $('f-' + name + '-kind'); if (kd) { kd.value = (mem.meta.last && mem.meta.last[name] && KINDS[name][mem.meta.last[name]]) ? mem.meta.last[name] : 'eigen'; kd.addEventListener('change', function () { paintForm(name); }); }
+      if (name === 'machines') { $('f-machines-unit').value = (mem.meta.last && mem.meta.last.unit === 'd') ? 'd' : 'u'; $('f-machines-unit').addEventListener('change', function () { paintForm('machines'); }); }
+      if (name === 'crew') $('f-crew-partner').addEventListener('change', function () { var k = mem.meta.kind && mem.meta.kind[this.value.trim().toLowerCase()]; if (k && KINDS.crew[k]) { $('f-crew-kind').value = k; paintForm('crew'); } });
+      if (name === 'machines') $('f-machines-item').addEventListener('change', function () {
+        var m = mem.meta.item && mem.meta.item[this.value.trim().toLowerCase()]; if (!m || typeof m !== 'object') return;
+        if (KINDS.machines[m.kind]) $('f-machines-kind').value = m.kind; $('f-machines-unit').value = m.unit === 'd' ? 'd' : 'u'; paintForm('machines');
+        if (m.partner && m.kind !== 'eigen' && !$('f-machines-partner').value.trim()) $('f-machines-partner').value = m.partner;
+        updatePending();
+      });
+      paintForm(name);
       $('add-' + name).onclick = function () { addRow(name); };
       $('list-' + name).addEventListener('input', function (ev) {
         var t = ev.target; if (!t.dataset || !t.dataset.rowInput) return;
@@ -368,16 +471,16 @@
   }
   function numVal(v) { v = String(v || '').replace(',', '.').trim(); return v === '' || isNaN(+v) ? '' : +v; }
   function addRow(name) {
-    var s = SECS[name], row = {}, missing = false;
-    s.fields.forEach(function (f) {
-      var el = $('f-' + name + '-' + f.k), v = f.num ? numVal(el.value) : String(el.value || '').replace(/\s+/g, ' ').trim();
-      if (f.req && v === '') missing = true;
-      row[f.k] = v;
-    });
-    if (missing) { $('f-' + name + '-' + s.fields[0].k).focus(); return; }
-    day[name].push(row);
-    s.fields.forEach(function (f) { if (!f.select) $('f-' + name + '-' + f.k).value = ''; });
-    renderAll(); saveNow(); $('f-' + name + '-' + s.fields[0].k).focus();
+    var s = SECS[name], row = {}, missing = '';
+    s.fields.forEach(function (f) { var el = $('f-' + name + '-' + f.k); row[f.k] = f.num ? numVal(el.value) : String(el.value || '').replace(/\s+/g, ' ').trim(); });
+    if (name === 'crew') { if (row.kind === 'eigen') { if (row.count === '' && row.hours === '' && !row.partner) missing = 'count'; } else if (!row.partner) missing = 'partner'; }
+    else s.fields.forEach(function (f) { if (f.req && row[f.k] === '' && !missing) missing = f.k; });
+    if (missing) { $('f-' + name + '-' + missing).focus(); return; }
+    if (name === 'machines') { if (row.unit !== 'd') delete row.unit; if (row.kind === 'eigen') row.partner = ''; }
+    day[name].push(row); learnRow(name, row);
+    s.fields.forEach(function (f) { if (!f.select && !f.opts) $('f-' + name + '-' + f.k).value = ''; });
+    paintForm(name);
+    renderAll(); saveNow(); var first = $('f-' + name + '-' + (name === 'crew' || name === 'machines' ? (name === 'crew' ? 'partner' : 'item') : s.fields[0].k)); if (first && !first.hidden) first.focus();
   }
   /* voorstellen uit eerdere dagen: de meest gebruikte regels, met de laatst gebruikte aantallen en uren */
   function suggestions(name) {
@@ -413,8 +516,8 @@
             var w = document.createElement('label'), inp = document.createElement('input'), u = document.createElement('span');
             w.className = 'pill'; inp.type = 'number'; inp.inputMode = 'decimal'; inp.step = n.step || '0.5'; inp.min = '0';
             inp.value = r[n.k] === undefined || r[n.k] === null ? '' : r[n.k];
-            inp.dataset.rowInput = '1'; inp.dataset.i = i; inp.dataset.k = n.k; inp.setAttribute('aria-label', n.label + ' bij ' + (s.parts(r)[0] || 'deze regel'));
-            u.textContent = n.u; w.appendChild(inp); w.appendChild(u); ctl.appendChild(w);
+            inp.dataset.rowInput = '1'; inp.dataset.i = i; inp.dataset.k = n.k; inp.setAttribute('aria-label', (typeof n.label === 'function' ? n.label(r) : n.label) + ' bij ' + (s.parts(r)[0] || 'deze regel'));
+            u.textContent = typeof n.u === 'function' ? n.u(r) : n.u; w.appendChild(inp); w.appendChild(u); ctl.appendChild(w);
           });
           var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.dataset.i = i; del.setAttribute('aria-label', s.text(r) + ' verwijderen');
           del.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -436,13 +539,15 @@
     if (day.safety.incident || day.safety.note) $('sec-safety').open = true;
     if (!busy('work')) $('work').value = day.work;
     if (!busy('other')) $('other').value = day.other;
+    if ((day.other || '').trim()) $('sec-other').open = true;
     renderWeather(); renderCopyPrev(); updatePending();
   }
   /* samenvattingen bij de ingeklapte secties en de regel bovenaan de dag: alleen wat echt is ingevuld, niets berekend of aangenomen */
   function renderSums() {
     $('sum-extra').textContent = day.extra.on ? (day.extra.how || 'Ja').toLowerCase() : 'geen';
-    $('sum-safety').textContent = day.safety.incident ? 'incident' : (day.safety.toolbox || day.safety.lmra ? [day.safety.toolbox ? 'toolbox' : '', day.safety.lmra ? 'LMRA' : ''].filter(Boolean).join(' + ') : '');
-    $('sum-photos').textContent = curPhotoCount ? curPhotoCount + (curPhotoCount === 1 ? ' foto' : '’s') : '';
+    $('sum-safety').textContent = day.safety.incident ? 'incident' : (day.safety.toolbox || day.safety.lmra ? [day.safety.toolbox ? 'toolbox' : '', day.safety.lmra ? 'LMRA' : ''].filter(Boolean).join(' + ') : (day.safety.note && day.safety.note.trim() ? 'toelichting' : 'niets geregistreerd'));
+    $('sum-photos').textContent = curPhotoCount ? curPhotoCount + (curPhotoCount === 1 ? ' foto' : '’s') : 'geen';
+    var ow = (day.other || '').trim(); $('sum-other').textContent = ow ? (ow.length > 40 ? ow.slice(0, 40).replace(/\s+\S*$/, '') + '…' : ow.split('\n')[0]) : 'geen';
     $('daySum').textContent = statParts(day).concat(curPhotoCount ? [curPhotoCount + (curPhotoCount === 1 ? ' foto' : '’s')] : []).join(' · ');
     updatePending();
   }
@@ -463,7 +568,7 @@
   var pendWarn = false;
   function pendingText(name) {
     var s = SECS[name], t = '';
-    s.fields.forEach(function (f) { if (f.select) return; var el = $('f-' + name + '-' + f.k); if (el && !t) t = String(el.value || '').trim(); });
+    s.fields.forEach(function (f) { if (f.select || f.opts) return; var el = $('f-' + name + '-' + f.k); if (el && !t) t = String(el.value || '').trim(); });
     return t;
   }
   function updatePending() {
@@ -472,11 +577,11 @@
       var base = SECS[name].sum(day[name]);
       h.hidden = !t; if (t) h.textContent = 'Nog niet toegevoegd: ' + t + '. Tik op Toevoegen.';
       sm.classList.toggle('warn', !!t);
-      sm.textContent = t ? (base ? base + ' · ' : '') + 'niet toegevoegd' : base;
+      sm.textContent = t ? (base && base !== 'geen' ? base + ' · ' : '') + 'niet toegevoegd' : base;
     });
   }
   function clearAddForms() {
-    LISTS.forEach(function (name) { SECS[name].fields.forEach(function (f) { if (!f.select) $('f-' + name + '-' + f.k).value = ''; }); });
+    LISTS.forEach(function (name) { SECS[name].fields.forEach(function (f) { if (!f.select && !f.opts) $('f-' + name + '-' + f.k).value = ''; }); if ($('f-' + name + '-kind')) paintForm(name); });
     pendWarn = false;
   }
   /* weggaan met een half ingevulde regel: eerst een waarschuwing, de tweede tik gaat toch door */
@@ -489,7 +594,7 @@
     try { $('add-' + n).scrollIntoView({ block: 'center' }); } catch (e) { /* oude browser */ }
     return true;
   }
-  buildSections();
+  buildSections(); seedMem(); fillDatalists();
 
   /* "Zelfde als vorige dag": personeel en materieel van de laatste eerdere dag van dit project, met één tik */
   function previousDay() {
@@ -586,7 +691,44 @@
   $('saInc').addEventListener('change', function () { day.safety.incident = this.checked; saveNow(); renderAll(); });
   $('saNote').addEventListener('input', function () { day.safety.note = this.value; saveSoon(); });
 
-  $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); });
+  /* werkzaamheden als opsomming: elke regel begint met een punt; Enter maakt een nieuwe regel met een punt, Enter op een lege regel of terugwissen
+     van het punt stopt de opsomming. Regels met alleen een punt tellen niet mee en worden niet bewaard. */
+  var BUL = '\u2022 ';
+  function fireInput(el) { el.dispatchEvent(new Event('input', { bubbles: true })); }
+  $('work').addEventListener('focus', function () { if (!this.value) { this.value = BUL; this.setSelectionRange(BUL.length, BUL.length); day.work = this.value; } renderWorkSugg(); });
+  $('work').addEventListener('blur', function () {
+    if (cleanWork(this.value) === '') { this.value = ''; day.work = ''; }
+    learnWork(); setTimeout(function () { $('workSugg').hidden = true; }, 200);
+  });
+  $('work').addEventListener('beforeinput', function (e) {
+    var ta = this; if (ta.selectionStart !== ta.selectionEnd) return;
+    var pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
+    var whole = v.slice(ls, le), before = v.slice(ls, pos);
+    if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
+      if (whole.indexOf(BUL) !== 0) return;
+      e.preventDefault();
+      if (whole === BUL) ta.setRangeText('', ls, le, 'end'); else ta.setRangeText('\n' + BUL, pos, pos, 'end');
+      fireInput(ta);
+    } else if (e.inputType === 'deleteContentBackward' && before === BUL) { e.preventDefault(); ta.setRangeText('', ls, pos, 'end'); fireInput(ta); }
+  });
+  $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); renderWorkSugg(); });
+  $('work').addEventListener('click', renderWorkSugg); $('work').addEventListener('keyup', function (e) { if (/Arrow|Home|End/.test(e.key)) renderWorkSugg(); });
+  /* voorstellen: eerder gebruikte werkregels die passen bij wat je typt, of de meest gebruikte als de regel nog leeg is */
+  function renderWorkSugg() {
+    var ta = $('work'), box = $('workSugg'), pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
+    var q = v.slice(ls, le).replace(/^\s*•\s*/, '').trim(), used = workLines(v).map(function (l) { return l.toLowerCase(); });
+    var list = memList('work', q.length >= 2 ? q : '', 40).filter(function (t) { return used.indexOf(t.toLowerCase()) === -1 && t.toLowerCase() !== q.toLowerCase(); }).slice(0, 5);
+    box.textContent = ''; list.forEach(function (t) { box.appendChild(chip('sug', '+ ' + t, { 'data-t': t })); });
+    box.hidden = !list.length || document.activeElement !== ta;
+  }
+  $('workSugg').addEventListener('pointerdown', function (e) { if (e.target.closest('.chip')) e.preventDefault(); });   /* het veld houdt de focus */
+  $('workSugg').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    var ta = $('work'), pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
+    ta.setRangeText(BUL + b.dataset.t, ls, le, 'end'); ta.focus(); fireInput(ta);
+  });
+  function learnWork() { workLines(day.work).forEach(function (l) { memLearn('work', l); }); memDirty = true; saveMem(); }
+  $('exWho').addEventListener('change', function () { memLearn('who', this.value); saveMem(); fillDatalists(); });
   $('other').addEventListener('input', function () { day.other = this.value; saveSoon(); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
   window.addEventListener('pagehide', saveNow);
@@ -814,7 +956,11 @@
       title: function (t) { doc.setFont('helvetica', 'bold'); doc.setFontSize(15); var l = doc.splitTextToSize(t, CW); doc.text(l, M, y); y += 8 * l.length; },
       para: function (t, size) {
         doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 11);
-        doc.splitTextToSize(t, CW).forEach(function (line) { k.ensure(6); doc.text(line, M, y); y += 5.4; });
+        String(t).split('\n').forEach(function (src) {
+          if (src.indexOf('• ') === 0) {   /* opsomming: het punt links, de tekst met inspringing */
+            doc.splitTextToSize(src.slice(2), CW - 5).forEach(function (line, i) { k.ensure(6); if (!i) doc.text('•', M, y); doc.text(line, M + 5, y); y += 5.4; });
+          } else doc.splitTextToSize(src, CW).forEach(function (line) { k.ensure(6); doc.text(line, M, y); y += 5.4; });
+        });
         y += 2;
       },
       bullets: function (list, empty) {
@@ -857,6 +1003,16 @@
     };
     return k;
   }
+  /* personeel en materieel in het rapport per soort: eigen, externe inhuur (gehuurd), onderaannemers */
+  var GROUP = { crew: { eigen: 'Personeel – eigen', inhuur: 'Personeel – externe inhuur', onderaannemer: 'Personeel – onderaannemers' }, machines: { eigen: 'Materieel – eigen', inhuur: 'Materieel – gehuurd', onderaannemer: 'Materieel – onderaannemers' } };
+  function kindGroups(name, items, lineFn) {
+    var g = {}; items.forEach(function (r) { var k = kindOf(r); (g[k] || (g[k] = [])).push(lineFn(r)); });
+    return KIND_ORDER.filter(function (k) { return g[k]; }).map(function (k) { return { label: GROUP[name][k], lines: g[k] }; });
+  }
+  function kindBlocks(k, groups, base, empty) {
+    if (!groups.length) { k.heading(base); k.bullets([], empty); return; }
+    groups.forEach(function (g) { k.heading(g.label); k.bullets(g.lines); });
+  }
   function buildReport(JsPdf, o) {
     var k = pdfDoc(JsPdf, o.dateText);
     k.start('Dagrapport');
@@ -868,8 +1024,8 @@
     if (o.weather) k.para('Weer rond 12:00: ' + o.weather, 10.5);
     if (o.note) { k.heading('Projectnotitie'); k.para(o.note); }
     k.heading('Werkzaamheden'); k.para(o.work || 'Geen werkzaamheden vastgelegd.');
-    k.heading('Personeel (partners)'); k.bullets(o.crew, 'Geen personeel vastgelegd.');
-    k.heading('Materieel (partners)'); k.bullets(o.machines, 'Geen materieel vastgelegd.');
+    kindBlocks(k, o.crewG, 'Personeel', 'Geen personeel vastgelegd.');
+    kindBlocks(k, o.machG, 'Materieel', 'Geen materieel vastgelegd.');
     k.heading('Stagnatie'); k.bullets(o.stagnation, 'Geen stagnatie.');
     if (o.deliveries.length) { k.heading('Leveringen'); k.bullets(o.deliveries); }
     if (o.extra) { k.heading('Meerwerk of afwijking'); k.para(o.extra); }
@@ -887,7 +1043,7 @@
     if (d.extra.on) ex = join([d.extra.how ? d.extra.how + ' opgedragen' : '', d.extra.who ? 'door ' + d.extra.who : '']) + (d.extra.note ? '\n' + d.extra.note : '');
     var sa = join([d.safety.toolbox ? 'Toolbox gehouden' : '', d.safety.lmra ? 'LMRA gedaan' : '', d.safety.incident ? 'Incident of bijna-ongeval' : '']);
     if (d.safety.note) sa += (sa ? '\n' : '') + d.safety.note;
-    return { weather: wt, crew: d.crew.map(SECS.crew.text), machines: d.machines.map(SECS.machines.text), stagnation: d.stagnation.map(SECS.stagnation.text),
+    return { weather: wt, crewG: kindGroups('crew', d.crew, SECS.crew.plain), machG: kindGroups('machines', d.machines, SECS.machines.plain), stagnation: d.stagnation.map(SECS.stagnation.text),
       deliveries: d.deliveries.map(SECS.deliveries.text), extra: ex, safety: sa };
   }
   /* delen via het deelmenu als dat bestanden ondersteunt, anders een download */
@@ -940,13 +1096,13 @@
     days.forEach(function (x) {
       var d = x.d; if (!d) return; filled++;
       d.crew.forEach(function (c) {
-        var k = (c.partner || '').toLowerCase(), t = crew[k] || (crew[k] = { partner: c.partner, hours: 0, days: {} });
+        var kd = kindOf(c), k = kd + '|' + (c.partner || '').toLowerCase(), t = crew[k] || (crew[k] = { kind: kd, partner: c.partner, hours: 0, days: {} });
         if (c.hours !== '' && c.hours !== undefined) t.hours += (+c.count || 1) * (+c.hours || 0);
         t.days[x.date] = 1;
       });
       d.machines.forEach(function (m) {
-        var k = ((m.item || '') + '|' + (m.partner || '')).toLowerCase(), t = mach[k] || (mach[k] = { item: m.item, partner: m.partner, hours: 0, days: {} });
-        if (m.hours !== '' && m.hours !== undefined) t.hours += +m.hours || 0;
+        var kd = kindOf(m), k = (kd + '|' + (m.item || '') + '|' + (m.partner || '')).toLowerCase(), t = mach[k] || (mach[k] = { kind: kd, item: m.item, partner: m.partner, hours: 0, perDay: 0, days: {} });
+        if (m.hours !== '' && m.hours !== undefined) { if (perDay(m)) t.perDay += +m.hours || 0; else t.hours += +m.hours || 0; }
         t.days[x.date] = 1;
       });
       d.stagnation.forEach(function (r) {
@@ -963,8 +1119,8 @@
   function nDays(o) { var n = Object.keys(o).length; return n + (n === 1 ? ' dag' : ' dagen'); }
   function weekParts(a) {
     return {
-      crew: Object.keys(a.crew).map(function (k) { var t = a.crew[k]; return join([t.partner, t.hours ? fmtNum(t.hours) + ' manuren' : '', nDays(t.days)]); }),
-      machines: Object.keys(a.mach).map(function (k) { var t = a.mach[k]; return join([t.item, t.partner, t.hours ? fmtNum(t.hours) + ' u' : '', nDays(t.days)]); }),
+      crewG: kindGroups('crew', Object.keys(a.crew).map(function (k) { return a.crew[k]; }), function (t) { return join([t.partner || KINDS.crew[t.kind], t.hours ? fmtNum(t.hours) + ' manuren' : '', 'op ' + nDays(t.days)]); }),
+      machG: kindGroups('machines', Object.keys(a.mach).map(function (k) { return a.mach[k]; }), function (t) { return join([t.item, t.partner, t.hours ? fmtNum(t.hours) + ' u' : '', t.perDay ? fmtNum(t.perDay) + (t.perDay === 1 ? ' dag gerekend' : ' dagen gerekend') : '', 'op ' + nDays(t.days)]); }),
       stagnation: Object.keys(a.stag).map(function (k) { var t = a.stag[k]; return join([t.cause, t.hours ? fmtNum(t.hours) + ' u' : '', t.dates.map(shortDay).join(', '), t.notes.join('; ')]); }),
       extra: a.extra, deliveries: a.deliveries, incidents: a.incidents,
       safety: a.filled ? join(['Toolbox op ' + a.tool + ' van ' + a.filled + ' dagen', 'LMRA op ' + a.lmra + ' van ' + a.filled + ' dagen']) : ''
@@ -986,8 +1142,8 @@
       k.row([dayLabel(x.date).replace(/ \d{4}$/, ''), d ? (wt || '–') : 'geen invoer', d && pers ? pers : '–', d ? (h ? fmtNum(h) + ' u' : (d.stagnation.length ? 'ja' : '–')) : '–', x.photos || '–'], cols, false); k.rule();
     });
     k.gap(2);
-    k.heading('Personeel (partners)'); k.bullets(o.crew, 'Geen personeel vastgelegd.');
-    k.heading('Materieel (partners)'); k.bullets(o.machines, 'Geen materieel vastgelegd.');
+    kindBlocks(k, o.crewG, 'Personeel', 'Geen personeel vastgelegd.');
+    kindBlocks(k, o.machG, 'Materieel', 'Geen materieel vastgelegd.');
     k.heading('Stagnatie'); k.bullets(o.stagnation, 'Geen stagnatie.');
     if (o.deliveries.length) { k.heading('Leveringen'); k.bullets(o.deliveries); }
     if (o.extra.length) { k.heading('Meerwerk of afwijkingen'); k.bullets(o.extra); }
@@ -1174,8 +1330,8 @@
     var box = $('dlist'); box.textContent = '';
     rows.forEach(function (e) {
       var parts = summary(e), d = fromRecord(e);
-      var line = parts.join(' · ') || (d.work || '').split('\n')[0] || d.machines.map(function (m) { return m.item; }).join(', ') || '';
-      var work = parts.length ? (d.work || '').trim().split('\n')[0] : '';
+      var line = parts.join(' · ') || (d.work || '').split('\n')[0].replace(/^•\s*/, '') || d.machines.map(function (m) { return m.item; }).join(', ') || '';
+      var work = parts.length ? (d.work || '').trim().split('\n')[0].replace(/^•\s*/, '') : '';
       var b = document.createElement('button'); b.type = 'button'; b.className = 'day'; b.dataset.date = e.date;
       var t = document.createElement('span'); t.className = 'txt';
       var x = document.createElement('b'); x.textContent = dayLabel(e.date); t.appendChild(x);
@@ -1223,7 +1379,7 @@
 
   /* de router */
   function route() {
-    if (view === 3) saveNow();   /* bewaar de dag die we verlaten; curPid en curDate zijn nog van die dag */
+    if (view === 3) { saveNow(); learnWork(); }   /* bewaar de dag die we verlaten; curPid en curDate zijn nog van die dag */
     var h = location.hash || '', g = /^#gp=(.+)$/.exec(h);
     if (g) { replaceTo('#/p/' + g[1]); return; }
     var list = projects();
@@ -1240,6 +1396,7 @@
   /* synchroniseren (als er gekoppeld is): na het ophalen de huidige laag verversen, behalve als je net iets typt */
   if (window.GwwData) {
     GwwData.onChange(function () {
+      seedMem(); fillDatalists();   /* dagen van een ander apparaat leveren ook voorstellen */
       if (timer) return;
       if (view === 3) { var s0 = curPid, d0 = curDate; if (s0 && d0) loadDay(s0, d0); } else route();
     });

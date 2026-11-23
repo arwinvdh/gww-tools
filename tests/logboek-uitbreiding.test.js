@@ -39,8 +39,8 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   ok(r.weather.temp === 11 && r.weather.src === 'handmatig', 'zelf aanpassen kan en wordt als handmatig bewaard');
 
   // 2 en 3. personeel en materieel van partners
-  await p.fill('#f-crew-partner', 'Bouwpartner BV'); await p.fill('#f-crew-count', '3'); await p.fill('#f-crew-hours', '8'); await p.click('#add-crew');
-  await p.fill('#f-machines-item', 'Graafmachine 14 ton'); await p.fill('#f-machines-partner', 'Machineverhuur NV'); await p.fill('#f-machines-hours', '7.5'); await p.click('#add-machines');
+  await p.selectOption('#f-crew-kind', 'onderaannemer'); await p.fill('#f-crew-partner', 'Bouwpartner BV'); await p.fill('#f-crew-count', '3'); await p.fill('#f-crew-hours', '8'); await p.click('#add-crew');
+  await p.selectOption('#f-machines-kind', 'inhuur'); await p.fill('#f-machines-item', 'Graafmachine 14 ton'); await p.fill('#f-machines-partner', 'Machineverhuur NV'); await p.fill('#f-machines-hours', '7.5'); await p.click('#add-machines');
   await p.waitForTimeout(800);
   r = await rec(today);
   ok(r.crew.length === 1 && r.crew[0].partner === 'Bouwpartner BV' && r.crew[0].count === 3 && r.crew[0].hours === 8, 'personeel: partner, aantal en uren bewaard');
@@ -65,7 +65,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   await open('deliveries'); await p.fill('#f-deliveries-what', 'Menggranulaat'); await p.fill('#f-deliveries-qty', '24 ton'); await p.fill('#f-deliveries-bon', '1234'); await p.click('#add-deliveries');
   await open('extra'); await p.check('#exOn'); await p.fill('#exWho', 'Toezichthouder'); await p.selectOption('#exHow', 'Mondeling'); await p.fill('#exNote', 'Extra stempelen');
   await open('safety'); await p.check('#saTool'); await p.check('#saLmra'); await p.check('#saInc'); await p.fill('#saNote', 'Bijna-ongeval met kraan');
-  await p.fill('#other', 'Opdrachtgever op bezoek'); await p.waitForTimeout(1000);
+  await open('other'); await p.fill('#other', 'Opdrachtgever op bezoek'); await p.waitForTimeout(1000);
   r = await rec('2026-12-31');
   ok(r.stagnation[0].cause === 'Kabels en leidingen' && r.stagnation[0].hours === 2 && /2 u/.test(await p.textContent('#sum-stagnation')), 'stagnatie: oorzaak, uren en samenvatting');
   ok(r.deliveries[0].what === 'Menggranulaat' && r.deliveries[0].qty === '24 ton' && r.deliveries[0].bon === '1234', 'leveringen: wat, hoeveelheid en bonnummer');
