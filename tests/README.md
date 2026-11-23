@@ -29,6 +29,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `sync-route.test.js` | Hetzelfde voor Route knijperwagen, inclusief verwijderde routes |
 | `koppellink.test.js` | De koppellink voor een tweede apparaat, ook met kapotte of verkeerde links |
 | `route-invullen.test.js` | Ruwe route plakken, Enter-toets tussen velden, uurchips uit eigen gebruik |
+| `route-stops.test.js` | Route knijperwagen met 1, 3, 8 en 15 stops: kop van een ingeklapte stop, meldingen en springen naar de stop, verplaatsen (knoppen, toetsenbord, slepen met muis en touch), verwijderen met ongedaan maken, dupliceren, opnieuw openen en delen, zonder project |
 | `layout.test.js` | Smalle telefoons (320 en 390 px): geen zijwaartse scroll, knoppen minstens 44px, actiebalk, recente projecten |
 | `nav.test.js` | Onderbalk in alle drie de pagina's: Home en een knop per tool, de juiste knop actief, de actiebalk van de tools blijft zichtbaar boven de onderbalk, de terugknop in de kop |
 | `logboek.test.js` | Logboek: project en datum kiezen, vanzelf bewaren met vast id, materieel en voorstellen, een lege dag wordt niet bewaard, wisselen van project of datum haalt niets door elkaar |

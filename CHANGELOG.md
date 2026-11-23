@@ -2,6 +2,14 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.22.0] - 2026-11-23
+
+- Route knijperwagen: de kop van een ingeklapte stop heeft twee regels. Bovenaan de actie als gekleurd label (laden, lossen, ophalen) met de plaats, daaronder het uur, het project en het eerste item met het aantal overige (`+2`). Elke stop heeft links een streep in de kleur van de eerste actie. Een onvolledige stop toont in rood wat ontbreekt. De koppen blijven compact (ongeveer 58 px), ook bij een route van 15 stops.
+- Meldingen: een tijd die niet bestaat (bijvoorbeeld 27.90) wordt gemeld. In Bericht is elke opmerking over een stop een knop die terug naar de invoer springt, de stop opent en de cursor in het veld zet dat ontbreekt. Kopiëren blokkeert niet, maar meldt nu het aantal opmerkingen.
+- Verplaatsen: naast slepen aan het nummer en de pijltjes in de geopende stop kan het nu ook met het toetsenbord (Alt + pijl omhoog of omlaag op de kop, ook ingeklapt). Bij drie of meer stops staat er een korte uitleg onder Stops.
+- Op de telefoon staan de drie routeknoppen op één rij en datum en opmerking naast elkaar (vanaf 352 px), zodat de eerste stop eerder in beeld komt.
+- Het bericht, de acties (laden, lossen, ophalen), de opslag en de synchronisatie van routes zijn ongewijzigd; stops worden nooit automatisch herordend.
+
 ## [1.21.0] - 2026-11-23
 
 - Locatie delen: onder de kaart staat een samenvatting van wat er gedeeld wordt: de pin (coördinaten uit de kaart), het adres (gevonden bij de pin of zelf ingevuld, of de melding dat er geen adres is) en de soort link in het bericht. Aanpassen springt naar het adresveld. De losse coördinaten naast de kaartlaag-knoppen zijn daarin opgegaan.
