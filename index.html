@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" class="own-safe">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -16,7 +16,6 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 /* Locatie delen: alleen wat bij deze pagina hoort. Gedeelde stijl staat in shared.css. */
-@keyframes drop { 0% { transform: translateY(-40px) rotate(-45deg); opacity: 0; } 60% { transform: translateY(4px) rotate(-45deg); opacity: 1; } 100% { transform: rotate(-45deg); } }
 
 /* grote schermen: meer ruimte voor kaart en invoer naast elkaar */
 @layer base {
@@ -26,24 +25,23 @@
 @layer components {
   .brand { padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)); }
   .wrap { padding-top: 1.1rem; }
-  .warnlink { border: 1px solid var(--warn); border-radius: 999px; padding: .35rem .9rem; background: transparent; text-align: left; color: var(--warn); font: inherit; font-size: .8125rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+  .warnlink { border: 1px solid var(--warn); border-radius: var(--radius-pill); padding: .35rem .9rem; background: transparent; text-align: left; color: var(--warn); font: inherit; font-size: var(--text-label); font-weight: 600; text-decoration: none; cursor: pointer; }
   .addr-note { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: -.2rem; }
   .map-hint { position: absolute; inset: 0; z-index: 800; display: grid; place-items: center; padding: 1rem; text-align: center; background: rgba(0,31,56,.55); color: #fff; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; }
   .map-hint.on { opacity: 1; }
-  .more-sum { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--accent); font-size: .875rem; font-weight: 600; }
+  .more-sum { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--accent); font-size: var(--text-sm); font-weight: 600; }
   details > summary { list-style: none; }
   details > summary::-webkit-details-marker { display: none; }
   .more-sum::after { content: "\25BE"; margin-left: .35rem; transition: transform .2s; }
   details[open] > .more-sum::after { transform: rotate(180deg); }
-  .more-in { grid-template-columns: minmax(0, 1fr); display: grid; gap: .6rem; padding-top: .4rem; animation: rise .25s ease both; }
+  .more-in { grid-template-columns: minmax(0, 1fr); display: grid; gap: .6rem; padding-top: .4rem; }
   .row { display: flex; gap: .4rem; align-items: stretch; flex-wrap: wrap; }
   .row > .grow { flex: 1; min-width: 0; }
   textarea.inp { resize: vertical; min-height: 64px; }
   .grid > div { grid-template-columns: minmax(0, 1fr); min-width: 0; }
-  .card:nth-child(2) { animation-delay: .05s; }
 
   /* schakelaar met knoppen */
-  .seg { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--line); border-radius: var(--radius-pill); overflow: hidden; }
   .seg button { min-height: 36px; padding: 0 .9rem; border: 0; border-right: 1px solid var(--line); background: var(--field); cursor: pointer; }
   .seg button:last-child { border-right: 0; }
   .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
@@ -52,7 +50,7 @@
   .optrow .seg button { padding: 0 .4rem; }
 
   /* kaart en pin */
-  :where(#map) { height: 320px; border-radius: 12px; border: 1px solid var(--line); z-index: 0; box-shadow: inset 0 0 0 1px var(--line); }
+  :where(#map) { height: 320px; border-radius: var(--radius-md); border: 1px solid var(--line); z-index: 0; box-shadow: inset 0 0 0 1px var(--line); }
   .viewer :where(#map) { height: 55vh; height: 55dvh; min-height: 280px; }
   .pin { width: 28px; height: 28px; margin: -28px 0 0 -14px; background: #E5322D; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); transform-origin: 50% 100%; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   .pin::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
@@ -62,7 +60,7 @@
   /* wat er gedeeld wordt: pin, adres en link naast elkaar, zodat je ziet wat uit de kaart komt en wat in het bericht belandt */
   .locsum { display: grid; gap: .35rem; padding: .6rem .75rem; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
   .locsum .r { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; min-width: 0; }
-  .locsum .k { flex: none; width: 3.6rem; font-size: .8125rem; font-weight: 700; color: var(--ink-2); }
+  .locsum .k { flex: none; width: 3.6rem; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
   .locsum .v { flex: 1 1 8rem; min-width: 0; overflow-wrap: break-word; font-weight: 600; }
   .locsum .v.dim { font-weight: 400; color: var(--ink-2); }
   .locsum .v.warnv { font-weight: 600; color: var(--warn); }
@@ -70,36 +68,32 @@
   #coords { display: none; }   /* de pin met coördinaten staat in de samenvatting onder de kaart */
   #me.busy::after { border-color: var(--accent); border-right-color: transparent; }
   .near { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin-top: -.2rem; }
-  .pin-new .pin { animation: drop .4s cubic-bezier(.3,1.4,.5,1); }
 
   /* zoekresultaten, projecten, recent */
   .results { display: grid; gap: .25rem; }
-  .results button { text-align: left; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--field); cursor: pointer; animation: rise .2s ease both; }
-  .proj { display: grid; grid-template-columns: 1fr auto; gap: .4rem; align-items: center; padding: .5rem 0; border-top: 1px solid var(--line); animation: rise .25s ease both; }
+  .results button { text-align: left; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--field); cursor: pointer; }
+  .proj { display: grid; grid-template-columns: 1fr auto; gap: .4rem; align-items: center; padding: .5rem 0; border-top: 1px solid var(--line); }
   .proj:first-child { border-top: 0; }
   .proj-main { text-align: left; background: none; border: 0; padding: .25rem 0; cursor: pointer; min-width: 0; }
   .proj-main b, .proj-main span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .proj-main span { color: var(--ink-2); font-size: .8125rem; }
+  .proj-main span { color: var(--ink-2); font-size: var(--text-label); }
   .seg button, .results button, .proj-main { transition: background-color .15s, border-color .15s, color .15s, transform .12s, box-shadow .15s, opacity .15s; }
-  .check { display: flex; gap: .5rem; align-items: center; min-height: 36px; min-width: 0; overflow-wrap: anywhere; }
-  .check input { width: 20px; height: 20px; }
   .opts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 .75rem; }
   .chips { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .15rem; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: none; min-height: 36px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--field); cursor: pointer; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .chip { max-width: 14rem; }
   .recent { display: grid; gap: .3rem; min-width: 0; }
-  .recent .rl { flex: none; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
+  .recent .rl { flex: none; font-size: var(--text-label); font-weight: 600; color: var(--ink-2); }
   .recent .chips { min-width: 0; padding-bottom: 0; }
   @media (hover: hover) {
     .results button:hover { border-color: var(--accent); }
     .proj-main:hover b { color: var(--accent); }
   }
   .nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
-  .vtitle { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  .vtitle { font-size: var(--text-xl); font-weight: 600; margin: 0; }
 
   /* bericht */
-  .wa-b { background: var(--wa-bubble); color: var(--wa-text); border-radius: 8px; padding: .55rem .7rem; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9375rem; line-height: 1.4; transition: opacity .15s; }
+  .wa-b { background: var(--wa-bubble); color: var(--wa-text); border-radius: var(--radius-sm); padding: .55rem .7rem; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9375rem; line-height: 1.4; transition: opacity .15s; }
   .wa-b a { color: var(--wa-link); }
 
   /* actiebalk: Deel afbeelding + drie knoppen */
@@ -142,8 +136,7 @@
     .btn.busy::after { display: none; }
   }
   @media (pointer: coarse) {
-    .seg button, .more-sum, .warnlink, .check { min-height: 44px; }
-    .check input { width: 22px; height: 22px; }
+    .seg button, .more-sum, .warnlink { min-height: 44px; }
   }
 }
 

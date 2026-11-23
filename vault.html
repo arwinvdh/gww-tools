@@ -13,8 +13,8 @@
 @layer components {
   .wrap { padding-bottom: 3rem; }
   .form { display: grid; gap: 0.75rem; }
-  .out { width: 100%; min-height: 8rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--field); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.75rem; line-height: 1.35; word-break: break-all; resize: vertical; }
-  .strength { font-size: 0.8125rem; color: var(--ink-2); margin: 0; }
+  .out { width: 100%; min-height: 8rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--field); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--text-xs); line-height: 1.35; word-break: break-all; resize: vertical; }
+  .strength { font-size: var(--text-label); color: var(--ink-2); margin: 0; }
   .strength.weak { color: var(--warn); }
   .strength.ok { color: var(--ok); }
   ol.steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
@@ -48,7 +48,7 @@
       <li>Na het uitrollen verschijnt er bij <b>Apparaten koppelen</b> een veld voor de pincode.</li>
     </ol>
   </div>
-  <p class="hint" style="margin-top:1rem"><a class="lnk" href="start.html">Terug naar Mijn tools</a></p>
+  <p class="linkrow" style="margin-top:1rem"><a class="lnk" href="start.html">Terug naar Mijn tools</a></p>
 </div>
 <script src="sync.js"></script>
 <script>

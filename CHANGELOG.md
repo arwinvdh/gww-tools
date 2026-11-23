@@ -2,6 +2,17 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.23.0] - 2026-11-23
+
+- Ontwerpronde over alle tools; geen nieuwe huisstijl. Nieuw: `DESIGN.md` met de ontwerpafspraken (variabelen, gedeelde onderdelen, regels bij een wijziging), verwezen vanuit `CLAUDE.md` en `README.md`.
+- Gedeeld in `shared.css` in plaats van per pagina: chip (met gekozen en voorstel), uitklapbare sectie (`.sec`), checkbox met label, lege toestand, lijst, invoerregel, melding met streep (`.callout`, groen of rood) en een vaste actierij voor dialogen (`.dlg-actions`). De veilige zone bovenaan stond drie keer los in de pagina's en staat nu één keer in `shared.css`.
+- Dubbele en tegenstrijdige regels weggehaald: drie versies van de chip (36, 40 en 44 px), twee van de checkbox, drie meldingsstijlen (`.ctx`, `.copynote`, `.pend`), twee lijst- en invoerregels, een dubbele kleur voor knoplinks en een dubbele dialoogtitel.
+- Variabelen overal: afrondingen en tekstmaten staan als `--radius-*` en `--text-*`, met een nieuwe `--text-label` (13 px) en `--chip-h`. Knoppen zijn nu 12 px afgerond, net als velden.
+- Dialogen: dezelfde opbouw. Gevaarlijke actie links, daarna secundair, de hoofdactie als laatste (Weekrapport en foto). Dialogen, lijsten en uitklappers komen zonder animatie in beeld.
+- Toegankelijkheid: de link in het WhatsApp-voorbeeld heeft nu voldoende contrast, de kleine verwijderknop is op touch 44 px breed, het datumveld heeft een duidelijke focusring en de losse link op de pincodepagina is 44 px hoog.
+- Nieuwe controle `design.test.js`: gedeelde onderdelen niet opnieuw gedefinieerd, geen losse radius-waarden of decoratieve animaties, contrast, tikdoelen, toetsenbordfocus en geen zijwaartse scroll op 375, 390, 430, 768, 1024 en 1440 px.
+- Gegevens, opslag, synchronisatie en functies zijn ongewijzigd.
+
 ## [1.22.0] - 2026-11-23
 
 - Route knijperwagen: de kop van een ingeklapte stop heeft twee regels. Bovenaan de actie als gekleurd label (laden, lossen, ophalen) met de plaats, daaronder het uur, het project en het eerste item met het aantal overige (`+2`). Elke stop heeft links een streep in de kleur van de eerste actie. Een onvolledige stop toont in rood wat ontbreekt. De koppen blijven compact (ongeveer 58 px), ook bij een route van 15 stops.
