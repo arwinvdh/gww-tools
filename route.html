@@ -52,7 +52,7 @@
   .paste-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
   .paste-msg { color: var(--ink-2); min-width: 0; }
   .paste-msg.bad { color: var(--warn); }
-  .r-dn { display: grid; gap: 0.5rem; grid-template-columns: 10rem minmax(0, 1fr); align-items: start; }
+  .r-dn { display: grid; gap: 0.5rem; grid-template-columns: 9.5rem minmax(0, 1fr); align-items: start; }
   /* datumveld: iOS Safari geeft het anders een eigen vaste breedte, waardoor het breder wordt dan de kaart */
   .r-dn input[type="date"] { display: block; -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; max-width: 100%; }
   .r-dn input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
@@ -63,12 +63,27 @@
   .stop.open { border-color: var(--accent); box-shadow: 0 8px 20px rgba(0, 31, 56, 0.1); }
   .hd { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; width: 100%; min-height: 56px; padding: 0.4rem 0.7rem 0.4rem 0.55rem; border: 0; border-radius: 12px; background: transparent; text-align: left; cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .hd:active { background: var(--bg); }
-  .hd-sum { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hd-sum { min-width: 0; display: grid; gap: 0.05rem; line-height: 1.3; }
+  .hd-sum .l1, .hd-sum .l2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* wat ontbreekt mag op twee regels staan: afgekapt zou het juist de reden verbergen */
+  .hd-sum .iss { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .hd-sum .miss { font-weight: 400; font-style: italic; color: var(--ink-2); }
+  @media (pointer: coarse) { .kb-hint { display: none; } }
+  .hd-sum .l2 { font-size: var(--text-sm); }
+  .hd-sum .iss { font-size: var(--text-sm); font-weight: 600; color: var(--warn); }
+  .stop.open .hd-sum .iss { display: none; }
   .hd-sum b { font-weight: 600; }
-  .sa { font-weight: 600; margin-right: 0.35rem; }
-  .sa.a-LADEN { color: var(--a-laden); }
-  .sa.a-LOSSEN { color: var(--a-lossen); }
-  .sa.a-OPHALEN { color: var(--a-ophalen); }
+  /* actie als gekleurd label, zodat je in een lange route in één oogopslag laden, lossen en ophalen onderscheidt */
+  .sa { display: inline-block; font-weight: 600; font-size: 0.8125rem; line-height: 1.5; padding: 0 0.5rem; margin-right: 0.1rem; border-radius: 999px; vertical-align: 0.05em; }
+  .sa.a-LADEN { color: var(--a-laden); background: color-mix(in srgb, var(--a-laden) 12%, var(--surface)); }
+  .sa.a-LOSSEN { color: var(--a-lossen); background: color-mix(in srgb, var(--a-lossen) 14%, var(--surface)); }
+  .sa.a-OPHALEN { color: var(--a-ophalen); background: color-mix(in srgb, var(--a-ophalen) 14%, var(--surface)); }
+  .stop[data-a="LADEN"] { border-left: 4px solid var(--a-laden); }
+  .stop[data-a="LOSSEN"] { border-left: 4px solid var(--a-lossen); }
+  .stop[data-a="OPHALEN"] { border-left: 4px solid var(--a-ophalen); }
+  .jump { display: block; width: 100%; min-height: 44px; padding: 0.25rem 0; border: 0; background: transparent; color: var(--warn); font: inherit; text-align: left; text-decoration: underline; cursor: pointer; }
+  .checks ul { list-style: none; margin: 0; padding: 0; }
+  .checks li:not(:has(.jump)) { padding: 0.35rem 0; }
   .muted { color: var(--ink-2); }
   .stop.bad:not(.open) .badge { border-color: var(--warn); background: var(--warn); color: var(--surface); }
   .hd .chev { color: var(--ink-2); transition: transform 0.2s; }
@@ -185,8 +200,9 @@
     /* drie knoppen verdelen de rij(en) netjes in plaats van een losse knop op de tweede regel */
     .card-hd .tools-r { flex: 1 1 100%; justify-content: flex-start; }
     .card-hd .tools-r .btn { flex: 1 1 auto; }
-    .r-dn { grid-template-columns: minmax(0, 1fr); }
+    .card-hd .tools-r .btn { padding-inline: 0.4rem; font-size: 0.8125rem; white-space: nowrap; }
   }
+  @media (max-width: 21.999rem) { .r-dn { grid-template-columns: minmax(0, 1fr); } }
   @media (pointer: coarse) {
     /* de statusregel in de balk is een knop: groter tikvlak zonder dat de balk hoger wordt */
     .meta { position: relative; }
@@ -243,6 +259,7 @@
 
       <div class="card">
         <h2>2 &middot; Stops</h2>
+        <p class="hint" id="moveHint" hidden>Verplaatsen: sleep het nummer, of open een stop en gebruik de pijltjes.<span class="kb-hint"> Toetsenbord: Alt + pijl op de kop.</span></p>
         <div id="stops"></div>
         <button id="add" class="btn wide add" type="button">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -453,18 +470,24 @@ function buildMessage(stops, iso, note) {
   return blocks.length ? head + '\n\n' + blocks.join('\n\n') : head;
 }
 
+/* meldingen per stop: dezelfde teksten als in de controle van het bericht, ook voor de kop van een ingeklapte stop */
+function stopIssues(s) {
+  const out = [];
+  if (!hasContent(s)) return out;
+  if (!clean(s.plaats)) out.push('plaats ontbreekt');
+  if (!s.acties.length) out.push('geen actie gekozen');
+  const link = clean(s.link);
+  if (link && !/^https?:\/\//i.test(link)) out.push('routelink begint niet met https://');
+  const tijd = normTijd(s.tijd);
+  if (tijd && !/^\d{1,2}\.\d{2}$/.test(tijd)) out.push('tijd "' + clean(s.tijd) + '" niet herkend, gebruik bijvoorbeeld 6.30');
+  else if (tijd) { const hm = tijd.split('.'); if (+hm[0] > 23 || +hm[1] > 59) out.push('tijd "' + clean(s.tijd) + '" bestaat niet, gebruik bijvoorbeeld 6.30'); }
+  if (!clean(s.items)) out.push(s.acties.length === 1 ? 'niet vermeld ' + WAT[s.acties[0]] : 'omschrijving ontbreekt');
+  return out;
+}
 function check(stops) {
   const out = [];
   stops.forEach(function (s, i) {
-    if (!hasContent(s)) return;
-    const p = 'Stop ' + (i + 1);
-    if (!clean(s.plaats)) out.push(p + ': plaats ontbreekt');
-    if (!s.acties.length) out.push(p + ': geen actie gekozen');
-    const link = clean(s.link);
-    if (link && !/^https?:\/\//i.test(link)) out.push(p + ': routelink begint niet met https://');
-    const tijd = normTijd(s.tijd);
-    if (tijd && !/^\d{1,2}\.\d{2}$/.test(tijd)) out.push(p + ': tijd "' + clean(s.tijd) + '" niet herkend, gebruik bijvoorbeeld 6.30');
-    if (!clean(s.items)) out.push(p + (s.acties.length === 1 ? ': niet vermeld ' + WAT[s.acties[0]] : ': omschrijving ontbreekt'));
+    stopIssues(s).forEach(function (x) { out.push('Stop ' + (i + 1) + ': ' + x); });
   });
   const empties = stops.filter(function (s) { return !hasContent(s); }).length;
   if (empties) out.push(empties + (empties > 1 ? ' lege stops worden' : ' lege stop wordt') + ' overgeslagen');
@@ -724,18 +747,27 @@ function check(stops) {
     if (s.tijdv !== 'om') bits.push(s.tijdv);
     return bits.join(' · ');
   }
+  /* kop van een ingeklapte stop in twee regels: actie en plaats, daaronder uur, project en het eerste item (met het aantal overige);
+     bij een onvolledige stop staat daar in rood wat ontbreekt */
   function sumHtml(s) {
     const acts = ACT_UI.filter(function (a) { return s.acties.indexOf(a) > -1; })
-      .map(function (a) { return '<span class="sa a-' + a + '">' + ACT_LABEL[a] + '</span>'; }).join('');
-    const plaats = clean(s.plaats), t = normTijd(s.tijd), it = itemLines(s.items)[0] || '';
+      .map(function (a) { return '<span class="sa a-' + a + '">' + ACT_LABEL[a] + '</span> '; }).join('');
+    const plaats = clean(s.plaats), t = normTijd(s.tijd), lines = itemLines(s.items), it = lines[0] || '';
     if (!acts && !plaats && !it) return '<span class="muted">Nieuwe stop</span>';
-    const rest = [t, it].filter(Boolean).join(' · ');
-    return acts + '<b>' + esc(plaats || '…') + '</b>' + (rest ? '<span class="muted"> ' + esc(rest) + '</span>' : '');
+    const bits = [];
+    if (t) bits.push((s.tijdv && s.tijdv !== 'om' ? s.tijdv + ' ' : '') + t);
+    if (clean(s.project)) bits.push(clean(s.project));
+    if (it) bits.push(it + (lines.length > 1 ? ' +' + (lines.length - 1) : ''));
+    const iss = stopIssues(s);
+    return '<span class="l1">' + acts + (plaats ? '<b>' + esc(plaats) + '</b>' : '<b class="miss">(geen plaats)</b>') + '</span>' +
+      (bits.length ? '<span class="l2 muted">' + esc(bits.join(' · ')) + '</span>' : '') +
+      (iss.length ? '<span class="iss">' + esc(iss.join(' · ')) + '</span>' : '');
   }
   function refreshHead(card, s) {
     if (!card) return;
     const h = card.querySelector('.hd-sum');
     if (h) h.innerHTML = sumHtml(s);
+    card.dataset.a = s.acties[0] || '';
     const el = card.querySelector('.more-btn .sum');
     if (el) el.textContent = moreOpen(s) ? '' : summary(s);
   }
@@ -752,9 +784,9 @@ function check(stops) {
       return '<option value="' + v + '"' + (v === s.tijdv ? ' selected' : '') + '>' + v + '</option>';
     }).join('');
     return '' +
-    '<article class="stop' + (on ? ' open' : '') + '" data-id="' + id + '">' +
-      '<button type="button" class="hd" data-do="open" aria-expanded="' + on + '" aria-controls="s' + id + '-body">' +
-        '<span class="badge">' + n + '</span><span class="hd-sum">' + sumHtml(s) + '</span>' + icon('chev', 18, 'chev') +
+    '<article class="stop' + (on ? ' open' : '') + '" data-id="' + id + '" data-a="' + (s.acties[0] || '') + '">' +
+      '<button type="button" class="hd" data-do="open" aria-expanded="' + on + '" aria-controls="s' + id + '-body" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">' +
+        '<span class="badge" title="Sleep om te verplaatsen">' + n + '</span><span class="hd-sum">' + sumHtml(s) + '</span>' + icon('chev', 18, 'chev') +
       '</button>' +
       '<div id="s' + id + '-body" class="body-wrap"><div class="in"><div class="body">' +
         '<div class="acts" role="group" aria-label="Acties stop ' + n + '">' + acts + '</div>' +
@@ -794,6 +826,7 @@ function check(stops) {
   function renderStops() {
     list.innerHTML = stops.length ? stops.map(cardHtml).join('') : '<p class="empty">Nog geen stops. Tik op Stop toevoegen om te beginnen.</p>';
     list.querySelectorAll('textarea').forEach(autosize);
+    $('moveHint').hidden = stops.length < 3;
   }
   function setActive(id, focusSel) {
     activeId = id;
@@ -836,7 +869,11 @@ function check(stops) {
     waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(text);
     const w = check(stops);
     checks.innerHTML = w.length
-      ? '<h3 class="w-h w-bad">Controleer</h3><ul>' + w.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
+      ? '<h3 class="w-h w-bad">Controleer</h3><ul>' + w.map(function (x) {
+          const m = /^Stop (\d+):/.exec(x);
+          /* een opmerking over een stop is een knop die naar die stop (en het juiste veld) springt */
+          return m ? '<li><button type="button" class="jump" data-stop="' + m[1] + '" aria-label="' + esc(x) + ', ga naar de stop">' + esc(x) + '</button></li>' : '<li>' + esc(x) + '</li>';
+        }).join('') + '</ul>'
       : '<h3 class="w-h w-ok">Alle stops compleet</h3>';
     const n = stops.filter(hasContent).length;
     meta.innerHTML = '<span class="m1">' + n + (n === 1 ? ' stop' : ' stops') + '</span>' +
@@ -1164,6 +1201,19 @@ function check(stops) {
     }
   });
 
+  /* verplaatsen met het toetsenbord: Alt + pijl omhoog of omlaag op de kop van een stop (ook als de stop ingeklapt is) */
+  list.addEventListener('keydown', function (e) {
+    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || !e.target.matches('.hd')) return;
+    const s = findStop(e.target); if (!s) return;
+    const i = stops.indexOf(s), j = e.key === 'ArrowUp' ? i - 1 : i + 1;
+    e.preventDefault();
+    if (j < 0 || j >= stops.length) return;
+    stops.splice(j, 0, stops.splice(i, 1)[0]);
+    renderStops(); update();
+    const h = list.querySelector('[data-id="' + s.id + '"] .hd'); if (h) h.focus();
+    status.textContent = 'Stop verplaatst naar positie ' + (j + 1);
+  });
+
   /* slepen: pak het nummer van een stop vast en sleep */
   let drag = null, suppressClick = false;
   list.addEventListener('click', function (e) {
@@ -1302,6 +1352,19 @@ function check(stops) {
     if (b) setView(b.dataset.view, true);
   });
   meta.addEventListener('click', function () { setView('bericht'); });
+  /* van een opmerking naar de stop: terug naar de invoer, de stop open en de cursor in het veld dat ontbreekt */
+  checks.addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-stop]');
+    if (!b) return;
+    const s = stops[+b.dataset.stop - 1];
+    if (!s) return;
+    const msg = b.textContent;
+    const sel = /plaats/.test(msg) ? '[data-f="plaats"]' : /actie/.test(msg) ? '.acts button' : /routelink/.test(msg) ? '[data-f="link"]' : /tijd/.test(msg) ? '[data-f="tijd"]' : '[data-f="items"]';
+    setView('stops');
+    const card = list.querySelector('[data-id="' + s.id + '"]');
+    if (/routelink/.test(msg) && card && !moreOpen(s)) { const mb = card.querySelector('[data-do="more"]'); if (mb) mb.click(); }
+    setActive(s.id, sel);
+  });
 
   /* eerdere routes */
   function routeCard(r) {
@@ -1422,13 +1485,18 @@ function check(stops) {
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { /* geweigerd */ }); } catch (e) { /* niet beschikbaar */ }
   }
   function remember() { learn(); saveRouteNow(); askPersist(); }
+  /* kopiëren blokkeert niet, maar zegt wel dat er opmerkingen zijn; tik op de regel onder het voorbeeld om ze te bekijken */
+  function warnRemarks() {
+    const n = check(stops).filter(function (x) { return /^Stop \d+:/.test(x); }).length;
+    if (n) toast('Gekopieerd. Let op: ' + n + (n === 1 ? ' opmerking' : ' opmerkingen') + ' bij de stops. Tik op de regel onderaan om ze te bekijken.');
+  }
   copyBtn.addEventListener('click', async function () {
     const text = buildMessage(stops, datum.value, note);
     try {
       await navigator.clipboard.writeText(text);
-      flash('Gekopieerd', true); remember();
+      flash('Gekopieerd', true); remember(); warnRemarks();
     } catch (e) {
-      if (fallbackCopy(text)) { flash('Gekopieerd', true); remember(); }
+      if (fallbackCopy(text)) { flash('Gekopieerd', true); remember(); warnRemarks(); }
       else { setView('bericht'); selectBubble(); flash('Handmatig kopiëren'); }
     }
   });
