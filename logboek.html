@@ -25,6 +25,7 @@
   textarea.inp { min-height: 8rem; resize: vertical; line-height: 1.4; }
   .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
   .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chips .chip { text-align: left; }
   .chip { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0.2rem 0.9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 600; cursor: pointer; font: inherit; font-weight: 600; }
   .chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
   .chip.sug { font-weight: 500; color: var(--ink-2); border-style: dashed; }
@@ -37,6 +38,21 @@
   .day::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
   .day.sel { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .empty { margin: 0; color: var(--ink-2); }
+  .wx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0.5rem; }
+  .wx .info { grid-column: 1 / -1; }
+  .sec { border-top: 1px solid var(--line); }
+  .sec > summary { min-height: 3.25rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.0625rem; cursor: pointer; list-style: none; }
+  .sec > summary::-webkit-details-marker { display: none; }
+  .sec > summary .sum { margin-left: auto; font-weight: 500; font-size: 0.9375rem; color: var(--ink-2); }
+  .sec > summary::after { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform 0.15s; }
+  .sec[open] > summary::after { transform: rotate(-135deg); }
+  .secbody { display: grid; gap: 0.6rem; padding-bottom: 1rem; }
+  .addgrid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .addgrid .wide { grid-column: 1 / -1; }
+  .check { display: flex; gap: 0.7rem; align-items: center; min-height: 44px; font-weight: 600; }
+  .check input { width: 24px; height: 24px; flex: none; }
+  textarea.inp.small { min-height: 5rem; }
+  .copyprev { justify-self: start; }
   .thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
   .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
   .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -59,13 +75,38 @@
         <div class="field"><label for="proj">Project</label><select class="inp" id="proj"></select></div>
         <div class="field"><label for="date">Datum</label><input class="inp" id="date" type="date"></div>
       </div>
-      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan?"></textarea></div>
       <div class="field">
-        <label for="eqin">Materieel</label>
-        <div class="addrow"><input class="inp" id="eqin" placeholder="Bijv. Graafmachine 14 ton" autocomplete="off"><button class="btn" id="eqadd" type="button">Toevoegen</button></div>
+        <label for="wxTemp">Weer rond 12:00</label>
+        <div class="wx">
+          <input class="inp" id="wxTemp" type="number" inputmode="decimal" step="0.1" placeholder="°C" aria-label="Temperatuur in graden Celsius">
+          <select class="inp" id="wxDesc" aria-label="Weertype"><option value="">Weertype</option></select>
+          <p class="hint info" id="wxInfo"></p>
+        </div>
       </div>
-      <div class="chips" id="eqlist" aria-label="Materieel op deze dag"></div>
-      <div class="chips" id="eqsug" aria-label="Eerder gebruikt materieel"></div>
+      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan?"></textarea></div>
+      <button class="btn copyprev" id="copyPrev" type="button" hidden></button>
+      <div id="secs"></div>
+      <details class="sec" id="sec-extra">
+        <summary><span>Meerwerk of afwijking</span><span class="sum" id="sum-extra"></span></summary>
+        <div class="secbody">
+          <label class="check"><input type="checkbox" id="exOn"> Er is meerwerk of een afwijking</label>
+          <div class="secbody" id="exBox" hidden>
+            <div class="field"><label for="exWho">Opgedragen door</label><input class="inp" id="exWho" autocomplete="off" placeholder="Naam of functie"></div>
+            <div class="field"><label for="exHow">Hoe opgedragen</label><select class="inp" id="exHow"><option>Schriftelijk</option><option>Mondeling</option></select></div>
+            <div class="field"><label for="exNote">Omschrijving</label><textarea class="inp small" id="exNote" placeholder="Wat is het meerwerk of de afwijking?"></textarea></div>
+          </div>
+        </div>
+      </details>
+      <details class="sec" id="sec-safety">
+        <summary><span>Veiligheid</span><span class="sum" id="sum-safety"></span></summary>
+        <div class="secbody">
+          <label class="check"><input type="checkbox" id="saTool"> Toolbox gehouden</label>
+          <label class="check"><input type="checkbox" id="saLmra"> LMRA gedaan</label>
+          <label class="check"><input type="checkbox" id="saInc"> Incident of bijna-ongeval</label>
+          <div class="field"><label for="saNote">Toelichting</label><textarea class="inp small" id="saNote" placeholder="Wat gebeurde er, wie was erbij?"></textarea></div>
+        </div>
+      </details>
+      <div class="field"><label for="other">Overig</label><textarea class="inp small" id="other" placeholder="Bezoek, afspraken, bijzonderheden"></textarea></div>
       <div class="field">
         <label>Foto's</label>
         <button class="btn" id="shotBtn" type="button">Foto maken</button>
@@ -121,7 +162,57 @@
   }
   function plabel(p) { return [p.nr, p.name].filter(Boolean).join(' · ') || 'Zonder naam'; }
 
-  var equipment = [];   /* materieel van de dag die nu open staat */
+  /* ---------- gegevens van de dag ----------
+     Eén regel per project en dag in `gww.log`. Velden die sinds 1.13.0 zijn toegevoegd (other, crew, machines, stagnation, deliveries,
+     extra, safety, weather) zijn optioneel: oudere regels blijven geldig. `equipment` (alleen namen) blijft meegeschreven voor oudere appversies. */
+  var WX_DESC = ['Zonnig', 'Wisselend bewolkt', 'Bewolkt', 'Mist', 'Motregen', 'Regen', 'Buien', 'Sneeuw', 'Onweer'];
+  var CAUSES = ['Weer', 'Opdrachtgever', 'Kabels en leidingen', 'Levering', 'Materieel', 'Overig'];
+  function join(a) { return a.filter(Boolean).join(' · '); }
+  var SECS = {
+    crew: { title: 'Personeel (partners)', open: true, key: function (r) { return (r.partner || '').toLowerCase(); },
+      fields: [{ k: 'partner', ph: 'Partner (bedrijf)', req: true, wide: true }, { k: 'count', ph: 'Aantal', num: true }, { k: 'hours', ph: 'Uren', num: true }],
+      text: function (r) { return join([r.partner, r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
+      sum: function (l) { var n = 0; l.forEach(function (r) { n += +r.count || 0; }); return l.length ? (n ? n + ' pers' : l.length + '×') : ''; } },
+    machines: { title: 'Materieel (partners)', open: true, key: function (r) { return ((r.item || '') + '|' + (r.partner || '')).toLowerCase(); },
+      fields: [{ k: 'item', ph: 'Materieel, bijv. Graafmachine 14 ton', req: true, wide: true }, { k: 'partner', ph: 'Partner (bedrijf)' }, { k: 'hours', ph: 'Uren', num: true }],
+      text: function (r) { return join([r.item, r.partner, r.hours ? r.hours + ' u' : '']); },
+      sum: function (l) { return l.length ? l.length + '×' : ''; } },
+    stagnation: { title: 'Stagnatie', key: null,
+      fields: [{ k: 'cause', ph: 'Oorzaak', select: CAUSES, req: true, wide: true }, { k: 'hours', ph: 'Uren', num: true }, { k: 'note', ph: 'Toelichting' }],
+      text: function (r) { return join([r.cause, r.hours ? r.hours + ' u' : '', r.note]); },
+      sum: function (l) { var h = 0; l.forEach(function (r) { h += +r.hours || 0; }); return l.length ? (h ? h + ' u' : l.length + '×') : 'geen'; } },
+    deliveries: { title: 'Leveringen', key: function (r) { return (r.what || '').toLowerCase(); },
+      fields: [{ k: 'what', ph: 'Wat is geleverd', req: true, wide: true }, { k: 'qty', ph: 'Hoeveelheid, bijv. 24 ton' }, { k: 'bon', ph: 'Bonnummer' }],
+      text: function (r) { return join([r.what, r.qty, r.bon ? 'bon ' + r.bon : '']); },
+      sum: function (l) { return l.length ? l.length + '×' : ''; } }
+  };
+  var LISTS = Object.keys(SECS);
+  function copy(v) { return JSON.parse(JSON.stringify(v)); }
+  function emptyDay() {
+    return { work: '', other: '', crew: [], machines: [], stagnation: [], deliveries: [],
+      extra: { on: false, who: '', how: 'Schriftelijk', note: '' }, safety: { toolbox: false, lmra: false, incident: false, note: '' }, weather: null };
+  }
+  function fromRecord(e) {
+    var d = emptyDay(); if (!e) return d;
+    d.work = e.work || ''; d.other = e.other || '';
+    ['crew', 'stagnation', 'deliveries'].forEach(function (k) { d[k] = Array.isArray(e[k]) ? copy(e[k]) : []; });
+    d.machines = Array.isArray(e.machines) ? copy(e.machines) : (e.equipment || []).map(function (n) { return { item: n, partner: '', hours: '' }; });
+    if (e.extra) Object.keys(d.extra).forEach(function (k) { if (e.extra[k] !== undefined) d.extra[k] = e.extra[k]; });
+    if (e.safety) Object.keys(d.safety).forEach(function (k) { if (e.safety[k] !== undefined) d.safety[k] = e.safety[k]; });
+    d.weather = e.weather ? copy(e.weather) : null;
+    return d;
+  }
+  function fields(d) {
+    return { work: d.work.trim(), other: d.other.trim(), crew: d.crew, machines: d.machines, equipment: d.machines.map(function (m) { return m.item; }),
+      stagnation: d.stagnation, deliveries: d.deliveries, extra: d.extra, safety: d.safety, weather: d.weather };
+  }
+  function hasContent(d) {
+    return !!(d.work.trim() || d.other.trim() || LISTS.some(function (k) { return d[k].length; }) || d.extra.on || d.safety.toolbox || d.safety.lmra || d.safety.incident || d.safety.note.trim());
+  }
+  var day = emptyDay();
+  /* tijdens het typen schrijft renderAll het veld met de cursor niet opnieuw; bij een andere dag of project wel (anders blijft de oude tekst staan) */
+  var forceFill = false;
+  function busy(id) { return !forceFill && document.activeElement === $(id); }
   /* project en datum van de dag die nu open staat: opslaan gebruikt deze, niet de keuzevelden. Bij een wisseling is het keuzeveld al veranderd voordat er opgeslagen wordt, en dan zou de inhoud bij het verkeerde project belanden. */
   var curPid = '', curDate = '', curPhotoCount = null;
 
@@ -131,10 +222,10 @@
   function loadDay() {
     curPid = $('proj').value; curDate = $('date').value; curPhotoCount = null;
     var e = find(loadLog(), curPid, curDate);
-    $('work').value = e ? e.work : '';
-    equipment = e ? e.equipment.slice() : [];
+    day = fromRecord(e);
     setState(e ? 'Opgeslagen.' : '');
-    renderEquipment(); renderHistory(); renderPhotos();
+    forceFill = true; renderAll(); forceFill = false; renderHistory(); renderPhotos();
+    if (!day.weather && curDate <= todayIso() && (curDate === todayIso() || hasContent(day))) fetchWeather();
   }
 
   /* opslaan: een lege dag wordt niet bewaard; het id van een bestaande regel blijft gelijk */
@@ -143,50 +234,176 @@
     clearTimeout(timer); timer = null;
     var pid = curPid, date = curDate;
     if (!pid || !date) return;
-    var work = $('work').value.trim(), a = loadLog(), e = find(a, pid, date), now = Date.now();
-    if (!work && !equipment.length && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
+    var a = loadLog(), e = find(a, pid, date), now = Date.now();
+    if (!hasContent(day) && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
       if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
       setState(''); renderHistory(); return;
     }
+    if (!hasContent(day) && !e) { setState(''); return; }
     /* alleen schrijven bij een echte wijziging: een nieuw tijdstip zonder wijziging zou bij synchroniseren de stand van een ander apparaat overschrijven */
-    if (e && e.work === work && JSON.stringify(e.equipment) === JSON.stringify(equipment)) { setState('Opgeslagen.'); renderHistory(); renderEquipment(); return; }
-    if (e) { e.work = work; e.equipment = equipment.slice(); e.modified = now; }
-    else a.push({ v: 1, id: newId(), projectId: pid, date: date, work: work, equipment: equipment.slice(), created: now, modified: now });
+    var next = fields(day);
+    if (e && JSON.stringify(fields(fromRecord(e))) === JSON.stringify(next)) { setState('Opgeslagen.'); renderHistory(); return; }
+    if (e) { Object.assign(e, copy(next)); e.modified = now; }
+    else a.push(Object.assign({ v: 1, id: newId(), projectId: pid, date: date }, copy(next), { created: now, modified: now }));
     if (window.GwwData) GwwData.revived('log/' + pid + '/' + date);
     if (saveLog(a)) setState('Opgeslagen.');
-    renderHistory(); renderEquipment();
+    renderHistory(); renderAll();
   }
   function saveSoon() { setState('Bezig met opslaan…'); clearTimeout(timer); timer = setTimeout(saveNow, 500); }
 
-  /* materieel: chips van deze dag, daaronder voorstellen uit eerdere dagen (alle projecten) */
-  function renderEquipment() {
-    var box = $('eqlist'); box.textContent = '';
-    equipment.forEach(function (name, i) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip on'; b.dataset.i = i;
-      b.setAttribute('aria-label', name + ' verwijderen'); b.textContent = name + ' ×'; box.appendChild(b);
-    });
-    var cnt = {};
-    loadLog().forEach(function (e) { (e.equipment || []).forEach(function (n) { cnt[n] = (cnt[n] || 0) + 1; }); });
-    var sug = Object.keys(cnt).filter(function (n) { return equipment.indexOf(n) === -1; })
-      .sort(function (x, y) { return cnt[y] - cnt[x] || x.localeCompare(y); }).slice(0, 6);
-    var sb = $('eqsug'); sb.textContent = '';
-    sug.forEach(function (n) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip sug'; b.dataset.n = n; b.textContent = '+ ' + n; sb.appendChild(b);
+  /* ---------- lijsten (personeel, materieel, stagnatie, leveringen) ---------- */
+  function buildSections() {
+    var host = $('secs');
+    LISTS.forEach(function (name) {
+      var s = SECS[name], d = document.createElement('details'); d.className = 'sec'; d.id = 'sec-' + name; if (s.open) d.open = true;
+      d.innerHTML = '<summary><span>' + s.title + '</span><span class="sum" id="sum-' + name + '"></span></summary>' +
+        '<div class="secbody"><div class="chips" id="list-' + name + '"></div><div class="addgrid" id="grid-' + name + '"></div>' +
+        '<button class="btn" type="button" id="add-' + name + '">Toevoegen</button><div class="chips" id="sug-' + name + '"></div></div>';
+      host.appendChild(d);
+      var grid = d.querySelector('#grid-' + name);
+      s.fields.forEach(function (f) {
+        var el;
+        if (f.select) { el = document.createElement('select'); f.select.forEach(function (o) { var op = document.createElement('option'); op.textContent = o; el.appendChild(op); }); }
+        else { el = document.createElement('input'); el.autocomplete = 'off'; el.placeholder = f.ph; if (f.num) { el.type = 'number'; el.inputMode = 'decimal'; el.step = '0.5'; el.min = '0'; } }
+        el.className = 'inp' + (f.wide ? ' wide' : ''); el.id = 'f-' + name + '-' + f.k; el.setAttribute('aria-label', f.ph);
+        el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('add-' + name).click(); } });
+        grid.appendChild(el);
+      });
+      $('add-' + name).onclick = function () { addRow(name); };
+      $('list-' + name).onclick = function (ev) {
+        var b = ev.target.closest('.chip'); if (!b) return;
+        day[name].splice(+b.dataset.i, 1); renderAll(); saveNow();
+      };
+      $('sug-' + name).onclick = function (ev) {
+        var b = ev.target.closest('.chip'); if (!b) return;
+        day[name].push(copy(JSON.parse(b.dataset.row))); renderAll(); saveNow();
+      };
     });
   }
-  function addEquipment(name) {
-    name = String(name || '').replace(/\s+/g, ' ').trim();
-    if (!name || equipment.some(function (n) { return n.toLowerCase() === name.toLowerCase(); })) return;
-    equipment.push(name); renderEquipment(); saveNow();
+  function numVal(v) { v = String(v || '').replace(',', '.').trim(); return v === '' || isNaN(+v) ? '' : +v; }
+  function addRow(name) {
+    var s = SECS[name], row = {}, missing = false;
+    s.fields.forEach(function (f) {
+      var el = $('f-' + name + '-' + f.k), v = f.num ? numVal(el.value) : String(el.value || '').replace(/\s+/g, ' ').trim();
+      if (f.req && v === '') missing = true;
+      row[f.k] = v;
+    });
+    if (missing) { $('f-' + name + '-' + s.fields[0].k).focus(); return; }
+    day[name].push(row);
+    s.fields.forEach(function (f) { if (!f.select) $('f-' + name + '-' + f.k).value = ''; });
+    renderAll(); saveNow(); $('f-' + name + '-' + s.fields[0].k).focus();
   }
-  $('eqadd').onclick = function () { addEquipment($('eqin').value); $('eqin').value = ''; $('eqin').focus(); };
-  $('eqin').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('eqadd').click(); } });
-  $('eqin').addEventListener('blur', function () { if ($('eqin').value.trim()) { addEquipment($('eqin').value); $('eqin').value = ''; } });
-  $('eqlist').onclick = function (e) {
-    var b = e.target.closest('.chip'); if (!b) return;
-    equipment.splice(+b.dataset.i, 1); renderEquipment(); saveNow();
+  /* voorstellen uit eerdere dagen: de meest gebruikte regels, met de laatst gebruikte aantallen en uren */
+  function suggestions(name) {
+    var s = SECS[name]; if (!s.key) return [];
+    var cnt = {}, tpl = {}, a = loadLog().slice().sort(function (x, y) { return (x.modified || 0) - (y.modified || 0); });
+    a.forEach(function (e) {
+      var rows = fromRecord(e)[name];
+      rows.forEach(function (r) { var k = s.key(r); if (!k) return; cnt[k] = (cnt[k] || 0) + 1; tpl[k] = r; });
+    });
+    var present = day[name].map(s.key);
+    return Object.keys(cnt).filter(function (k) { return present.indexOf(k) === -1; })
+      .sort(function (x, y) { return cnt[y] - cnt[x] || x.localeCompare(y); }).slice(0, 6).map(function (k) { return tpl[k]; });
+  }
+  function chip(cls, text, attrs) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip ' + cls; b.textContent = text;
+    Object.keys(attrs || {}).forEach(function (k) { b.setAttribute(k, attrs[k]); }); return b;
+  }
+  function renderAll() {
+    LISTS.forEach(function (name) {
+      var s = SECS[name], box = $('list-' + name), sb = $('sug-' + name); box.textContent = ''; sb.textContent = '';
+      day[name].forEach(function (r, i) { var t = s.text(r); box.appendChild(chip('on', t + ' ×', { 'data-i': i, 'aria-label': t + ' verwijderen' })); });
+      suggestions(name).forEach(function (r) { sb.appendChild(chip('sug', '+ ' + s.text(r), { 'data-row': JSON.stringify(r) })); });
+      $('sum-' + name).textContent = s.sum(day[name]);
+      var d = $('sec-' + name); if (day[name].length && !d.open) d.open = true;
+    });
+    // meerwerk en veiligheid
+    $('exOn').checked = !!day.extra.on; $('exBox').hidden = !day.extra.on;
+    if (!busy('exWho')) $('exWho').value = day.extra.who;
+    $('exHow').value = day.extra.how || 'Schriftelijk';
+    if (!busy('exNote')) $('exNote').value = day.extra.note;
+    $('sum-extra').textContent = day.extra.on ? (day.extra.how || 'Ja').toLowerCase() : 'geen';
+    if (day.extra.on) $('sec-extra').open = true;
+    $('saTool').checked = !!day.safety.toolbox; $('saLmra').checked = !!day.safety.lmra; $('saInc').checked = !!day.safety.incident;
+    if (!busy('saNote')) $('saNote').value = day.safety.note;
+    $('sum-safety').textContent = day.safety.incident ? 'incident' : (day.safety.toolbox || day.safety.lmra ? [day.safety.toolbox ? 'toolbox' : '', day.safety.lmra ? 'LMRA' : ''].filter(Boolean).join(' + ') : '');
+    if (day.safety.incident || day.safety.note) $('sec-safety').open = true;
+    if (!busy('work')) $('work').value = day.work;
+    if (!busy('other')) $('other').value = day.other;
+    renderWeather(); renderCopyPrev();
+  }
+  buildSections();
+
+  /* "Zelfde als vorige dag": personeel en materieel van de laatste eerdere dag van dit project, met één tik */
+  function previousDay() {
+    return loadLog().filter(function (e) { return e.projectId === curPid && e.date < curDate; })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
+      .filter(function (e) { var d = fromRecord(e); return d.crew.length || d.machines.length; })[0];
+  }
+  function renderCopyPrev() {
+    var p = !day.crew.length && !day.machines.length ? previousDay() : null, b = $('copyPrev');
+    b.hidden = !p; if (p) { b.textContent = 'Zelfde personeel en materieel als ' + dayLabel(p.date); b.dataset.date = p.date; }
+  }
+  $('copyPrev').onclick = function () {
+    var e = find(loadLog(), curPid, this.dataset.date); if (!e) return;
+    var d = fromRecord(e); day.crew = d.crew; day.machines = d.machines; renderAll(); saveNow();
   };
-  $('eqsug').onclick = function (e) { var b = e.target.closest('.chip'); if (b) addEquipment(b.dataset.n); };
+
+  /* ---------- weer rond 12:00 ---------- */
+  var WMO = function (c) {
+    if (c === 0) return 'Zonnig'; if (c <= 2) return 'Wisselend bewolkt'; if (c === 3) return 'Bewolkt'; if (c === 45 || c === 48) return 'Mist';
+    if (c >= 51 && c <= 57) return 'Motregen'; if (c >= 61 && c <= 67) return 'Regen'; if (c >= 80 && c <= 82) return 'Buien';
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'Sneeuw'; if (c >= 95) return 'Onweer'; return 'Bewolkt';
+  };
+  (function () { var sel = $('wxDesc'); WX_DESC.forEach(function (o) { var op = document.createElement('option'); op.textContent = o; sel.appendChild(op); }); })();
+  function fmtNum(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+  function renderWeather() {
+    var w = day.weather;
+    if (!busy('wxTemp')) $('wxTemp').value = w && w.temp !== '' && w.temp !== undefined ? w.temp : '';
+    $('wxDesc').value = w && w.desc ? w.desc : '';
+    var parts = [];
+    if (w && w.wind !== undefined && w.wind !== '') parts.push('wind ' + Math.round(w.wind) + ' km/u');
+    if (w && w.rain !== undefined && w.rain !== '') parts.push('neerslag die dag ' + fmtNum(w.rain) + ' mm');
+    parts.push(w ? (w.src === 'auto' ? 'automatisch om 12:00' : 'zelf ingevuld') : '');
+    $('wxInfo').textContent = parts.filter(Boolean).join(' · ');
+  }
+  function setWeather(w) { day.weather = w; renderWeather(); if (hasContent(day)) saveSoon(); }
+  function manualWeather() {
+    var t = numVal($('wxTemp').value), d = $('wxDesc').value, old = day.weather || {};
+    if (t === '' && !d) { setWeather(null); return; }
+    setWeather({ temp: t, desc: d, wind: old.wind, rain: old.rain, src: 'handmatig' });
+  }
+  $('wxTemp').addEventListener('change', manualWeather); $('wxDesc').addEventListener('change', manualWeather);
+  /* positie voor het weer: de plek van een foto van die dag, anders de positie van het toestel */
+  function weatherPos(pid, date) {
+    return photosOfDay(pid, date).then(function (l) { var p = l.filter(function (x) { return x.lat != null; })[0]; return p ? { lat: p.lat, lon: p.lon } : getPos(); }).catch(function () { return getPos(); });
+  }
+  function fetchWeather() {
+    var date = curDate, pid = curPid;
+    if (!date || date > todayIso() || navigator.onLine === false) return;
+    $('wxInfo').textContent = 'Weer ophalen…';
+    weatherPos(pid, date).then(function (pos) {
+      if (!pos) throw new Error('geen positie');
+      return timeoutFetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos.lat.toFixed(3) + '&longitude=' + pos.lon.toFixed(3) +
+        '&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code&start_date=' + date + '&end_date=' + date + '&timezone=auto', 8000);
+    }).then(function (j) {
+      if (curDate !== date || curPid !== pid || day.weather) return;
+      var h = j && j.hourly, i = h && h.time ? h.time.indexOf(date + 'T12:00') : -1;
+      if (i < 0 || h.temperature_2m[i] == null) throw new Error('geen weergegevens');
+      var rain = 0; (h.precipitation || []).forEach(function (x) { rain += x || 0; });
+      setWeather({ temp: Math.round(h.temperature_2m[i]), desc: WMO(h.weather_code[i]), wind: Math.round(h.wind_speed_10m[i]), rain: Math.round(rain * 10) / 10, src: 'auto' });
+    }).catch(function () { if (curDate === date && !day.weather) $('wxInfo').textContent = 'Weer niet beschikbaar. Vul het zelf in.'; });
+  }
+
+  /* meerwerk en veiligheid */
+  $('exOn').addEventListener('change', function () { day.extra.on = this.checked; renderAll(); saveNow(); });
+  $('exWho').addEventListener('input', function () { day.extra.who = this.value; saveSoon(); });
+  $('exHow').addEventListener('change', function () { day.extra.how = this.value; saveNow(); renderAll(); });
+  $('exNote').addEventListener('input', function () { day.extra.note = this.value; saveSoon(); });
+  $('saTool').addEventListener('change', function () { day.safety.toolbox = this.checked; saveNow(); renderAll(); });
+  $('saLmra').addEventListener('change', function () { day.safety.lmra = this.checked; saveNow(); renderAll(); });
+  $('saInc').addEventListener('change', function () { day.safety.incident = this.checked; saveNow(); renderAll(); });
+  $('saNote').addEventListener('input', function () { day.safety.note = this.value; saveSoon(); });
 
   /* eerdere dagen van het gekozen project */
   function renderHistory() {
@@ -194,10 +411,11 @@
     var rows = loadLog().filter(function (e) { return e.projectId === pid; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var box = $('history'); box.textContent = '';
     rows.forEach(function (e) {
+      var d = fromRecord(e);
       var b = document.createElement('button'); b.type = 'button'; b.className = 'day' + (e.date === $('date').value ? ' sel' : ''); b.dataset.date = e.date;
       var t = document.createElement('span'); t.className = 'txt';
       var s = document.createElement('b'); s.textContent = dayLabel(e.date); t.appendChild(s);
-      var line = (e.work || '').split('\n')[0] || (e.equipment || []).join(', ') || 'Foto\u2019s';
+      var line = (d.work || '').split('\n')[0] || d.machines.map(function (m) { return m.item; }).join(', ') || d.crew.map(function (c) { return c.partner; }).join(', ') || 'Foto’s';
       var sm = document.createElement('small'); sm.textContent = line; t.appendChild(sm);
       b.appendChild(t); box.appendChild(b);
     });
@@ -208,7 +426,8 @@
     saveNow(); $('date').value = b.dataset.date; loadDay(); window.scrollTo({ top: 0 });
   };
 
-  $('work').addEventListener('input', saveSoon);
+  $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); });
+  $('other').addEventListener('input', function () { day.other = this.value; saveSoon(); });
   $('date').addEventListener('change', function () { if (!$('date').value) $('date').value = todayIso(); saveNow(); loadDay(); });
   $('proj').addEventListener('change', function () { saveNow(); loadDay(); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
@@ -413,19 +632,33 @@
       doc.splitTextToSize(t, CW).forEach(function (line) { ensure(6); doc.text(line, M, y); y += 5.4; });
       y += 2;
     }
+    function bullets(list, empty) {
+      if (!list.length) { para(empty); return; }
+      list.forEach(function (t) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+        doc.splitTextToSize(t, CW - 6).forEach(function (line, i) { ensure(6); doc.text((i ? '   ' : '•  ') + line, M, y); y += 5.6; });
+      });
+      y += 2;
+    }
     header();
     doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(doc.splitTextToSize(o.title, CW), M, y); y += 8 * doc.splitTextToSize(o.title, CW).length;
     var meta = [];
     if (o.who) meta.push('Uitvoerder: ' + o.who);
     if (o.phone) meta.push('Telefoon: ' + o.phone);
     if (meta.length) para(meta.join('   '), 10.5);
+    if (o.weather) para('Weer rond 12:00: ' + o.weather, 10.5);
     if (o.note) { heading('Projectnotitie'); para(o.note); }
     heading('Werkzaamheden'); para(o.work || 'Geen werkzaamheden vastgelegd.');
-    heading('Materieel');
-    if (o.equipment.length) o.equipment.forEach(function (n) { ensure(6); doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text('\u2022  ' + n, M, y); y += 5.6; }); else para('Geen materieel vastgelegd.');
+    heading('Personeel (partners)'); bullets(o.crew, 'Geen personeel vastgelegd.');
+    heading('Materieel (partners)'); bullets(o.machines, 'Geen materieel vastgelegd.');
+    heading('Stagnatie'); bullets(o.stagnation, 'Geen stagnatie.');
+    if (o.deliveries.length) { heading('Leveringen'); bullets(o.deliveries, ''); }
+    if (o.extra) { heading('Meerwerk of afwijking'); para(o.extra); }
+    if (o.safety) { heading('Veiligheid'); para(o.safety); }
+    if (o.other) { heading('Overig'); para(o.other); }
     y += 2;
     if (o.photos.length) {
-      heading('Foto\u2019s');
+      heading('Foto’s');
       var gap = 4, pw = (CW - gap) / 2, col = 0, rowH = 0;
       o.photos.forEach(function (p) {
         var ph = pw * p.h / p.w;
@@ -439,20 +672,31 @@
     var n = doc.getNumberOfPages();
     for (var i = 1; i <= n; i++) {
       doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(86, 104, 121);
-      doc.text('GWW Tools ' + o.version + '  \u00B7  gemaakt op ' + o.madeOn, M, H - 8);
+      doc.text('GWW Tools ' + o.version + '  ·  gemaakt op ' + o.madeOn, M, H - 8);
       doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8, { align: 'right' });
     }
     return doc.output('blob');
   }
+  /* de teksten van de dag voor het rapport */
+  function reportParts(d) {
+    var w = d.weather, wt = '';
+    if (w) wt = join([w.temp !== '' && w.temp !== undefined ? w.temp + ' °C' : '', w.desc, w.wind !== undefined && w.wind !== '' ? 'wind ' + Math.round(w.wind) + ' km/u' : '', w.rain !== undefined && w.rain !== '' ? 'neerslag die dag ' + fmtNum(w.rain) + ' mm' : '']);
+    var ex = '';
+    if (d.extra.on) ex = join([d.extra.how ? d.extra.how + ' opgedragen' : '', d.extra.who ? 'door ' + d.extra.who : '']) + (d.extra.note ? '\n' + d.extra.note : '');
+    var sa = join([d.safety.toolbox ? 'Toolbox gehouden' : '', d.safety.lmra ? 'LMRA gedaan' : '', d.safety.incident ? 'Incident of bijna-ongeval' : '']);
+    if (d.safety.note) sa += (sa ? '\n' : '') + d.safety.note;
+    return { weather: wt, crew: d.crew.map(SECS.crew.text), machines: d.machines.map(SECS.machines.text), stagnation: d.stagnation.map(SECS.stagnation.text),
+      deliveries: d.deliveries.map(SECS.deliveries.text), extra: ex, safety: sa };
+  }
   $('report').onclick = function () {
     saveNow();
-    var pid = curPid, date = curDate, proj = projects().filter(function (p) { return p.id === pid; })[0], e = find(loadLog(), pid, date);
-    var btn = this; btn.disabled = true; setState('Rapport maken\u2026');
+    var pid = curPid, date = curDate, proj = projects().filter(function (p) { return p.id === pid; })[0], d = fromRecord(find(loadLog(), pid, date));
+    var btn = this; btn.disabled = true; setState('Rapport maken…');
     Promise.all([loadPdfLib(), photosOfDay(pid, date)]).then(function (r) {
-      return Promise.all(r[1].map(function (p) { return blobToDataUrl(p.blob).then(function (d) { return { data: d, w: p.w, h: p.h }; }); })).then(function (photos) {
-        var now = new Date();
-        var blob = buildReport(r[0], { title: proj ? plabel(proj) : 'Project', who: proj && proj.who, phone: proj && proj.phone, note: proj && proj.note,
-          dateText: dayLabel(date), work: e ? e.work : '', equipment: e ? e.equipment : [], photos: photos, version: APP_VERSION, madeOn: whenLabel(now) });
+      return Promise.all(r[1].map(function (p) { return blobToDataUrl(p.blob).then(function (x) { return { data: x, w: p.w, h: p.h }; }); })).then(function (photos) {
+        var now = new Date(), parts = reportParts(d);
+        var blob = buildReport(r[0], Object.assign({ title: proj ? plabel(proj) : 'Project', who: proj && proj.who, phone: proj && proj.phone, note: proj && proj.note,
+          dateText: dayLabel(date), work: d.work, other: d.other, photos: photos, version: APP_VERSION, madeOn: whenLabel(now) }, parts));
         var name = 'dagrapport-' + (proj && proj.nr ? proj.nr.replace(/[^\w-]+/g, '') + '-' : '') + date + '.pdf';
         var file = new File([blob], name, { type: 'application/pdf' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) { return navigator.share({ files: [file] }).catch(function () { /* geannuleerd */ }); }

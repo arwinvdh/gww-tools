@@ -2,6 +2,14 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.13.0] - 2026-11-23
+
+- Logboek uitgebreid voor GWW: weer rond 12:00 (automatisch, aan te passen), personeel en materieel van partners (met aantallen en uren), stagnatie met oorzaak en uren, leveringen, meerwerk of afwijking en veiligheid (inklapbaar) en een veld Overig.
+- "Zelfde personeel en materieel als vorige dag" met één tik, en voorstellen uit eerdere dagen met de laatst gebruikte aantallen en uren.
+- Het dagrapport (PDF) bevat alle nieuwe onderdelen.
+- Nieuwe velden zijn optioneel in `gww.log` en synchroniseren mee; oudere regels blijven geldig (het oude veld `equipment` blijft meegeschreven).
+- Gefixt: bij een andere dag of project bleef oude tekst staan als de cursor nog in een tekstveld stond.
+
 ## [1.12.0] - 2026-11-23
 
 - Projecten en Logboek synchroniseren tussen apparaten via dezelfde koppeling als Route en Locatie delen (`data/projecten.json` en `data/logboek.json`, formaat `{v:1, docs}`). Per project en per logregel wint de nieuwste wijziging; verwijderingen worden gedeeld (grafsteen, lokaal bewaard in `gww.tombstones`). Foto's blijven op het toestel.

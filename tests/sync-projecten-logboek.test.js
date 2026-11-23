@@ -32,7 +32,7 @@ const { createMock } = require('./mock-github.js');
 
   // logboek: A schrijft een dag, B ziet hem
   await A.goto(ROOT + 'logboek.html#gp=' + idA); await A.waitForTimeout(600);
-  await A.fill('#work', 'Sleuf gegraven'); await A.fill('#eqin', 'Graafmachine'); await A.click('#eqadd');
+  await A.fill('#work', 'Sleuf gegraven'); await A.fill('#f-machines-item', 'Graafmachine'); await A.click('#add-machines');
   ok(await waitFor(() => remote('logboek.json') && Object.keys(remote('logboek.json').docs).length === 1), 'A: logregel staat in data/logboek.json');
   await B.goto(ROOT + 'logboek.html#gp=' + idA);
   ok(await waitFor(async () => ((await ls(B, 'gww.log')) || []).length === 1), 'B: ziet de logregel van A');
@@ -40,7 +40,7 @@ const { createMock } = require('./mock-github.js');
   ok(JSON.stringify(Object.keys(remote('logboek.json').docs)[0].split('/').length) === '3', 'logregel staat onder log/<project-id>/<datum>');
 
   // verwijderingen worden gedeeld: A leegt de dag
-  await A.fill('#work', ''); await A.click('#eqlist .chip');
+  await A.fill('#work', ''); await A.click('#list-machines .chip');
   ok(await waitFor(() => { const d = Object.values(remote('logboek.json').docs)[0]; return d && d.__del; }), 'A: een lege dag wordt als verwijderd in de repo gezet');
   await B.reload();
   ok(await waitFor(async () => ((await ls(B, 'gww.log')) || []).length === 0), 'B: de verwijderde dag verdwijnt ook');

@@ -11,7 +11,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await p.goto(ROOT + 'logboek.html#gp=p2'); await p.waitForTimeout(500);
   const log = () => p.evaluate(() => JSON.parse(localStorage.getItem('gww.log') || '[]'));
   ok(await p.inputValue('#proj') === 'p2', 'vanuit een project geopend: dat project staat gekozen');
-  await p.fill('#work', 'Sleuf gegraven'); await p.fill('#eqin', 'Graafmachine'); await p.click('#eqadd'); await p.waitForTimeout(800);
+  await p.fill('#work', 'Sleuf gegraven'); await p.fill('#f-machines-item', 'Graafmachine'); await p.click('#add-machines'); await p.waitForTimeout(800);
   let l = await log();
   ok(l.length === 1 && l[0].projectId === 'p2' && l[0].work === 'Sleuf gegraven' && l[0].equipment.join() === 'Graafmachine' && l[0].v === 1 && l[0].id, 'werkzaamheden en materieel worden vanzelf bewaard met project-id en vast id');
   const id0 = l[0].id;
@@ -20,12 +20,12 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   ok(l.length === 1 && l[0].id === id0 && l[0].work === 'Sleuf gegraven en gestort', 'wijzigen werkt dezelfde regel bij (id blijft gelijk)');
   // ander project: eigen, lege dag; materieel wordt voorgesteld uit eerdere dagen
   await p.selectOption('#proj', 'p1'); await p.waitForTimeout(300);
-  ok(await p.inputValue('#work') === '' && await p.locator('#eqsug .chip', { hasText: 'Graafmachine' }).count() === 1, 'ander project start leeg en stelt eerder materieel voor');
-  await p.click('#eqsug .chip'); await p.waitForTimeout(300);
+  ok(await p.inputValue('#work') === '' && await p.locator('#sug-machines .chip', { hasText: 'Graafmachine' }).count() === 1, 'ander project start leeg en stelt eerder materieel voor');
+  await p.click('#sug-machines .chip'); await p.waitForTimeout(300);
   l = await log();
   ok(l.length === 2 && l.some(x => x.projectId === 'p1' && x.equipment.join() === 'Graafmachine'), 'voorgesteld materieel toevoegen bewaart een regel voor dat project');
   // materieel weghalen en alles leegmaken verwijdert de regel
-  await p.click('#eqlist .chip'); await p.waitForTimeout(300);
+  await p.click('#list-machines .chip'); await p.waitForTimeout(300);
   ok((await log()).length === 1, 'een lege dag wordt niet bewaard');
   // eerdere dagen: terugkeren naar project 2 en de dag openen
   await p.selectOption('#proj', 'p2'); await p.waitForTimeout(300);

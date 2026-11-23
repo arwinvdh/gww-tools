@@ -10,7 +10,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
     localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: 'IB9', name: 'Rapportproject', who: 'Piet Uitvoerder', phone: '0612345678', note: 'Inrit via de poort', created: 1, modified: 2 }])); } });
   const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   await p.goto(ROOT + 'logboek.html#gp=p1'); await p.waitForTimeout(500);
-  await p.fill('#work', 'Sleuf gegraven en kabels gelegd'); await p.fill('#eqin', 'Graafmachine'); await p.click('#eqadd'); await p.waitForTimeout(700);
+  await p.fill('#work', 'Sleuf gegraven en kabels gelegd'); await p.fill('#f-machines-item', 'Graafmachine'); await p.click('#add-machines'); await p.waitForTimeout(700);
   const b64 = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 1200; c.height = 900; const g = c.getContext('2d'); g.fillStyle = 'rgb(200,120,40)'; g.fillRect(0, 0, 1200, 900); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
   await p.setInputFiles('#shot', { name: 'f.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(b64, 'base64') });
   await p.waitForSelector('#thumbs button', { timeout: 15000 });
