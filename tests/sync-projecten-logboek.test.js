@@ -2,6 +2,7 @@
 const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
 const { createMock } = require('./mock-github.js');
 (async () => {
+  const iso0 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const TODAY = iso0(new Date());
   const b = await chromium.launch(launchOptions());
   const gh = createMock(); const REPO = 'arwinvdh/test-data', TOKEN = 'github_pat_testtoken_0123456789';
   const waitFor = async (fn, ms = 25000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await new Promise(r => setTimeout(r, 300)); } return false; };
@@ -31,10 +32,10 @@ const { createMock } = require('./mock-github.js');
   await A.reload(); ok(await waitFor(async () => ((await ls(A, 'gww.projects')) || [])[0].name === 'Hernoemd'), 'A: ziet de nieuwe naam, id blijft gelijk');
 
   // logboek: A schrijft een dag, B ziet hem
-  await A.goto(ROOT + 'logboek.html#gp=' + idA); await A.waitForTimeout(600);
+  await A.goto(ROOT + 'logboek.html#/p/' + idA + '/' + TODAY); await A.waitForTimeout(600);
   await A.fill('#work', 'Sleuf gegraven'); await A.fill('#f-machines-item', 'Graafmachine'); await A.click('#add-machines');
   ok(await waitFor(() => remote('logboek.json') && Object.keys(remote('logboek.json').docs).length === 1), 'A: logregel staat in data/logboek.json');
-  await B.goto(ROOT + 'logboek.html#gp=' + idA);
+  await B.goto(ROOT + 'logboek.html#/p/' + idA + '/' + TODAY);
   ok(await waitFor(async () => ((await ls(B, 'gww.log')) || []).length === 1), 'B: ziet de logregel van A');
   ok(await waitFor(async () => (await B.inputValue('#work')) === 'Sleuf gegraven'), 'B: de dag staat open met de tekst van A');
   ok(JSON.stringify(Object.keys(remote('logboek.json').docs)[0].split('/').length) === '3', 'logregel staat onder log/<project-id>/<datum>');
