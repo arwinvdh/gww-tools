@@ -2,6 +2,16 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.18.0] - 2026-11-23
+
+- Onderbalk: op tablet en desktop staan de tabs gegroepeerd in het midden in plaats van over de hele breedte uitgerekt.
+- Locatie delen: het zoekveld staat op elke schermbreedte op een eigen rij (op tablet en desktop was het platgedrukt tot een paar letters); Mijn locatie blijft op één regel; de actiebalk breekt labels op desktop niet meer af en de labels zijn minstens 12px; op grote schermen (80rem en breder) is de pagina breder.
+- Route knijperwagen: de drie knoppen bij Route verdelen de breedte op smalle schermen; de statusregel in de actiebalk heeft een groter tikvlak (de balk wordt niet hoger).
+- Projecten: in het projectvenster is Opslaan nu de hoofdknop en zijn de drie tool-links secundair.
+- Startpagina en synchronisatieblok: de links onder Apparaten koppelen en de uitklapper Hoe stel ik dit in? hebben een tikvlak van minstens 44px.
+- Kaarten verschijnen direct zonder intreeanimatie.
+- Opslag, synchronisatie en gegevensformaten zijn ongewijzigd.
+
 ## [1.17.0] - 2026-11-23
 
 - Startpagina: tools staan als rij met icoon, naam en korte beschrijving (de hele rij is aanklikbaar). Nieuw: een compacte synchronisatiestatus met symbool en tekst (niet gekoppeld, gekoppeld, gesynchroniseerd om, mislukt); een tik opent de koppelgegevens. Zonder projecten en routes staat er een lege toestand met knoppen naar Projecten en Locatie delen.
