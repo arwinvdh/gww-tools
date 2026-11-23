@@ -75,7 +75,7 @@
   .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
   .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
   #pdlg img { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 10px; background: #000; }
-  #pdlg .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  #pdlg .actions, #wdlg .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 }
 </style>
 </head>
@@ -97,6 +97,7 @@
     <h2>Dagen</h2>
     <div class="list" id="dlist"></div>
     <p class="empty" id="noDays" hidden>Nog geen dagen vastgelegd.</p>
+    <button class="btn" id="weekBtn" type="button">Weekrapport PDF</button>
     <a class="btn" id="editProj" href="projecten.html">Project bewerken</a>
   </section>
   <section id="v3" hidden>
@@ -154,6 +155,15 @@
     <button class="btn" id="report" type="button">Dagrapport PDF</button>
   </div>
 </div>
+<dialog id="wdlg">
+  <h2>Weekrapport</h2>
+  <div class="daynav"><button class="btn sm" id="wprev" type="button">‹ Vorige week</button><button class="btn sm" id="wnext" type="button">Volgende week ›</button></div>
+  <p><b id="wtitle"></b></p>
+  <p class="hint" id="wcount"></p>
+  <label class="check"><input type="checkbox" id="wphotos"> Foto’s meenemen</label>
+  <p class="hint" id="wstate" role="status"></p>
+  <div class="actions"><button class="btn primary" id="wmake" type="button">PDF maken</button><button class="btn" id="wclose" type="button">Sluiten</button></div>
+</dialog>
 <dialog id="ndlg">
   <h2>Kies een project</h2>
   <div class="list" id="nlist"></div>
@@ -639,66 +649,88 @@
     });
   }
   function blobToDataUrl(blob) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(blob); }); }
-  function buildReport(JsPdf, o) {
+  /* gedeelde opbouw van de PDF: kopband, koppen, tekst, regels, tabel, foto's en voettekst */
+  function pdfDoc(JsPdf, headRight) {
     var doc = new JsPdf({ unit: 'mm', format: 'a4', compress: true });
-    var W = 210, M = 15, CW = W - 2 * M, H = 297, y = 0;
+    var W = 210, M = 15, CW = W - 2 * M, H = 297, y = 0, headLeft = '';
     function header() {
       doc.setFillColor(0, 31, 56); doc.rect(0, 0, W, 22, 'F'); doc.setFillColor(118, 183, 32); doc.rect(0, 22, W, 1.2, 'F');
-      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Dagrapport', M, 14);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(o.dateText, W - M, 14, { align: 'right' });
+      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(headLeft, M, 14);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(headRight, W - M, 14, { align: 'right' });
       doc.setTextColor(10, 27, 44); y = 32;
     }
-    function ensure(h) { if (y + h > H - 18) { doc.addPage(); header(); } }
-    function heading(t) { ensure(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(t, M, y); y += 2; doc.setDrawColor(195, 207, 219); doc.line(M, y, W - M, y); y += 6; }
-    function para(t, size) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 11);
-      doc.splitTextToSize(t, CW).forEach(function (line) { ensure(6); doc.text(line, M, y); y += 5.4; });
-      y += 2;
-    }
-    function bullets(list, empty) {
-      if (!list.length) { para(empty); return; }
-      list.forEach(function (t) {
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
-        doc.splitTextToSize(t, CW - 6).forEach(function (line, i) { ensure(6); doc.text((i ? '   ' : '•  ') + line, M, y); y += 5.6; });
-      });
-      y += 2;
-    }
-    header();
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(doc.splitTextToSize(o.title, CW), M, y); y += 8 * doc.splitTextToSize(o.title, CW).length;
+    var k = {
+      doc: doc, M: M, CW: CW,
+      start: function (title) { headLeft = title; header(); },
+      ensure: function (h) { if (y + h > H - 18) { doc.addPage(); header(); } },
+      heading: function (t) { k.ensure(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(t, M, y); y += 2; doc.setDrawColor(195, 207, 219); doc.line(M, y, W - M, y); y += 6; },
+      title: function (t) { doc.setFont('helvetica', 'bold'); doc.setFontSize(15); var l = doc.splitTextToSize(t, CW); doc.text(l, M, y); y += 8 * l.length; },
+      para: function (t, size) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 11);
+        doc.splitTextToSize(t, CW).forEach(function (line) { k.ensure(6); doc.text(line, M, y); y += 5.4; });
+        y += 2;
+      },
+      bullets: function (list, empty) {
+        if (!list.length) { if (empty) k.para(empty); return; }
+        list.forEach(function (t) {
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+          doc.splitTextToSize(t, CW - 6).forEach(function (line, i) { k.ensure(6); doc.text((i ? '   ' : '•  ') + line, M, y); y += 5.6; });
+        });
+        y += 2;
+      },
+      /* tabel: kolommen met x-positie (mm vanaf de linkerrand) en uitlijning */
+      row: function (cells, cols, bold) {
+        k.ensure(7); doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(10);
+        cells.forEach(function (c, i) { doc.text(String(c), M + cols[i].x, y, cols[i].right ? { align: 'right', maxWidth: cols[i].w } : { maxWidth: cols[i].w }); });
+        y += 6;
+      },
+      rule: function () { doc.setDrawColor(195, 207, 219); doc.line(M, y - 4.2, W - M, y - 4.2); },
+      gap: function (n) { y += n; },
+      photos: function (list) {
+        var gap = 4, pw = (CW - gap) / 2, col = 0, rowH = 0;
+        list.forEach(function (p) {
+          var ph = pw * p.h / p.w;
+          if (col === 0) { k.ensure(ph + 4); rowH = 0; }
+          var x = M + col * (pw + gap);
+          doc.addImage(p.data, 'JPEG', x, y, pw, ph); rowH = Math.max(rowH, ph);
+          if (col === 1) { y += rowH + gap; col = 0; } else col = 1;
+        });
+        if (col === 1) y += rowH + gap;
+        y += 3;
+      },
+      finish: function (version, madeOn) {
+        var n = doc.getNumberOfPages();
+        for (var i = 1; i <= n; i++) {
+          doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(86, 104, 121);
+          doc.text('GWW Tools ' + version + '  ·  gemaakt op ' + madeOn, M, H - 8);
+          doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8, { align: 'right' });
+        }
+        return doc.output('blob');
+      }
+    };
+    return k;
+  }
+  function buildReport(JsPdf, o) {
+    var k = pdfDoc(JsPdf, o.dateText);
+    k.start('Dagrapport');
+    k.title(o.title);
     var meta = [];
     if (o.who) meta.push('Uitvoerder: ' + o.who);
     if (o.phone) meta.push('Telefoon: ' + o.phone);
-    if (meta.length) para(meta.join('   '), 10.5);
-    if (o.weather) para('Weer rond 12:00: ' + o.weather, 10.5);
-    if (o.note) { heading('Projectnotitie'); para(o.note); }
-    heading('Werkzaamheden'); para(o.work || 'Geen werkzaamheden vastgelegd.');
-    heading('Personeel (partners)'); bullets(o.crew, 'Geen personeel vastgelegd.');
-    heading('Materieel (partners)'); bullets(o.machines, 'Geen materieel vastgelegd.');
-    heading('Stagnatie'); bullets(o.stagnation, 'Geen stagnatie.');
-    if (o.deliveries.length) { heading('Leveringen'); bullets(o.deliveries, ''); }
-    if (o.extra) { heading('Meerwerk of afwijking'); para(o.extra); }
-    if (o.safety) { heading('Veiligheid'); para(o.safety); }
-    if (o.other) { heading('Overig'); para(o.other); }
-    y += 2;
-    if (o.photos.length) {
-      heading('Foto’s');
-      var gap = 4, pw = (CW - gap) / 2, col = 0, rowH = 0;
-      o.photos.forEach(function (p) {
-        var ph = pw * p.h / p.w;
-        if (col === 0) { ensure(ph + 4); rowH = 0; }
-        var x = M + col * (pw + gap);
-        doc.addImage(p.data, 'JPEG', x, y, pw, ph); rowH = Math.max(rowH, ph);
-        if (col === 1) { y += rowH + gap; col = 0; } else col = 1;
-      });
-      if (col === 1) y += rowH + gap;
-    }
-    var n = doc.getNumberOfPages();
-    for (var i = 1; i <= n; i++) {
-      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(86, 104, 121);
-      doc.text('GWW Tools ' + o.version + '  ·  gemaakt op ' + o.madeOn, M, H - 8);
-      doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8, { align: 'right' });
-    }
-    return doc.output('blob');
+    if (meta.length) k.para(meta.join('   '), 10.5);
+    if (o.weather) k.para('Weer rond 12:00: ' + o.weather, 10.5);
+    if (o.note) { k.heading('Projectnotitie'); k.para(o.note); }
+    k.heading('Werkzaamheden'); k.para(o.work || 'Geen werkzaamheden vastgelegd.');
+    k.heading('Personeel (partners)'); k.bullets(o.crew, 'Geen personeel vastgelegd.');
+    k.heading('Materieel (partners)'); k.bullets(o.machines, 'Geen materieel vastgelegd.');
+    k.heading('Stagnatie'); k.bullets(o.stagnation, 'Geen stagnatie.');
+    if (o.deliveries.length) { k.heading('Leveringen'); k.bullets(o.deliveries); }
+    if (o.extra) { k.heading('Meerwerk of afwijking'); k.para(o.extra); }
+    if (o.safety) { k.heading('Veiligheid'); k.para(o.safety); }
+    if (o.other) { k.heading('Overig'); k.para(o.other); }
+    k.gap(2);
+    if (o.photos.length) { k.heading('Foto’s'); k.photos(o.photos); }
+    return k.finish(o.version, o.madeOn);
   }
   /* de teksten van de dag voor het rapport */
   function reportParts(d) {
@@ -711,6 +743,14 @@
     return { weather: wt, crew: d.crew.map(SECS.crew.text), machines: d.machines.map(SECS.machines.text), stagnation: d.stagnation.map(SECS.stagnation.text),
       deliveries: d.deliveries.map(SECS.deliveries.text), extra: ex, safety: sa };
   }
+  /* delen via het deelmenu als dat bestanden ondersteunt, anders een download */
+  function deliverPdf(blob, name) {
+    var file = new File([blob], name, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { return navigator.share({ files: [file] }).catch(function () { /* geannuleerd */ }); }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    return Promise.resolve();
+  }
   $('report').onclick = function () {
     saveNow();
     var pid = curPid, date = curDate, proj = projects().filter(function (p) { return p.id === pid; })[0], d = fromRecord(find(loadLog(), pid, date));
@@ -721,14 +761,141 @@
         var blob = buildReport(r[0], Object.assign({ title: proj ? plabel(proj) : 'Project', who: proj && proj.who, phone: proj && proj.phone, note: proj && proj.note,
           dateText: dayLabel(date), work: d.work, other: d.other, photos: photos, version: APP_VERSION, madeOn: whenLabel(now) }, parts));
         var name = 'dagrapport-' + (proj && proj.nr ? proj.nr.replace(/[^\w-]+/g, '') + '-' : '') + date + '.pdf';
-        var file = new File([blob], name, { type: 'application/pdf' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) { return navigator.share({ files: [file] }).catch(function () { /* geannuleerd */ }); }
-        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
-        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+        return deliverPdf(blob, name);
       });
     }).then(function () { setState('Dagrapport klaar.'); })
       .catch(function () { setState('Het rapport kon niet worden gemaakt. De PDF-bibliotheek laadt alleen met verbinding, de eerste keer.'); })
       .then(function () { btn.disabled = false; });
+  };
+
+  /* ---------- weekrapport als PDF (maandag t/m zondag) ---------- */
+  function mondayOf(iso) {
+    var p = iso.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2], 12), wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function addDaysIso(iso, n) { var p = iso.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2] + n, 12); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function isoWeek(iso) {
+    var p = iso.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])), dn = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dn);
+    var ys = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return { nr: Math.ceil(((d - ys) / 864e5 + 1) / 7), year: d.getUTCFullYear() };
+  }
+  function shortDay(iso) { var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace(/\./g, ''); }
+  function weekRange(monday) {
+    var sun = addDaysIso(monday, 6), p = sun.split('-');
+    return shortDay(monday) + ' – ' + shortDay(sun) + ' ' + p[0];
+  }
+  /* totalen van de week uit de dagen van dit project */
+  function weekAgg(pid, monday) {
+    var log = loadLog(), days = [];
+    for (var i = 0; i < 7; i++) { var date = addDaysIso(monday, i), e = find(log, pid, date); days.push({ date: date, d: e ? fromRecord(e) : null }); }
+    var crew = {}, mach = {}, stag = {}, extra = [], deliveries = [], incidents = [], tool = 0, lmra = 0, filled = 0;
+    days.forEach(function (x) {
+      var d = x.d; if (!d) return; filled++;
+      d.crew.forEach(function (c) {
+        var k = (c.partner || '').toLowerCase(), t = crew[k] || (crew[k] = { partner: c.partner, hours: 0, days: {} });
+        if (c.hours !== '' && c.hours !== undefined) t.hours += (+c.count || 1) * (+c.hours || 0);
+        t.days[x.date] = 1;
+      });
+      d.machines.forEach(function (m) {
+        var k = ((m.item || '') + '|' + (m.partner || '')).toLowerCase(), t = mach[k] || (mach[k] = { item: m.item, partner: m.partner, hours: 0, days: {} });
+        if (m.hours !== '' && m.hours !== undefined) t.hours += +m.hours || 0;
+        t.days[x.date] = 1;
+      });
+      d.stagnation.forEach(function (r) {
+        var t = stag[r.cause] || (stag[r.cause] = { cause: r.cause, hours: 0, dates: [], notes: [] });
+        t.hours += +r.hours || 0; if (t.dates.indexOf(x.date) === -1) t.dates.push(x.date); if (r.note) t.notes.push(shortDay(x.date) + ': ' + r.note);
+      });
+      if (d.extra.on) extra.push(dayLabel(x.date) + ': ' + join([d.extra.how ? d.extra.how + ' opgedragen' : '', d.extra.who ? 'door ' + d.extra.who : '', d.extra.note]));
+      d.deliveries.forEach(function (r) { deliveries.push(shortDay(x.date) + ': ' + SECS.deliveries.text(r)); });
+      if (d.safety.toolbox) tool++; if (d.safety.lmra) lmra++;
+      if (d.safety.incident) incidents.push(dayLabel(x.date) + (d.safety.note ? ': ' + d.safety.note : ''));
+    });
+    return { days: days, filled: filled, crew: crew, mach: mach, stag: stag, extra: extra, deliveries: deliveries, incidents: incidents, tool: tool, lmra: lmra };
+  }
+  function nDays(o) { var n = Object.keys(o).length; return n + (n === 1 ? ' dag' : ' dagen'); }
+  function weekParts(a) {
+    return {
+      crew: Object.keys(a.crew).map(function (k) { var t = a.crew[k]; return join([t.partner, t.hours ? fmtNum(t.hours) + ' manuren' : '', nDays(t.days)]); }),
+      machines: Object.keys(a.mach).map(function (k) { var t = a.mach[k]; return join([t.item, t.partner, t.hours ? fmtNum(t.hours) + ' u' : '', nDays(t.days)]); }),
+      stagnation: Object.keys(a.stag).map(function (k) { var t = a.stag[k]; return join([t.cause, t.hours ? fmtNum(t.hours) + ' u' : '', t.dates.map(shortDay).join(', '), t.notes.join('; ')]); }),
+      extra: a.extra, deliveries: a.deliveries, incidents: a.incidents,
+      safety: a.filled ? join(['Toolbox op ' + a.tool + ' van ' + a.filled + ' dagen', 'LMRA op ' + a.lmra + ' van ' + a.filled + ' dagen']) : ''
+    };
+  }
+  function buildWeekReport(JsPdf, o) {
+    var k = pdfDoc(JsPdf, 'Week ' + o.weekNr + ' · ' + o.range);
+    k.start('Weekrapport');
+    k.title(o.title);
+    var meta = []; if (o.who) meta.push('Uitvoerder: ' + o.who); if (o.phone) meta.push('Telefoon: ' + o.phone);
+    if (meta.length) k.para(meta.join('   '), 10.5);
+    k.heading('Weekoverzicht');
+    var cols = [{ x: 0, w: 34 }, { x: 36, w: 66 }, { x: 118, w: 14, right: true }, { x: 150, w: 28, right: true }, { x: 180, w: 20, right: true }];
+    k.row(['Dag', 'Weer rond 12:00', 'Pers.', 'Stagnatie', 'Foto’s'], cols, true); k.rule();
+    o.days.forEach(function (x) {
+      var d = x.d, w = d && d.weather, pers = 0, h = 0;
+      if (d) { d.crew.forEach(function (c) { pers += +c.count || 0; }); d.stagnation.forEach(function (r) { h += +r.hours || 0; }); }
+      var wt = w ? join([w.temp !== '' && w.temp !== undefined ? w.temp + ' °C' : '', w.desc, w.rain !== undefined && w.rain !== '' ? fmtNum(w.rain) + ' mm' : '']) : '';
+      k.row([dayLabel(x.date).replace(/ \d{4}$/, ''), d ? (wt || '–') : 'geen invoer', d && pers ? pers : '–', d ? (h ? fmtNum(h) + ' u' : (d.stagnation.length ? 'ja' : '–')) : '–', x.photos || '–'], cols, false); k.rule();
+    });
+    k.gap(2);
+    k.heading('Personeel (partners)'); k.bullets(o.crew, 'Geen personeel vastgelegd.');
+    k.heading('Materieel (partners)'); k.bullets(o.machines, 'Geen materieel vastgelegd.');
+    k.heading('Stagnatie'); k.bullets(o.stagnation, 'Geen stagnatie.');
+    if (o.deliveries.length) { k.heading('Leveringen'); k.bullets(o.deliveries); }
+    if (o.extra.length) { k.heading('Meerwerk of afwijkingen'); k.bullets(o.extra); }
+    if (o.safety || o.incidents.length) { k.heading('Veiligheid'); if (o.safety) k.para(o.safety); k.bullets(o.incidents.map(function (t) { return 'Incident of bijna-ongeval op ' + t; })); }
+    o.days.forEach(function (x) {
+      var d = x.d; if (!d) return;
+      var has = d.work.trim() || d.other.trim() || (x.shots && x.shots.length); if (!has) return;
+      k.heading(dayLabel(x.date));
+      if (d.work.trim()) k.para(d.work.trim());
+      if (d.other.trim()) k.para('Overig: ' + d.other.trim());
+      if (x.shots && x.shots.length) k.photos(x.shots);
+    });
+    return k.finish(o.version, o.madeOn);
+  }
+  function shrinkPhoto(blob, maxEdge, q) {
+    return (window.createImageBitmap ? createImageBitmap(blob, { imageOrientation: 'from-image' }).catch(function () { return loadImgEl(blob); }) : loadImgEl(blob)).then(function (img) {
+      var sc = Math.min(1, maxEdge / Math.max(img.width, img.height)), w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+      var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+      return { data: c.toDataURL('image/jpeg', q), w: w, h: h };
+    });
+  }
+  var weekMon = '';
+  function renderWeekDialog() {
+    var a = weekAgg(curPid, weekMon), wk = isoWeek(weekMon);
+    $('wtitle').textContent = 'Week ' + wk.nr + ' · ' + weekRange(weekMon);
+    $('wcount').textContent = a.filled ? a.filled + (a.filled === 1 ? ' dag met invoer' : ' dagen met invoer') : 'Geen dagen met invoer in deze week.';
+    $('wmake').disabled = !a.filled;
+  }
+  $('weekBtn').onclick = function () {
+    weekMon = mondayOf(todayIso()); $('wstate').textContent = ''; renderWeekDialog();
+    if ($('wdlg').showModal) $('wdlg').showModal(); else $('wdlg').setAttribute('open', '');
+  };
+  function closeWeek() { if ($('wdlg').close) $('wdlg').close(); else $('wdlg').removeAttribute('open'); }
+  $('wclose').onclick = closeWeek;
+  $('wprev').onclick = function () { weekMon = addDaysIso(weekMon, -7); renderWeekDialog(); };
+  $('wnext').onclick = function () { weekMon = addDaysIso(weekMon, 7); renderWeekDialog(); };
+  $('wmake').onclick = function () {
+    var pid = curPid, mon = weekMon, withPhotos = $('wphotos').checked, btn = this, proj = projectById(pid);
+    btn.disabled = true; $('wstate').textContent = 'Rapport maken…';
+    var a = weekAgg(pid, mon);
+    var jobs = a.days.map(function (x) {
+      return photosOfDay(pid, x.date).then(function (list) {
+        x.photos = list.length;
+        if (!withPhotos || !list.length) return;
+        return Promise.all(list.map(function (p) { return shrinkPhoto(p.blob, 1000, 0.8); })).then(function (shots) { x.shots = shots; });
+      }).catch(function () { x.photos = 0; });
+    });
+    Promise.all([loadPdfLib(), Promise.all(jobs)]).then(function (r) {
+      var wk = isoWeek(mon), parts = weekParts(a);
+      var blob = buildWeekReport(r[0], Object.assign({ title: proj ? plabel(proj) : 'Project', who: proj && proj.who, phone: proj && proj.phone, weekNr: wk.nr, range: weekRange(mon),
+        days: a.days, version: APP_VERSION, madeOn: whenLabel(new Date()) }, parts));
+      return deliverPdf(blob, 'weekrapport-' + (proj && proj.nr ? proj.nr.replace(/[^\w-]+/g, '') + '-' : '') + wk.year + '-w' + String(wk.nr).padStart(2, '0') + '.pdf');
+    }).then(function () { $('wstate').textContent = 'Weekrapport klaar.'; })
+      .catch(function () { $('wstate').textContent = 'Het rapport kon niet worden gemaakt. De PDF-bibliotheek laadt alleen met verbinding, de eerste keer.'; })
+      .then(function () { btn.disabled = false; renderWeekDialog(); });
   };
 
   /* ---------- lagen: projecten, dagen van een project, één dag ----------
