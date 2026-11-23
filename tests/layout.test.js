@@ -49,6 +49,15 @@ const { devices } = require('playwright');
   await p.fill('#q', '51.995961, 4.476169'); await p.click('#go'); await p.waitForTimeout(500);
   const tops = await p.evaluate(() => ['img', 'dl', 'wa', 'copy'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().top)));
   ok(new Set(tops).size === 1, 'desktop: actiebalk staat op één rij (' + tops.join(',') + ')');
+  // desktop: kaart links blijft in beeld bij scrollen, project en bericht staan rechts; mobiel blijft onder elkaar
+  {
+    const q = await p.evaluate(() => { const m = document.querySelector('.mapcol'), pr = document.getElementById('card-project'); return { sticky: getComputedStyle(m).position, mapLeft: Math.round(document.getElementById('map').getBoundingClientRect().left), projLeft: Math.round(pr.getBoundingClientRect().left) }; });
+    ok(q.sticky === 'sticky' && q.mapLeft < q.projLeft, 'desktop: kaart staat links vast en project rechts (' + q.sticky + ', ' + q.mapLeft + ' < ' + q.projLeft + ')');
+    const m = await offlinePage(b, devices['iPhone 13'], 'index.html');
+    const mm = await m.evaluate(() => ({ sticky: getComputedStyle(document.querySelector('.mapcol')).position, order: ['map', 'card-project'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().top)) }));
+    ok(mm.sticky === 'static' && mm.order[0] < mm.order[1], 'mobiel: kaart boven project, niets vast (' + mm.sticky + ')');
+    await m.context().close();
+  }
   // toetsenbordfocus: duidelijke outline op invoervelden
   await p.keyboard.press('Tab'); await p.focus('#q');
   const ol = await p.evaluate(() => { const c = getComputedStyle(document.getElementById('q')); return [c.outlineStyle, c.outlineWidth]; });

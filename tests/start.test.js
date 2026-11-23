@@ -46,6 +46,27 @@ const fs = require('fs'), path = require('path');
     ok(await pe.evaluate(() => document.getElementById('recentProjects').hidden && document.getElementById('recentRoutes').hidden), 'start: zonder gegevens blijven de recent-blokken verborgen');
     await ctx.close(); await empty.close();
   }
+  // tegels met beschrijving, compacte syncstatus en lege toestand
+  {
+    const p = await offlinePage(b, devices['iPhone 13'], 'start.html');
+    const r = await p.evaluate(() => ({
+      descs: [...document.querySelectorAll('.tile .ds')].map(e => e.textContent.trim()).filter(Boolean).length,
+      line: document.getElementById('syncTxt').textContent, hidden: document.getElementById('syncLine').hidden,
+      empty: !document.getElementById('emptyStart').hidden,
+      emptyLinks: [...document.querySelectorAll('#emptyStart a')].map(a => a.getAttribute('href')).join() }));
+    ok(r.descs === 4, 'start: elke tool-tegel heeft een korte beschrijving (' + r.descs + ')');
+    ok(!r.hidden && /Niet gekoppeld/.test(r.line), 'start: syncstatus zonder koppeling zegt Niet gekoppeld (' + r.line + ')');
+    ok(r.empty && r.emptyLinks === 'projecten.html,index.html', 'start: lege toestand toont acties voor project en locatie (' + r.emptyLinks + ')');
+    await p.click('#syncLine'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => document.getElementById('more').open), 'start: tik op de syncstatus opent de koppelgegevens');
+    await p.evaluate(() => { localStorage.setItem('gww.projects', JSON.stringify([{ id: 'x', nr: '1', name: 'A' }])); });
+    await p.reload(); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => document.getElementById('emptyStart').hidden), 'start: lege toestand verdwijnt als Projecten een project heeft');
+    await p.evaluate(() => { localStorage.setItem('gh-sync-config', JSON.stringify({ repo: 'a/b', token: 't' })); });
+    await p.reload(); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => document.getElementById('syncTxt').textContent) === 'Gekoppeld', 'start: gekoppeld zonder synchronisatie zegt Gekoppeld');
+    await p.context().close();
+  }
   // manifest en bestanden die de service worker bewaart bestaan echt
   const root = path.resolve(__dirname, '..');
   const man = JSON.parse(fs.readFileSync(path.join(root, 'start.webmanifest'), 'utf8'));
