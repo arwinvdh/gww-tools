@@ -2,6 +2,11 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.25.0] - 2026-11-23
+
+- Logboek: back-up maken en terugzetten, onderaan het projectenoverzicht. De back-up is één bestand met alle projecten en logdagen (`gww-logboek-backup-<datum>.json`, zonder foto's). Terugzetten voegt alleen toe en overschrijft een dag of project alleen met een nieuwere versie; er wordt niets verwijderd, ongeldige regels in het bestand worden overgeslagen en een ongeldig bestand wijzigt niets. Is er dagen in het logboek en is de laatste back-up ouder dan 30 dagen (of er is er nog geen), dan staat er een herinnering.
+- Nieuwe opslagsleutel `gww.lastBackup` (tijdstip van de laatste back-up). Bestaande sleutels en formaten zijn ongewijzigd.
+
 ## [1.24.0] - 2026-11-23
 
 Technische kwaliteitsronde: opslag, synchronisatie, offline, PDF, toegankelijkheid en veilige zones onderzocht en met nieuwe tests vastgelegd. Gegevensformaten zijn ongewijzigd.
