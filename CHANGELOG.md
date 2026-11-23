@@ -2,6 +2,12 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.12.0] - 2026-11-23
+
+- Projecten en Logboek synchroniseren tussen apparaten via dezelfde koppeling als Route en Locatie delen (`data/projecten.json` en `data/logboek.json`, formaat `{v:1, docs}`). Per project en per logregel wint de nieuwste wijziging; verwijderingen worden gedeeld (grafsteen, lokaal bewaard in `gww.tombstones`). Foto's blijven op het toestel.
+- Projecten die je overneemt uit Locatie delen krijgen een id dat uit nummer en naam is afgeleid, en bij de eerste keer wordt eerst gesynchroniseerd, zodat twee apparaten geen dubbele projecten maken.
+- Gefixt: Logboek en Projecten schrijven een dag of project alleen nog weg bij een echte wijziging; een nieuw tijdstip zonder wijziging kon bij synchroniseren de stand van een ander apparaat overschrijven.
+
 ## [1.11.0] - 2026-11-23
 
 - Dagrapport als PDF vanuit het logboek: project, datum, uitvoerder en telefoon, projectnotitie, werkzaamheden, materieel en de foto's met stempel, op A4. De PDF-bibliotheek (jsPDF 4.2.1) wordt pas geladen als je een rapport maakt en door de service worker bewaard. Delen via het deelmenu (bijvoorbeeld naar Bestanden of Mail), anders een download.

@@ -43,6 +43,7 @@ index.html              Locatie delen
 route.html              Route knijperwagen
 projecten.html          gedeelde projectlijst met een vast id per project
 logboek.html            logboek per project en dag: werkzaamheden en materieel
+datasync.js             synchroniseren van Projecten en Logboek (bovenop sync.js)
 nav.js                  onderbalk en lijst met tools (een nieuwe tool komt hier als één regel bij)
 manifest.webmanifest    installatiegegevens Locatie delen
 route.webmanifest       installatiegegevens Route knijperwagen
@@ -88,7 +89,7 @@ Waar je op moet letten: `vault.json` staat in een publieke repo. Iedereen kan he
 
 Wat er gebeurt:
 
-- De gegevens worden als JSON-bestand in `data/` van die repo gezet (`locatie.json` en `route.json`). Elke wijziging is een commit, dus de geschiedenis staat er ook.
+- De gegevens worden als JSON-bestand in `data/` van die repo gezet (`locatie.json`, `route.json`, `projecten.json` en `logboek.json`). Foto's van het logboek blijven op het toestel. Elke wijziging is een commit, dus de geschiedenis staat er ook.
 - Per project of route wint de nieuwste versie. Een verwijdering wordt ook gedeeld. Wijzigen twee apparaten tegelijk, dan worden ze samengevoegd.
 - Je laatste invoer wordt nooit zomaar overgenomen. Staat er op een ander apparaat nieuwere invoer, dan zie je een melding met Overnemen of Negeren.
 - De tool weigert een openbare repo, zodat je gegevens niet publiek komen te staan.
@@ -129,9 +130,10 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Startpagina: `start.tipX`.
   - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
-  - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Staat alleen op het apparaat (nog niet gesynchroniseerd).
+  - Grafstenen (sinds 1.12.0): `gww.tombstones`, `{ documentsleutel: tijdstip }` voor verwijderde projecten en logregels, nodig om verwijderingen te synchroniseren; na 90 dagen opgeruimd.
+  - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Wordt sinds 1.12.0 gesynchroniseerd.
   - Foto's (sinds 1.10.0): IndexedDB-database `gww-photos`, store `photos`, records `{ v, id, projectId, date, day, blob, w, h, lat, lon, created }` (`day` is `projectId|datum`). Alleen op het apparaat.
-- Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`.
+- Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`. Bestanden: `locatie.json`, `route.json`, en sinds 1.12.0 `projecten.json` (documenten `projects/<id>`) en `logboek.json` (documenten `log/<project-id>/<datum>`).
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
 
 Dit valt er niet onder: interne code en CSS, teksten en layout, de tests, `visie.html`, het cache-id, de weergave van het versienummer en externe diensten.

@@ -32,6 +32,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `layout.test.js` | Smalle telefoons (320 en 390 px): geen zijwaartse scroll, knoppen minstens 44px, actiebalk, recente projecten |
 | `nav.test.js` | Onderbalk in alle drie de pagina's: Home en een knop per tool, de juiste knop actief, de actiebalk van de tools blijft zichtbaar boven de onderbalk, de terugknop in de kop |
 | `logboek.test.js` | Logboek: project en datum kiezen, vanzelf bewaren met vast id, materieel en voorstellen, een lege dag wordt niet bewaard, wisselen van project of datum haalt niets door elkaar |
+| `sync-projecten-logboek.test.js` | Synchroniseren van Projecten en Logboek tussen twee apparaten: aanmaken, wijzigen, verwijderen, geen dubbele projecten bij een nieuw apparaat |
 | `logboek-pdf.test.js` | Dagrapport als PDF: bestand met projectnaam en datum, foto erin, melding en foutmelding zonder verbinding (de bibliotheek komt uit `node_modules`) |
 | `logboek-foto.test.js` | Foto's in het logboek: stempel en verkleinen, bewaren op het apparaat, openen en verwijderen |
 | `vanuit-project.test.js` | Werken vanuit Projecten: gegevens van een project, knoppen naar de tools, Locatie delen en Route openen met dat project, eigen bewaarde gegevens blijven ongewijzigd |
