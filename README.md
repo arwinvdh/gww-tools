@@ -8,7 +8,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, recente projecten en routes onder hun tool (alleen lezen; een tik laadt het item direct in de tool) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
 | **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project en uitvoerder, telefoon en notitie; neemt de projecten uit Locatie delen over. Vanuit een project open je Locatie delen of Route met dat project ingevuld (`#gp=<id>`). |
-| **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | Per project en dag werkzaamheden, materieel en foto's met stempel (tijd, locatie, kaartje) vastleggen; bewaart vanzelf. |
+| **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | Per project en dag werkzaamheden, materieel en foto's met stempel (tijd, locatie, kaartje) vastleggen; bewaart vanzelf. Maakt het dagrapport als PDF. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
 ## Locatie delen
@@ -62,7 +62,7 @@ Elke tool is één HTML-bestand met eigen code en de stijl die alleen bij die to
 
 ### Opbouw van de stijl
 
-`shared.css` begint met `@layer reset, base, components, overrides;`. Een regel in een latere laag wint van een regel in een eerdere laag, ook als die minder specifiek is. Daardoor hoeft een uitzondering (smal scherm, touch, bezig) niet meer op de goede plek in het bestand te staan. Zet een nieuwe regel in de laag die bij zijn rol past: gewone onderdelen in `components`, uitzonderingen in `overrides`. De aanpassing van de Leaflet-knoppen staat buiten de lagen, omdat Leaflet zelf ook buiten lagen staat. Heb je `shared.css` aangepast, verhoog dan ook `CACHE` in `sw.js`. De enige externe code is Leaflet 1.9.4, geladen van cdnjs.
+`shared.css` begint met `@layer reset, base, components, overrides;`. Een regel in een latere laag wint van een regel in een eerdere laag, ook als die minder specifiek is. Daardoor hoeft een uitzondering (smal scherm, touch, bezig) niet meer op de goede plek in het bestand te staan. Zet een nieuwe regel in de laag die bij zijn rol past: gewone onderdelen in `components`, uitzonderingen in `overrides`. De aanpassing van de Leaflet-knoppen staat buiten de lagen, omdat Leaflet zelf ook buiten lagen staat. Heb je `shared.css` aangepast, verhoog dan ook `CACHE` in `sw.js`. De enige externe code is Leaflet 1.9.4, geladen van cdnjs, en jsPDF 4.2.1 voor het dagrapport, geladen van jsDelivr zodra je een rapport maakt.
 
 ## Synchroniseren tussen apparaten
 
@@ -164,6 +164,7 @@ In `tests/` staan automatische controles die de tools in een echte (onzichtbare)
 | GitHub API (alleen als je synchroniseren aanzet) | je gegevens bewaren in je eigen privérepo |
 | OpenStreetMap (tegels en Nominatim) | kaart en adressen buiten Nederland, en als terugval |
 | cdnjs | Leaflet |
+| jsDelivr | jsPDF (PDF-bibliotheek voor het dagrapport, versie vastgezet) |
 
 Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzender blijven op het apparaat en komen alleen in het bericht en de afbeelding die je zelf verstuurt. De diensten hierboven ontvangen alleen de coördinaten, zoekopdrachten en tegelverzoeken die nodig zijn voor de kaart.
 

@@ -73,6 +73,7 @@
       </div>
       <div class="thumbs" id="thumbs"></div>
       <p class="hint state" id="state" role="status"></p>
+      <button class="btn primary" id="report" type="button">Dagrapport als PDF</button>
     </div>
     <div style="margin-top:1rem">
       <h2>Eerdere dagen van dit project</h2>
@@ -374,6 +375,87 @@
     if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten?'; return; }
     var id = openPhoto && openPhoto.id; closePhoto();
     if (id) dbDo('readwrite', function (st) { return st.delete(id); }).then(function () { return renderPhotos(); }).then(function () { saveNow(); });
+  };
+
+  /* ---------- dagrapport als PDF ----------
+     jsPDF (versie vastgezet) wordt pas geladen als je een rapport maakt; de service worker bewaart hem voor offline gebruik.
+     Het rapport bevat project, datum, uitvoerder en telefoon, notitie van het project, werkzaamheden, materieel en de foto's met stempel. */
+  var PDF_LIB = 'https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js';
+  function loadPdfLib() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script'); s.src = PDF_LIB;
+      s.onload = function () { window.jspdf && window.jspdf.jsPDF ? res(window.jspdf.jsPDF) : rej(new Error('geen bibliotheek')); };
+      s.onerror = function () { rej(new Error('niet geladen')); };
+      document.head.appendChild(s);
+    });
+  }
+  function blobToDataUrl(blob) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(blob); }); }
+  function buildReport(JsPdf, o) {
+    var doc = new JsPdf({ unit: 'mm', format: 'a4', compress: true });
+    var W = 210, M = 15, CW = W - 2 * M, H = 297, y = 0;
+    function header() {
+      doc.setFillColor(0, 31, 56); doc.rect(0, 0, W, 22, 'F'); doc.setFillColor(118, 183, 32); doc.rect(0, 22, W, 1.2, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Dagrapport', M, 14);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(o.dateText, W - M, 14, { align: 'right' });
+      doc.setTextColor(10, 27, 44); y = 32;
+    }
+    function ensure(h) { if (y + h > H - 18) { doc.addPage(); header(); } }
+    function heading(t) { ensure(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(t, M, y); y += 2; doc.setDrawColor(195, 207, 219); doc.line(M, y, W - M, y); y += 6; }
+    function para(t, size) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(size || 11);
+      doc.splitTextToSize(t, CW).forEach(function (line) { ensure(6); doc.text(line, M, y); y += 5.4; });
+      y += 2;
+    }
+    header();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(doc.splitTextToSize(o.title, CW), M, y); y += 8 * doc.splitTextToSize(o.title, CW).length;
+    var meta = [];
+    if (o.who) meta.push('Uitvoerder: ' + o.who);
+    if (o.phone) meta.push('Telefoon: ' + o.phone);
+    if (meta.length) para(meta.join('   '), 10.5);
+    if (o.note) { heading('Projectnotitie'); para(o.note); }
+    heading('Werkzaamheden'); para(o.work || 'Geen werkzaamheden vastgelegd.');
+    heading('Materieel');
+    if (o.equipment.length) o.equipment.forEach(function (n) { ensure(6); doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text('\u2022  ' + n, M, y); y += 5.6; }); else para('Geen materieel vastgelegd.');
+    y += 2;
+    if (o.photos.length) {
+      heading('Foto\u2019s');
+      var gap = 4, pw = (CW - gap) / 2, col = 0, rowH = 0;
+      o.photos.forEach(function (p) {
+        var ph = pw * p.h / p.w;
+        if (col === 0) { ensure(ph + 4); rowH = 0; }
+        var x = M + col * (pw + gap);
+        doc.addImage(p.data, 'JPEG', x, y, pw, ph); rowH = Math.max(rowH, ph);
+        if (col === 1) { y += rowH + gap; col = 0; } else col = 1;
+      });
+      if (col === 1) y += rowH + gap;
+    }
+    var n = doc.getNumberOfPages();
+    for (var i = 1; i <= n; i++) {
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(86, 104, 121);
+      doc.text('GWW Tools ' + o.version + '  \u00B7  gemaakt op ' + o.madeOn, M, H - 8);
+      doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8, { align: 'right' });
+    }
+    return doc.output('blob');
+  }
+  $('report').onclick = function () {
+    saveNow();
+    var pid = curPid, date = curDate, proj = projects().filter(function (p) { return p.id === pid; })[0], e = find(loadLog(), pid, date);
+    var btn = this; btn.disabled = true; setState('Rapport maken\u2026');
+    Promise.all([loadPdfLib(), photosOfDay(pid, date)]).then(function (r) {
+      return Promise.all(r[1].map(function (p) { return blobToDataUrl(p.blob).then(function (d) { return { data: d, w: p.w, h: p.h }; }); })).then(function (photos) {
+        var now = new Date();
+        var blob = buildReport(r[0], { title: proj ? plabel(proj) : 'Project', who: proj && proj.who, phone: proj && proj.phone, note: proj && proj.note,
+          dateText: dayLabel(date), work: e ? e.work : '', equipment: e ? e.equipment : [], photos: photos, version: APP_VERSION, madeOn: whenLabel(now) });
+        var name = 'dagrapport-' + (proj && proj.nr ? proj.nr.replace(/[^\w-]+/g, '') + '-' : '') + date + '.pdf';
+        var file = new File([blob], name, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { return navigator.share({ files: [file] }).catch(function () { /* geannuleerd */ }); }
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      });
+    }).then(function () { setState('Dagrapport klaar.'); })
+      .catch(function () { setState('Het rapport kon niet worden gemaakt. De PDF-bibliotheek laadt alleen met verbinding, de eerste keer.'); })
+      .then(function () { btn.disabled = false; });
   };
 
   /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
