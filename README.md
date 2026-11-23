@@ -131,7 +131,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
   - Grafstenen (sinds 1.12.0): `gww.tombstones`, `{ documentsleutel: tijdstip }` voor verwijderde projecten en logregels, nodig om verwijderingen te synchroniseren; na 90 dagen opgeruimd.
-  - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Wordt sinds 1.12.0 gesynchroniseerd.
+  - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]` plus sinds 1.13.0 optioneel `other`, `crew`, `machines`, `stagnation`, `deliveries`, `extra`, `safety` en `weather`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Wordt sinds 1.12.0 gesynchroniseerd.
   - Foto's (sinds 1.10.0): IndexedDB-database `gww-photos`, store `photos`, records `{ v, id, projectId, date, day, blob, w, h, lat, lon, created }` (`day` is `projectId|datum`). Alleen op het apparaat.
 - Het syncformaat: `data/<tool>.json` met `{v:1, docs}` en `data/LEESMIJ.md`. Bestanden: `locatie.json`, `route.json`, en sinds 1.12.0 `projecten.json` (documenten `projects/<id>`) en `logboek.json` (documenten `log/<project-id>/<datum>`).
 - De koppellink (`#koppel=` met `{r,t}`) en het formaat van `vault.json`.
@@ -166,6 +166,7 @@ In `tests/` staan automatische controles die de tools in een echte (onzichtbare)
 | GitHub API (alleen als je synchroniseren aanzet) | je gegevens bewaren in je eigen privérepo |
 | OpenStreetMap (tegels en Nominatim) | kaart en adressen buiten Nederland, en als terugval |
 | cdnjs | Leaflet |
+| Open-Meteo | weer rond 12:00 in het logboek (alleen de coördinaten van een foto of van het toestel en de datum gaan mee; zonder bereik vul je het zelf in) |
 | jsDelivr | jsPDF (PDF-bibliotheek voor het dagrapport, versie vastgezet) |
 
 Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzender blijven op het apparaat en komen alleen in het bericht en de afbeelding die je zelf verstuurt. De diensten hierboven ontvangen alleen de coördinaten, zoekopdrachten en tegelverzoeken die nodig zijn voor de kaart.
