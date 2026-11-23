@@ -42,7 +42,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await p.click('#plist .day'); await p.waitForTimeout(400);
   ok(/#\/p\/p1$/.test(await hash()) && await h1() === 'IB1 · Eerste' && await p.textContent('#todayBtn') === 'Vandaag openen', 'laag 2: dagen van het project en "Vandaag openen" (' + await h1() + ')');
   const days = await p.$$eval('#dlist .day', els => els.map(e => e.textContent));
-  ok(days.length === 2 && /9 °C · 3 pers · 2 u stagnatie/.test(days[0]) && /Oud/.test(days[1]), 'laag 2: samenvatting per dag (' + days[0] + ')');
+  ok(days.length === 2 && /9 °C · 3 pers · .*2 u stagnatie/.test(days[0]) && /Oud/.test(days[1]), 'laag 2: samenvatting per dag (' + days[0] + ')');
 
   // terugknop in de kop gaat één laag omhoog
   await p.click('.brand .back'); await p.waitForTimeout(400);

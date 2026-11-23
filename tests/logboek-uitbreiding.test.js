@@ -45,7 +45,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   r = await rec(today);
   ok(r.crew.length === 1 && r.crew[0].partner === 'Bouwpartner BV' && r.crew[0].count === 3 && r.crew[0].hours === 8, 'personeel: partner, aantal en uren bewaard');
   ok(r.machines[0].item === 'Graafmachine 14 ton' && r.machines[0].partner === 'Machineverhuur NV' && r.machines[0].hours === 7.5 && r.equipment.join() === 'Graafmachine 14 ton', 'materieel: item, partner en uren bewaard; namen ook in het oude veld');
-  ok(/3 pers/.test(await p.textContent('#sum-crew')) && /Bouwpartner BV.*3 pers · 8 u/.test(await p.textContent('#list-crew')), 'personeel: samenvatting en chip kloppen');
+  ok(/3 pers · 24 manuren/.test(await p.textContent('#sum-crew')) && /Bouwpartner BV/.test(await p.textContent('#list-crew')) && await p.inputValue('#list-crew .pill input >> nth=0') === '3' && await p.inputValue('#list-crew .pill input >> nth=1') === '8', 'personeel: samenvatting met manuren, aantal en uren staan in de regel');
 
   // 4. zelfde als vorige dag
   await goDay('2026-12-31');

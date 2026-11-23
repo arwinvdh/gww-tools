@@ -2,6 +2,16 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.20.0] - 2026-11-23
+
+- Logboek, dagregistratie: aantal personen en uren staan als invulveld in de regel zelf (personeel, materieel en stagnatie). Een waarde aanpassen na het overnemen van de vorige dag kost één tik, in plaats van de regel verwijderen en opnieuw invoeren. Het veld houdt de cursor tijdens het typen.
+- Samenvatting onder elke sectietitel, ook als die ingeklapt is: personen en manuren (zoals het weekrapport ze telt, alleen waar uren zijn ingevuld), aantal machines en uren, stagnatieuren, leveringen, meerwerk, veiligheid en het aantal foto's. Foto's is nu een sectie. Bovenaan de dag staat dezelfde regel in één oogopslag, ook in de dagenlijst (met de eerste regel werkzaamheden) en in het weekrapportvenster (zeven dagen met cijfers of geen invoer).
+- Bewaarstatus: Automatisch bewaard om 14:32 (of de datum als dat een andere dag was), en Wordt automatisch bewaard zodra je iets invult op een lege dag. Een mislukte opslag staat in rood.
+- Zelfde als vorige dag: werkt ook als alleen personeel of alleen materieel nog leeg is (overschrijft nooit iets), noemt wat er wordt overgenomen, toont na afloop een melding om aantallen en uren te controleren en heeft Ongedaan maken.
+- Half ingevulde regels (getypt maar niet toegevoegd) zijn zichtbaar bij de sectie en in de samenvatting. Opslaan en terug, Vorige dag en Volgende dag waarschuwen daar eerst een keer voor; de tweede tik gaat door. De toevoegvelden worden leeg bij een andere dag.
+- Dagnavigatie: de knoppen noemen de dag waar ze heen gaan.
+- Geen wijzigingen aan de PDF-rapporten, het opslagformaat (`gww.log`) of de foto's; er zijn geen nieuwe verplichte velden.
+
 ## [1.19.0] - 2026-11-23
 
 - Projecten: de lijst staat bovenaan zodra er projecten zijn (het formulier Nieuw project daaronder) en toont per project nummer, naam en locatie, of Geen locatie.
