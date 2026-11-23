@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.11.0] - 2026-11-23
+
+- Dagrapport als PDF vanuit het logboek: project, datum, uitvoerder en telefoon, projectnotitie, werkzaamheden, materieel en de foto's met stempel, op A4. De PDF-bibliotheek (jsPDF 4.2.1) wordt pas geladen als je een rapport maakt en door de service worker bewaard. Delen via het deelmenu (bijvoorbeeld naar Bestanden of Mail), anders een download.
+
 ## [1.10.1] - 2026-11-23
 
 - Datumvelden blijven binnen hun kaart en staan links uitgelijnd op iPhone (het datumveld in het logboek liep over de rand).

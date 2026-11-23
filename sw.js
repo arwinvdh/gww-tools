@@ -1,7 +1,7 @@
 // Service worker: de app opent ook zonder of met slecht bereik.
 // Pagina en manifest: eerst het netwerk (altijd de nieuwste versie), na 4 s of zonder netwerk de bewaarde kopie.
 // Kaartbibliotheek en iconen: uit de cache.
-const CACHE = 'locatie-v50';
+const CACHE = 'locatie-v51';
 const LOCAL = ['./', 'index.html', 'route.html', 'start.html', 'vault.html', 'visie.html', 'sync.js', 'version.js', 'nav.js', 'projecten.html', 'logboek.html', 'shared.css', 'manifest.webmanifest', 'route.webmanifest', 'start.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/start-icon-180.png', 'icons/start-icon-192.png', 'icons/start-icon-512.png',
@@ -10,7 +10,8 @@ const LOCAL = ['./', 'index.html', 'route.html', 'start.html', 'vault.html', 'vi
   'icons/logboek-icon-180.png', 'icons/logboek-icon-192.png', 'icons/logboek-icon-512.png'];
 const CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
+  'https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js'
 ];
 
 // Oude caches opruimen mag alleen als ze aantoonbaar van deze app zijn: de naam begint met CACHE_PREFIX én alle
