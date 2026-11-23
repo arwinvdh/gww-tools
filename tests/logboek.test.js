@@ -15,7 +15,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   ok(await p.textContent('#dayProj') === 'IB2 · Tweede', 'de dag opent bij het juiste project');
   await p.fill('#work', 'Sleuf gegraven'); await p.fill('#f-machines-item', 'Graafmachine'); await p.click('#add-machines'); await p.waitForTimeout(800);
   let l = await log();
-  ok(l.length === 1 && l[0].projectId === 'p2' && l[0].work === 'Sleuf gegraven' && l[0].equipment.join() === 'Graafmachine' && l[0].v === 1 && l[0].id, 'werkzaamheden en materieel worden vanzelf bewaard met project-id en vast id');
+  ok(l.length === 1 && l[0].projectId === 'p2' && l[0].work === '• Sleuf gegraven' && l[0].equipment.join() === 'Graafmachine' && l[0].v === 1 && l[0].id, 'werkzaamheden en materieel worden vanzelf bewaard met project-id en vast id');
   const id0 = l[0].id;
   await p.fill('#work', 'Sleuf gegraven en gestort'); await p.waitForTimeout(800);
   l = await log();

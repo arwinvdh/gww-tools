@@ -59,7 +59,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   ok(new RegExp('#/p/p2/' + YEST + '$').test(await hash()) && await p.inputValue('#work') === 'Andere dag' && await p.isEnabled('#nextDay'), 'laag 3: vorige dag toont die dag, volgende dag kan weer');
   await p.click('#nextDay'); await p.waitForTimeout(500);
   await p.fill('#work', 'Vandaag gewerkt'); await p.click('#saveBack'); await p.waitForTimeout(600);
-  ok(/#\/p\/p2$/.test(await hash()) && (await log()).some(e => e.projectId === 'p2' && e.date === TODAY && e.work === 'Vandaag gewerkt'), 'Opslaan en terug: bewaard en terug naar de dagen van het project');
+  ok(/#\/p\/p2$/.test(await hash()) && (await log()).some(e => e.projectId === 'p2' && e.date === TODAY && e.work === '• Vandaag gewerkt'), 'Opslaan en terug: bewaard en terug naar de dagen van het project');
   ok(await p.textContent('#todayBtn') === 'Vandaag openen' && (await p.$$('#dlist .day')).length === 2, 'laag 2 toont de nieuwe dag meteen');
 
   // dag verwijderen vraagt bevestiging

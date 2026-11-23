@@ -2,6 +2,16 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.26.0] - 2026-11-23
+
+- Logboek, werkzaamheden: noteren als opsomming. Bij het openen staat er een punt, Enter maakt een nieuwe regel met een punt, Enter op een lege punt of Backspace direct na het punt stopt de opsomming. Een regel met alleen een punt wordt niet bewaard. Bestaande tekst blijft zoals hij was. In de PDF staan de punten met inspringing.
+- Personeel en materieel: per regel de soort kiezen (eigen, externe inhuur of onderaannemer; bij materieel eigen, gehuurd of onderaannemer). Eigen personeel heeft geen bedrijf nodig, eigen materieel geen verhuurder. "Partners" heet nu onderaannemers; oudere regels zonder soort tellen als onderaannemer. Het dag- en weekrapport zet ze per soort onder eigen kopjes.
+- Materieel per uur of per dag. Per dag staat apart in de samenvatting en het rapport (dagen gerekend), naast de uren. Aantallen en uren worden nergens automatisch ingevuld.
+- Leveringen: veld Leverancier (niet verplicht), ook in het rapport.
+- Kopjes: Overig is een gewone sectie net als Veiligheid en Foto's. Alle secties hebben een samenvatting ("geen", bij Veiligheid "niets geregistreerd"). Meer ruimte boven Dag verwijderen.
+- Slim onthouden en voorstellen: bedrijven, materieel, leveranciers, hoeveelheden, toelichtingen, opdrachtgevers en werkregels worden onthouden (nieuwe opslagsleutel `gww.logmem`, alleen op het apparaat) en komen terug bij het typen. Een bekend bedrijf of materieel zet de soort, eenheid en verhuurder goed. Bij het openen wordt het geheugen aangevuld met het logboek, dus ook dagen van een ander apparaat leveren voorstellen. Werkregels worden als knop voorgesteld terwijl je typt.
+- Nieuwe optionele velden in een logdag: `kind` en `unit` bij personeel en materieel en `supplier` bij leveringen; zie de README. Bestaande dagen worden niet aangepast; oudere appversies negeren de nieuwe velden (een hoeveelheid per dag zou daar als uren getoond worden).
+
 ## [1.25.0] - 2026-11-23
 
 - Logboek: back-up maken en terugzetten, onderaan het projectenoverzicht. De back-up is één bestand met alle projecten en logdagen (`gww-logboek-backup-<datum>.json`, zonder foto's). Terugzetten voegt alleen toe en overschrijft een dag of project alleen met een nieuwere versie; er wordt niets verwijderd, ongeldige regels in het bestand worden overgeslagen en een ongeldig bestand wijzigt niets. Is er dagen in het logboek en is de laatste back-up ouder dan 30 dagen (of er is er nog geen), dan staat er een herinnering.
