@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.10.1] - 2026-11-23
+
+- Datumvelden blijven binnen hun kaart en staan links uitgelijnd op iPhone (het datumveld in het logboek liep over de rand).
+
 ## [1.10.0] - 2026-11-22
 
 - Foto's in het logboek: Foto maken opent de camera; de foto krijgt een stempel met project, datum en tijd, adres, coördinaten en (online) een kaartje. De bewerkte foto staat op het toestel (IndexedDB `gww-photos`), per project en dag. Tik op een foto om hem te bekijken, in Foto's te bewaren via het deelmenu, of te verwijderen.

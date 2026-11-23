@@ -64,6 +64,9 @@
   .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.15rem; min-width: 0; }
   .field > label { font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
   .inp { width: 100%; min-height: 52px; padding: 0.5rem 0.9rem; border: 1.5px solid var(--line); border-radius: 12px; background: var(--field); color: var(--ink); font-size: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
+  /* iOS Safari geeft een datumveld een eigen breedte: vastzetten zodat het in de kaart blijft en links uitgelijnd staat */
+  input[type="date"].inp { -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; text-align: left; }
+  input[type="date"].inp::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
   .inp:focus-visible { border-color: var(--accent); outline: 2px solid var(--focus); outline-offset: 0; }
   .hint { font-size: 0.875rem; color: var(--ink-2); margin: 0; }
   .hint.err { color: var(--warn); }
