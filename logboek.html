@@ -194,7 +194,7 @@
   var $ = function (id) { return document.getElementById(id); };
   $('ver').textContent = 'Versie ' + APP_VERSION + '.';
 
-  function readJson(k) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function readJson(k) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(function (x) { return x && typeof x === 'object' && !Array.isArray(x); }) : []; } catch (e) { return []; } }   /* alleen bruikbare regels */
   function loadLog() { return readJson(KEY); }
   function saveLog(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); if (window.GwwData) GwwData.changed(); return true; } catch (e) { setState('Opslaan lukt niet op dit apparaat. Maak een rapport van wat je hebt of maak ruimte vrij.', true); return false; } }
   function projects() { return readJson(PKEY).filter(function (p) { return p && p.id; }); }
@@ -766,8 +766,30 @@
   }
   function blobToDataUrl(blob) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(blob); }); }
   /* gedeelde opbouw van de PDF: kopband, koppen, tekst, regels, tabel, foto's en voettekst */
+  /* De standaardlettertypen in een PDF kennen alleen Latijns-1 en een paar leestekens (Windows-1252). Namen als Łódź of Gdańsk zouden anders
+     als rommel in het rapport staan (ZakBad Aódz). Daarom: letters met een accent worden de gewone letter, een paar bekende letters krijgen een
+     vaste vervanging, en wat niet bestaat (emoji, pijltjes) valt weg. Alleen de PDF verandert; de ingevoerde tekst blijft zoals hij is. */
+  var PDF_OK = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+  var PDF_MAP = { 'ł': 'l', 'Ł': 'L', 'đ': 'd', 'Đ': 'D', 'ħ': 'h', 'Ħ': 'H', 'ı': 'i', 'ŀ': 'l', 'Ŀ': 'L', 'ŉ': 'n', 'ſ': 's', 'ĸ': 'k', 'Ŋ': 'N', 'ŋ': 'n', 'ƒ': 'f' };
+  function pdfSafe(t) {
+    if (Array.isArray(t)) return t.map(pdfSafe);
+    t = String(t == null ? '' : t);
+    var out = '', dropped = false;
+    Array.from(t).forEach(function (ch) {
+      var c = ch.codePointAt(0);
+      if (c === 10 || (c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || PDF_OK.indexOf(ch) > -1) { out += ch; return; }
+      var r = PDF_MAP[ch];
+      if (r === undefined) { r = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); if (!/^[\x20-\x7e]+$/.test(r)) r = ''; }
+      if (r === '') dropped = true;
+      out += r;
+    });
+    return dropped ? out.replace(/ {2,}/g, ' ') : out;
+  }
   function pdfDoc(JsPdf, headRight) {
     var doc = new JsPdf({ unit: 'mm', format: 'a4', compress: true });
+    var rawText = doc.text, rawSplit = doc.splitTextToSize;   /* alle tekst gaat via pdfSafe */
+    doc.text = function () { var a = [].slice.call(arguments); a[0] = pdfSafe(a[0]); return rawText.apply(doc, a); };
+    doc.splitTextToSize = function () { var a = [].slice.call(arguments); a[0] = pdfSafe(a[0]); return rawSplit.apply(doc, a); };
     var W = 210, M = 15, CW = W - 2 * M, H = 297, y = 0, headLeft = '';
     function header() {
       doc.setFillColor(0, 31, 56); doc.rect(0, 0, W, 22, 'F'); doc.setFillColor(118, 183, 32); doc.rect(0, 22, W, 1.2, 'F');
@@ -1148,7 +1170,7 @@
     if (!list.length) { ['v1', 'v2', 'v3'].forEach(function (id) { $(id).hidden = true; }); $('dayBar').hidden = true; document.body.classList.remove('inday'); view = 0; setTitle('Logboek'); return; }
     var m = /^#\/p\/([^/]+)(?:\/(\d{4}-\d{2}-\d{2}))?$/.exec(h);
     if (!m) { showProjects(); return; }
-    var pid = decodeURIComponent(m[1]);
+    var pid; try { pid = decodeURIComponent(m[1]); } catch (e) { pid = m[1]; }   /* een kapot adres geeft geen fout, alleen een onbekend project */
     if (m[2]) showDay(pid, m[2]); else showDays(pid);
   }
   window.addEventListener('hashchange', route);

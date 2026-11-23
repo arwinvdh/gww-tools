@@ -149,6 +149,7 @@
 <body>
 <header class="brand"><div class="in"><span class="dot"></span><h1>Locatie delen</h1><button class="gear" id="gear" aria-label="Mijn gegevens" title="Mijn gegevens"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></header>
 <div class="wrap" id="app">
+<p class="callout warn" id="storeWarn" role="alert" hidden>Bewaren lukt niet op dit apparaat (opslag vol of uitgezet). Je invoer blijft alleen staan zolang deze pagina open is. Deel of kopieer het bericht dus eerst.</p>
 
 <!-- Ontvanger-weergave -->
 <section id="viewer" hidden>
@@ -179,7 +180,7 @@
           <button class="btn primary" id="go">Zoek</button>
           <button class="btn" id="me">Mijn locatie</button>
         </div>
-        <p class="hint" id="status">Plak een Google Maps-link, coördinaten (52.0907, 5.1214) of typ een adres. Of tik op de kaart.</p>
+        <p class="hint" id="status" role="status">Plak een Google Maps-link, coördinaten (52.0907, 5.1214) of typ een adres. Of tik op de kaart.</p>
         <div class="results" id="results"></div>
         <div id="map-e-slot"><div id="map"></div></div>
         <div class="row" style="justify-content:space-between;align-items:center">
@@ -290,7 +291,7 @@
   </dialog>
 </section>
 </div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="sync.js"></script>
@@ -311,7 +312,9 @@
   window.addEventListener('unhandledrejection', function (e) { showErr(e.reason && e.reason.message || e.reason); });
   var LS = { draft: 'locdelen.draft', projects: 'locdelen.projects', base: 'locdelen.base', range: 'locdelen.range', share: 'locdelen.share' };
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  /* lukt bewaren niet (opslag vol of uitgeschakeld), dan blijft een melding bovenaan staan: anders lijkt alles bewaard */
+  var storeWarned = false;
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { storeWarned = true; var w = document.getElementById('storeWarn'); if (w) w.hidden = false; } }
 
   var OPT_DEF = { labels: 1, parcel: 0, mini: 1 };
   var state = { addrAuto: true, layer: 'sat', failed: {}, opts: loadOpts(), lat: null, lon: null, range: +lsGet(LS.range, 400) };
@@ -1196,7 +1199,8 @@
   }
 
   /* ---------- projecten ---------- */
-  function getP() { try { return JSON.parse(lsGet(LS.projects, '[]')) || []; } catch (e) { return []; } }
+  /* een kapotte of vreemde opslag (geen lijst, lege of rare regels) geeft een lege lijst of alleen de bruikbare regels, nooit een foutmelding */
+  function getP() { try { var a = JSON.parse(lsGet(LS.projects, '[]')); return Array.isArray(a) ? a.filter(function (x) { return x && typeof x === 'object' && !Array.isArray(x); }) : []; } catch (e) { return []; } }
   function setP(a) { lsSet(LS.projects, JSON.stringify(a)); renderP(); }
   function saveProject(silent) {
     if (state.lat == null) return false;
@@ -1354,7 +1358,7 @@
   /* project kiezen uit de gedeelde lijst (tegel Projecten): vult alleen Projectnr. en Projectnaam in, er wordt niets extra bewaard */
   function fillPick() {
     var list = []; try { list = JSON.parse(localStorage.getItem('gww.projects')) || []; } catch (e) { list = []; }
-    if (!Array.isArray(list)) list = [];
+    list = Array.isArray(list) ? list.filter(function (x) { return x && typeof x === 'object' && !Array.isArray(x); }) : [];
     var sel = $('pick'); while (sel.options.length > 1) sel.remove(1);
     list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
       var t = [p.nr, p.name].filter(Boolean).join(' \u00B7 '); if (!t) return;

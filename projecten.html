@@ -67,6 +67,7 @@
       <div class="field"><label for="name">Naam</label><input class="inp" id="name" autocomplete="off"></div>
     </div>
     <button class="btn primary" id="add" type="button">Toevoegen</button>
+    <p class="hint" id="addmsg" role="status"></p>
   </div>
   <div class="listbox">
     <h2>Mijn projecten</h2>
@@ -113,7 +114,7 @@
           <button class="btn sm" id="locFromLd" type="button">Uit Locatie delen</button>
           <button class="btn sm danger" id="locClear" type="button" hidden>Wissen</button>
         </div>
-        <div class="addrow"><input class="inp" id="locQ" type="search" placeholder="Adres of plaats zoeken" autocomplete="off" enterkeyhint="search"><button class="btn" id="locGo" type="button">Zoeken</button></div>
+        <div class="addrow"><input class="inp" id="locQ" type="search" aria-label="Adres of plaats zoeken" placeholder="Adres of plaats zoeken" autocomplete="off" enterkeyhint="search"><button class="btn" id="locGo" type="button">Zoeken</button></div>
         <div class="list" id="locRes"></div>
         <p class="hint" id="locMsg" role="status"></p>
       </div>
@@ -141,10 +142,11 @@
   $('ver').textContent = 'Versie ' + APP_VERSION + '.';
 
   /* opslag: elke fout (geen opslag, kapotte JSON) valt terug op een lege lijst */
-  function readJson(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : d; } catch (e) { return d; } }
+  function readJson(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(function (x) { return x && typeof x === 'object' && !Array.isArray(x); }) : d; } catch (e) { return d; } }   /* alleen bruikbare regels */
   function load() { return readJson(KEY, []); }
-  function save(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) { say('Opslaan lukt niet op dit apparaat.'); } if (window.GwwData) GwwData.changed(); }
+  function save(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) { say('Opslaan lukt niet op dit apparaat (opslag vol of uitgezet).'); sayAdd('Opslaan lukt niet op dit apparaat (opslag vol of uitgezet).'); return false; } if (window.GwwData) GwwData.changed(); return true; }
   function say(t) { $('msg').textContent = t; }
+  function sayAdd(t) { $('addmsg').textContent = t; }   /* meldingen bij Nieuw project staan bij die knop, niet onderaan de pagina */
 
   /* vast id: wijzigt nooit, ook niet als nummer of naam verandert */
   /* bij het overnemen uit Locatie delen is het id afgeleid van nummer en naam: twee apparaten die hetzelfde project overnemen krijgen zo hetzelfde id */
@@ -199,12 +201,13 @@
 
   $('add').onclick = function () {
     var nr = $('nr').value.trim(), name = $('name').value.trim();
-    if (!nr && !name) { say('Geef een nummer of een naam.'); return; }
+    if (!nr && !name) { sayAdd('Geef een nummer of een naam.'); return; }
     var cur = load(), rec = { nr: nr, name: name };
-    if (cur.some(function (p) { return sameKey(p, rec); })) { say('Dit project staat er al.'); return; }
+    if (cur.some(function (p) { return sameKey(p, rec); })) { sayAdd('Dit project staat er al.'); return; }
     var now = Date.now();
     cur.push({ v: 1, id: newId(), nr: nr, name: name, created: now, modified: now });
-    save(cur); $('nr').value = ''; $('name').value = ''; say('Project toegevoegd.'); render();
+    if (!save(cur)) return;   /* mislukt het bewaren, dan niet doen alsof het project er is */
+    $('nr').value = ''; $('name').value = ''; sayAdd('Project toegevoegd.'); render();
   };
   $('import').onclick = function () {
     var n = importFromLocatie();

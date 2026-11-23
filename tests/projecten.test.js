@@ -16,7 +16,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await p.fill('#nr', 'IB1'); await p.fill('#name', 'Nieuw'); await p.click('#add'); await p.waitForTimeout(200);
   await p.fill('#nr', 'IB1'); await p.fill('#name', 'nieuw'); await p.click('#add'); await p.waitForTimeout(200);
   list = await read();
-  ok(list.length === 3 && /staat er al/.test(await p.textContent('#msg')), 'toevoegen werkt en een dubbel project wordt geweigerd');
+  ok(list.length === 3 && /staat er al/.test(await p.textContent('#addmsg')), 'toevoegen werkt en een dubbel project wordt geweigerd');
   // bewerken: id blijft, naam wijzigt
   const idBefore = list.find(x => x.nr === 'IB1').id;
   await p.click(`.row[data-id="${idBefore}"]`); await p.fill('#ename', 'Hernoemd'); await p.click('#esave'); await p.waitForTimeout(200);

@@ -153,9 +153,9 @@
   .empty { margin: 0; color: var(--ink-2); }
   .list { display: grid; }
   .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
-  /* veilige zone bovenaan (notch): de kop begint eronder; de pagina's met een eigen oplossing zetten class "own-safe" op html */
-  html.has-nav:not(.own-safe) { padding-top: env(safe-area-inset-top, 0px); }
-  html.has-nav:not(.own-safe) body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
+  /* veilige zone bovenaan (notch): de kop begint eronder, ook op pagina's zonder onderbalk (pincode, visie); de pagina's met een eigen oplossing zetten class "own-safe" op html */
+  html:not(.own-safe) { padding-top: env(safe-area-inset-top, 0px); }
+  html:not(.own-safe) body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
 }
 
 /* onderbalk (nav.js): Home en een knop per tool. De hoogte staat in --nav-h zodat de actiebalk, meldingen en padding erboven blijven. */

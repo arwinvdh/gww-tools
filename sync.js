@@ -190,7 +190,12 @@
         var txt = '# Gegevens\n\nDeze map wordt beheerd door Locatie delen en Route knijperwagen. Niet handmatig aanpassen.\n';
         return api('PUT', '/repos/' + repo + '/contents/data/LEESMIJ.md', { message: 'sync gestart', content: b64enc(txt) }, c);
       });
-    }).then(function () { setConfig(c); setStatus('ok'); return c; });
+    }).then(function () {
+      setConfig(c);
+      /* kan de koppeling niet worden bewaard, dan niet doen alsof: na herladen zou je weer ontkoppeld zijn */
+      if (!getConfig()) throw new Error('De koppeling kan op dit apparaat niet worden bewaard (opslag uitgezet of vol).');
+      setStatus('ok'); return c;
+    });
   }
   function disconnect() { clearConfig(); setStatus('off'); }
 
