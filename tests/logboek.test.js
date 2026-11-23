@@ -25,7 +25,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   l = await log();
   ok(l.length === 2 && l.some(x => x.projectId === 'p1' && x.equipment.join() === 'Graafmachine'), 'voorgesteld materieel toevoegen bewaart een regel voor dat project');
   // materieel weghalen en alles leegmaken verwijdert de regel
-  await p.click('#list-machines .chip'); await p.waitForTimeout(300);
+  await p.click('#list-machines .del'); await p.waitForTimeout(300);
   ok((await log()).length === 1, 'een lege dag wordt niet bewaard');
   // eerdere dagen: terugkeren naar project 2 en de dag openen
   await p.selectOption('#proj', 'p2'); await p.waitForTimeout(300);

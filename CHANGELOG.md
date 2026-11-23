@@ -2,6 +2,10 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.13.1] - 2026-11-23
+
+- Logboek: ingevoerde regels (personeel, materieel, stagnatie, leveringen) staan nu als gewone regels met de naam vet, de details eronder en een verwijderknop, in plaats van als afgeronde tags.
+
 ## [1.13.0] - 2026-11-23
 
 - Logboek uitgebreid voor GWW: weer rond 12:00 (automatisch, aan te passen), personeel en materieel van partners (met aantallen en uren), stagnatie met oorzaak en uren, leveringen, meerwerk of afwijking en veiligheid (inklapbaar) en een veld Overig.

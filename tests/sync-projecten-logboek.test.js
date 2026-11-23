@@ -40,7 +40,7 @@ const { createMock } = require('./mock-github.js');
   ok(JSON.stringify(Object.keys(remote('logboek.json').docs)[0].split('/').length) === '3', 'logregel staat onder log/<project-id>/<datum>');
 
   // verwijderingen worden gedeeld: A leegt de dag
-  await A.fill('#work', ''); await A.click('#list-machines .chip');
+  await A.fill('#work', ''); await A.click('#list-machines .del');
   ok(await waitFor(() => { const d = Object.values(remote('logboek.json').docs)[0]; return d && d.__del; }), 'A: een lege dag wordt als verwijderd in de repo gezet');
   await B.reload();
   ok(await waitFor(async () => ((await ls(B, 'gww.log')) || []).length === 0), 'B: de verwijderde dag verdwijnt ook');
