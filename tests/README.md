@@ -37,6 +37,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `logboek-weekrapport.test.js` | Weekrapport als PDF: dialoog en weekkeuze, bestand met project en weeknummer, foto's alleen met de schakelaar |
 | `logboek-lagen.test.js` | Logboek in lagen: overzicht, dagen van een project met samenvatting, één dag met actiebalk, vorige en volgende dag, Opslaan en terug, dag verwijderen, nieuwe dag vandaag, terugknop, zoeken |
 | `logboek-uitbreiding.test.js` | Logboek-onderdelen: weer rond 12:00, personeel en materieel van partners, zelfde als vorige dag, stagnatie, leveringen, meerwerk, veiligheid, overig, oud formaat en rapport |
+| `logboek-dag.test.js` | Dagregistratie: bestaande en oude registraties blijven intact, lege/gedeeltelijke/uitgebreide dag, aantal en uren in de regel, samenvattingen, bewaarstatus, overnemen van de vorige dag met ongedaan maken, half ingevulde regels, dagnavigatie, dagenlijst en weekoverzicht, foto's, smalle en brede schermen |
 | `logboek-pdf.test.js` | Dagrapport als PDF: bestand met projectnaam en datum, foto erin, melding en foutmelding zonder verbinding (de bibliotheek komt uit `node_modules`) |
 | `logboek-foto.test.js` | Foto's in het logboek: stempel en verkleinen, bewaren op het apparaat, openen en verwijderen |
 | `vanuit-project.test.js` | Werken vanuit Projecten: gegevens van een project, knoppen naar de tools, Locatie delen en Route openen met dat project, eigen bewaarde gegevens blijven ongewijzigd |
