@@ -181,10 +181,15 @@
   }
   @media (max-width: 26rem) {
     .card-hd { flex-wrap: wrap; }
+    /* drie knoppen verdelen de rij(en) netjes in plaats van een losse knop op de tweede regel */
     .card-hd .tools-r { flex: 1 1 100%; justify-content: flex-start; }
+    .card-hd .tools-r .btn { flex: 1 1 auto; }
     .r-dn { grid-template-columns: minmax(0, 1fr); }
   }
   @media (pointer: coarse) {
+    /* de statusregel in de balk is een knop: groter tikvlak zonder dat de balk hoger wordt */
+    .meta { position: relative; }
+    .meta::before { content: ""; position: absolute; inset: -14px -8px; }
     .undo button { min-height: 44px; }
     .ico { width: 44px; height: 44px; }
   }

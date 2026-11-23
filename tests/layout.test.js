@@ -53,6 +53,8 @@ const { devices } = require('playwright');
   {
     const q = await p.evaluate(() => { const m = document.querySelector('.mapcol'), pr = document.getElementById('card-project'); return { sticky: getComputedStyle(m).position, mapLeft: Math.round(document.getElementById('map').getBoundingClientRect().left), projLeft: Math.round(pr.getBoundingClientRect().left) }; });
     ok(q.sticky === 'sticky' && q.mapLeft < q.projLeft, 'desktop: kaart staat links vast en project rechts (' + q.sticky + ', ' + q.mapLeft + ' < ' + q.projLeft + ')');
+    const hh = await p.evaluate(() => { const m = document.querySelector('.mapcol').getBoundingClientRect(), bar = document.querySelector('.bar').getBoundingClientRect(); return [Math.round(m.bottom), Math.round(bar.top)]; });
+    ok(hh[0] <= hh[1], 'desktop: de vaste kaartkolom eindigt boven de actiebalk (' + hh.join(' <= ') + ')');
     const m = await offlinePage(b, devices['iPhone 13'], 'index.html');
     const mm = await m.evaluate(() => ({ sticky: getComputedStyle(document.querySelector('.mapcol')).position, order: ['map', 'card-project'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().top)) }));
     ok(mm.sticky === 'static' && mm.order[0] < mm.order[1], 'mobiel: kaart boven project, niets vast (' + mm.sticky + ')');
@@ -77,5 +79,57 @@ const { devices } = require('playwright');
   ok(busy[0] !== 'rgba(0, 0, 0, 0)' && busy[1] === 'none', 'minder beweging: bezig-knop houdt leesbaar label (' + busy.join(' | ') + ')');
   // vaste lagen: shared.css is geladen
   ok(await p.evaluate(() => [...document.styleSheets].some(s => /shared\.css$/.test(s.href || ''))), 'shared.css is geladen');
+  await b.close();
+})();
+
+// --- Ontwerpronde: breed scherm, zoekbalk, actiebalk, tikvlakken, geen intreeanimatie ---
+(async () => {
+  const b = await chromium.launch(launchOptions());
+  // onderbalk: op breed scherm staan de tabs gegroepeerd in het midden en niet over de hele breedte uitgerekt
+  for (const w of [768, 1024, 1440]) {
+    const p = await offlinePage(b, { viewport: { width: w, height: 900 } }, 'start.html');
+    const r = await p.evaluate(() => { const a = [...document.querySelectorAll('.appnav a')].map(e => e.getBoundingClientRect()); return { max: Math.round(Math.max(...a.map(x => x.width))), left: Math.round(a[0].left), right: Math.round(innerWidth - a[a.length - 1].right) }; });
+    ok(r.max <= 129 && Math.abs(r.left - r.right) <= 2, `onderbalk op ${w}px: tabs hoogstens 8rem breed en gecentreerd (${r.max}px, ${r.left}/${r.right})`);
+    await p.context().close();
+  }
+  // Locatie delen: zoekveld heeft op elke breedte een bruikbare breedte (niet platgedrukt door de knoppen ernaast)
+  for (const w of [375, 390, 430, 768, 1024, 1440]) {
+    const p = await offlinePage(b, { viewport: { width: w, height: 900 }, hasTouch: w < 768, isMobile: w < 768 }, 'index.html');
+    const r = await p.evaluate(() => { const q = document.getElementById('q').getBoundingClientRect(), g = document.getElementById('go').getBoundingClientRect(), m = document.getElementById('me').getBoundingClientRect(); return { qw: Math.round(q.width), qBelow: g.top >= q.bottom - 1, meH: Math.round(m.height) }; });
+    ok(r.qw >= 250 && r.qBelow, `Locatie delen op ${w}px: zoekveld op eigen rij en minstens 250px (${r.qw}px)`);
+    ok(r.meH <= 60, `Locatie delen op ${w}px: Mijn locatie blijft op één regel (${r.meH}px hoog)`);
+    // knoppenlabels in de actiebalk: minstens 12px en op één regel
+    const l = await p.evaluate(() => [...document.querySelectorAll('.ibtn .lbl')].filter(e => e.offsetParent).map(e => ({ fs: parseFloat(getComputedStyle(e).fontSize), lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight || 14)) })));
+    ok(l.length > 0 && l.every(x => x.fs >= 12), `Locatie delen op ${w}px: labels in de actiebalk minstens 12px (${l.map(x => x.fs).join(',')})`);
+    await p.context().close();
+  }
+  // desktop: actiebalk-labels breken niet af
+  { const p = await offlinePage(b, { viewport: { width: 1440, height: 900 } }, 'index.html');
+    const h = await p.evaluate(() => ['dl', 'wa', 'copy'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().height)));
+    ok(h.every(x => x <= 60), 'desktop: knoppen in de actiebalk zijn één regel hoog (' + h.join(',') + ')');
+    // kaarten verschijnen direct, zonder intreeanimatie
+    const an = await p.evaluate(() => getComputedStyle(document.querySelector('.card')).animationName);
+    ok(an === 'none', 'kaarten hebben geen intreeanimatie (' + an + ')');
+    await p.context().close(); }
+  // startpagina: losse links in het koppelblok zijn minstens 44px hoog; de uitklapper in het syncblok ook
+  for (const w of [375, 1024]) {
+    const p = await offlinePage(b, { viewport: { width: w, height: 800 }, hasTouch: w < 768, isMobile: w < 768 }, 'start.html');
+    const r = await p.evaluate(() => ({ links: [...document.querySelectorAll('.linkrow a')].map(e => Math.round(e.getBoundingClientRect().height)), sum: Math.round(document.querySelector('.gh-box summary').getBoundingClientRect().height) }));
+    ok(r.links.length === 2 && r.links.every(x => x >= 44) && r.sum >= 44, `start op ${w}px: links en uitklapper minstens 44px hoog (${r.links.join(',')} / ${r.sum})`);
+    await p.context().close();
+  }
+  await b.close();
+})();
+
+// Project-venster: Opslaan is de hoofdactie, de links naar de tools zijn secundair
+(async () => {
+  const b = await chromium.launch(launchOptions());
+  const p = await offlinePage(b, devices['iPhone 13'], 'projecten.html');
+  await p.evaluate(() => localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: '25-001', name: 'Testproject', created: 1, modified: 1 }])));
+  await p.reload(); await p.waitForTimeout(500);
+  await p.click('text=25-001'); await p.waitForTimeout(400);
+  const r = await p.evaluate(() => ({ save: document.getElementById('esave').classList.contains('primary'), launch: ['goLoc', 'goRoute', 'goLog'].some(i => document.getElementById(i).classList.contains('primary')), sw: document.scrollingElement.scrollWidth <= document.documentElement.clientWidth }));
+  ok(r.save && !r.launch && r.sw, 'project-venster: Opslaan is primair, de tool-links zijn secundair, geen zijwaartse scroll');
+  ok(p.errs.length === 0, 'project-venster: geen scriptfouten ' + p.errs.join('|'));
   await b.close();
 })();
