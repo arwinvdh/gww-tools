@@ -81,7 +81,7 @@
   .hint.ok { color: var(--ok); }
 
   /* knoppen */
-  .btn { min-height: var(--control-h); padding: 0.35rem 1.1rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
+  .btn { min-height: var(--control-h); padding: 0.35rem 1.1rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
   .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:disabled { opacity: 0.5; cursor: default; }
   .btn.sm { min-height: 40px; padding: 0.2rem 0.75rem; font-size: var(--text-sm); }

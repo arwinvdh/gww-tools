@@ -41,6 +41,7 @@
   .tabs button[aria-selected="true"] .tab-n { color: var(--on-accent); }
 
   /* kaarten */
+  .ctx { margin: 0; padding: 0.4rem 0.7rem; border-left: 4px solid var(--brand-green); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
   .card-hd { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
   .card-hd .tools-r { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
   :where(#stops-pane) { display: grid; gap: 1rem; min-width: 0; }
@@ -225,6 +226,7 @@
             <button id="reset" class="btn sm" type="button" aria-label="Nieuwe route">Nieuwe route</button>
           </div>
         </div>
+        <p class="ctx" id="ctxProject" role="status" hidden></p>
         <div id="paste-body" class="paste-body" hidden>
           <label class="sr" for="paste-text">Ruwe route</label>
           <textarea id="paste-text" class="inp" rows="5" placeholder="Plak hier je ruwe route, bijvoorbeeld: 1. Laden bij R3S 6.00 -> 1 bigbag spramex"></textarea>
@@ -1495,7 +1497,12 @@ function check(stops) {
     if (!m) return;
     const id = decodeURIComponent(m[1]);
     preferredProject = projectList().filter(function (p) { return p.id === id; })[0] || null;
-    if (preferredProject) toast('Project ' + clean(preferredProject.nr) + ' staat bovenaan bij de projectvoorstellen.');
+    if (preferredProject) {
+      toast('Project ' + clean(preferredProject.nr) + ' staat bovenaan bij de projectvoorstellen.');
+      /* blijft staan tot de pagina sluit, zodat je ziet bij welk project je werkt (de toast verdwijnt vanzelf) */
+      const cx = document.getElementById('ctxProject');
+      cx.textContent = 'Project: ' + [clean(preferredProject.nr), clean(preferredProject.name)].filter(Boolean).join(' · ') + ' (bovenaan bij de voorstellen)'; cx.hidden = false;
+    }
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ }
   })();
 

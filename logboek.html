@@ -969,6 +969,7 @@
   function showDays(pid) {
     var p = projectById(pid); if (!p) { replaceTo('#/'); return; }
     curPid = pid; curDate = ''; show(2); setTitle(plabel(p));
+    $('editProj').href = 'projecten.html#p=' + encodeURIComponent(pid);   /* opent dit project direct in Projecten */
     var rows = dayRows(pid), today = todayIso();
     $('todayBtn').textContent = rows.some(function (e) { return e.date === today; }) ? 'Vandaag openen' : 'Vandaag invullen';
     $('todayBtn').dataset.date = today;
