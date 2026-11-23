@@ -2,6 +2,13 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.17.0] - 2026-11-23
+
+- Startpagina: tools staan als rij met icoon, naam en korte beschrijving (de hele rij is aanklikbaar). Nieuw: een compacte synchronisatiestatus met symbool en tekst (niet gekoppeld, gekoppeld, gesynchroniseerd om, mislukt); een tik opent de koppelgegevens. Zonder projecten en routes staat er een lege toestand met knoppen naar Projecten en Locatie delen.
+- Locatie delen op desktop (breed en hoog scherm): de kaart blijft links in beeld, project en bericht staan rechts. Op mobiel is de volgorde ongewijzigd.
+- `shared.css`: ontwerpwaarden (ruimte, afrondingen, tekstmaten, hoogte van knoppen, kleinste tikdoel) als variabelen, met dezelfde waarden als voorheen. Het uiterlijk van bestaande onderdelen verandert niet.
+- Opslag en gegevensformaten zijn ongewijzigd.
+
 ## [1.16.0] - 2026-11-23
 
 - Een project heeft nu een vaste locatie (lat, lon en adres, optioneel in `gww.projects`). Instellen in Projecten: huidige locatie, een adres zoeken (PDOK) of overnemen uit Locatie delen; wissen kan. Bij het eerste overnemen uit Locatie delen komt de locatie mee.
