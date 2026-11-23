@@ -42,6 +42,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `vanuit-project.test.js` | Werken vanuit Projecten: gegevens van een project, knoppen naar de tools, Locatie delen en Route openen met dat project, eigen bewaarde gegevens blijven ongewijzigd |
 | `project-kiezen.test.js` | Project kiezen uit de gedeelde lijst in Locatie delen en als voorstel in Route knijperwagen |
 | `projecten.test.js` | Projectlijst: kopiëren uit Locatie delen zonder daar iets te wijzigen, vast id, bewerken, dubbelen en verwijderen |
+| `projecten-venster.test.js` | Projectlijst met locatie, projectvenster op telefoon, tablet en desktop, bewerken, annuleren, opslaan en verwijderen, terug uit een tool, toetsenbord (verkleind scherm), project zichtbaar in Route |
 | `version.test.js` | Eén appversie: SemVer-syntaxis, bovenste CHANGELOG-sectie gelijk aan `version.js`, `version.js` in `LOCAL`, geen eigen `VERSION =` in de pagina's, `Versie 1.0.0` zichtbaar in alle drie |
 
 `mock-github.js` is de nagebootste GitHub; die wordt door de sync-tests gebruikt. De tests gebruiken je echte GitHub of je token nergens.

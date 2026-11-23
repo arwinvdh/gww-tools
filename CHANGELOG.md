@@ -2,6 +2,16 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.19.0] - 2026-11-23
+
+- Projecten: de lijst staat bovenaan zodra er projecten zijn (het formulier Nieuw project daaronder) en toont per project nummer, naam en locatie, of Geen locatie.
+- Projectvenster opnieuw opgebouwd: op de telefoon schermvullend (op tablet en desktop een venster van hoogstens 34rem), met een kop met het actieve project en zijn locatie, bovenaan Openen met dit project (Locatie delen, Route knijperwagen en Logboek met icoon), daaronder Projectgegevens, en Verwijderen apart onderaan. Opslaan (hoofdknop) en Sluiten staan in een vaste voet.
+- De sluitknop heet Annuleren zodra er iets gewijzigd is en bewaart dan niets. Opslaan zonder nummer en naam geeft een melding in plaats van niets te doen. Verwijderen vraagt twee tikken binnen 4 seconden, daarna valt de knop terug.
+- Toetsenbord: op de telefoon volgt het venster het zichtbare scherm, zodat de voet boven het toetsenbord blijft en het veld waarin je typt in beeld scrolt.
+- Navigatie: het projectvenster heeft een adres (`projecten.html#p=<id>`). Terug uit een tool komt het project dus weer open; Project bewerken in het Logboek opent het project direct. Route toont het gekozen project blijvend boven de route.
+- Knoppen die een link zijn (zoals Apple Maps en Waze) hebben nu dezelfde donkere tekst als andere knoppen in plaats van linkblauw.
+- Opslag, project-id's, synchronisatie en `#gp=`-adressen zijn ongewijzigd.
+
 ## [1.18.0] - 2026-11-23
 
 - Onderbalk: op tablet en desktop staan de tabs gegroepeerd in het midden in plaats van over de hele breedte uitgerekt.

@@ -35,14 +35,39 @@
   .loctext { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
   .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
   #locRes .row { min-height: 3rem; }
-  dialog { max-height: calc(100dvh - 2rem); overflow: auto; }
+  /* lijst: eerst scannen, dan toevoegen. Zodra er projecten zijn staat de lijst bovenaan en het formulier eronder. */
+  .has-list .addcard { order: 2; }
+  .has-list .importcard { order: 3; }
+  .has-list .tail { order: 9; }
+  .row small { overflow-wrap: anywhere; }
+  .row small.noloc { font-style: italic; }
+
+  /* projectvenster: kop, scrollend midden en vaste voet. Op de telefoon schermvullend, daarboven een gewoon venster. */
+  #dlg { padding: 0; overflow: hidden; border-radius: var(--radius-lg); width: min(34rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); }
+  #dlg[open] { display: flex; flex-direction: column; gap: 0; }
+  .dhead { padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  .dhead h2 { margin: 0; min-height: 0; display: block; font-size: var(--text-xl); overflow-wrap: anywhere; }
+  .dhead p { margin: 0.15rem 0 0; }
+  .dbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-4); display: grid; gap: var(--space-6); align-content: start; scroll-padding-bottom: 5rem; }
+  .dsec { display: grid; gap: var(--space-3); min-width: 0; }
+  .dsec > h3 { margin: 0; font-size: var(--text-sm); font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .launch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .launch .btn { flex-direction: column; gap: 0.25rem; min-height: 4.5rem; padding: 0.4rem 0.25rem; font-size: var(--text-sm); line-height: 1.15; }
+  .launch svg { width: 24px; height: 24px; }
+  .dfoot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-2); padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
+  .dfoot .emsg { grid-column: 1 / -1; margin: 0; }
+  .dangerzone { border-top: 1px solid var(--line); padding-top: var(--space-4); }
+  @media (max-width: 40rem) {
+    #dlg { width: 100%; max-width: 100%; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; margin: 0; inset: 0; border: 0; border-radius: 0; }
+    .dhead { padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0px)); }
+  }
 }
 </style>
 </head>
 <body>
 <header class="brand"><div class="in"><span class="dot"></span><h1>Projecten</h1></div></header>
 <div class="wrap">
-  <div class="card">
+  <div class="card addcard">
     <h2>Nieuw project</h2>
     <div class="two">
       <div class="field"><label for="nr">Projectnummer</label><input class="inp" id="nr" autocomplete="off" autocapitalize="characters"></div>
@@ -50,50 +75,64 @@
     </div>
     <button class="btn primary" id="add" type="button">Toevoegen</button>
   </div>
-  <div>
+  <div class="listbox">
     <h2>Mijn projecten</h2>
     <input class="inp" id="filter" type="search" placeholder="Zoeken" hidden>
     <div class="list" id="list"></div>
     <p class="empty" id="empty" hidden>Nog geen projecten. Voeg er een toe of haal ze op uit Locatie delen.</p>
   </div>
-  <div class="card">
+  <div class="card importcard">
     <h2>Ophalen uit Locatie delen</h2>
     <p class="hint">Kopieert de projecten uit Locatie delen naar deze lijst. Locatie delen zelf verandert niet en projecten die er al staan komen niet dubbel.</p>
     <div class="actions"><button class="btn" id="import" type="button">Ophalen</button></div>
     <p class="hint" id="msg" role="status"></p>
   </div>
-  <p class="hint" id="syncmsg"></p>
-  <p class="hint"><span id="ver"></span></p>
+  <p class="hint tail" id="syncmsg"></p>
+  <p class="hint tail"><span id="ver"></span></p>
 </div>
-<dialog id="dlg">
-  <h2 id="etitle">Project</h2>
-  <div class="launch">
-    <a class="btn" id="goLoc" href="index.html">Locatie delen</a>
-    <a class="btn" id="goRoute" href="route.html">Route knijperwagen</a>
-    <a class="btn" id="goLog" href="logboek.html">Logboek</a>
+<dialog id="dlg" aria-labelledby="etitle">
+  <div class="dhead">
+    <h2 id="etitle">Project</h2>
+    <p class="hint" id="esub"></p>
   </div>
-  <p class="hint">De tool opent met dit project al ingevuld.</p>
-  <div class="field"><label for="enr">Projectnummer</label><input class="inp" id="enr" autocomplete="off" autocapitalize="characters"></div>
-  <div class="field"><label for="ename">Naam</label><input class="inp" id="ename" autocomplete="off"></div>
-  <div class="field"><label for="ewho">Uitvoerder</label><input class="inp" id="ewho" autocomplete="off"></div>
-  <div class="field"><label for="ephone">Telefoon</label><input class="inp" id="ephone" type="tel" autocomplete="off"></div>
-  <div class="field"><label for="enote">Notitie</label><textarea class="inp" id="enote" rows="2"></textarea></div>
-  <div class="field locbox">
-    <label>Locatie van het project</label>
-    <p class="loctext" id="locText">Nog geen locatie</p>
-    <div class="actions">
-      <button class="btn sm" id="locHere" type="button">Huidige locatie</button>
-      <button class="btn sm" id="locFromLd" type="button">Uit Locatie delen</button>
-      <button class="btn sm danger" id="locClear" type="button" hidden>Wissen</button>
-    </div>
-    <div class="addrow"><input class="inp" id="locQ" type="search" placeholder="Adres of plaats zoeken" autocomplete="off"><button class="btn" id="locGo" type="button">Zoeken</button></div>
-    <div class="list" id="locRes"></div>
-    <p class="hint" id="locMsg" role="status"></p>
+  <div class="dbody" id="ebody">
+    <section class="dsec" aria-labelledby="h-open">
+      <h3 id="h-open">Openen met dit project</h3>
+      <div class="launch">
+        <a class="btn" id="goLoc" href="index.html">Locatie delen</a>
+        <a class="btn" id="goRoute" href="route.html">Route knijperwagen</a>
+        <a class="btn" id="goLog" href="logboek.html">Logboek</a>
+      </div>
+      <p class="hint">De tool opent met dit project al ingevuld. Wat hieronder staat wordt eerst bewaard.</p>
+    </section>
+    <section class="dsec" aria-labelledby="h-data">
+      <h3 id="h-data">Projectgegevens</h3>
+      <div class="field"><label for="enr">Projectnummer</label><input class="inp" id="enr" autocomplete="off" autocapitalize="characters" enterkeyhint="next"></div>
+      <div class="field"><label for="ename">Naam</label><input class="inp" id="ename" autocomplete="off" enterkeyhint="next"></div>
+      <div class="field"><label for="ewho">Uitvoerder</label><input class="inp" id="ewho" autocomplete="off" enterkeyhint="next"></div>
+      <div class="field"><label for="ephone">Telefoon</label><input class="inp" id="ephone" type="tel" autocomplete="off" enterkeyhint="next"></div>
+      <div class="field"><label for="enote">Notitie</label><textarea class="inp" id="enote" rows="2"></textarea></div>
+      <div class="field locbox">
+        <label>Locatie van het project</label>
+        <p class="loctext" id="locText">Nog geen locatie</p>
+        <div class="actions">
+          <button class="btn sm" id="locHere" type="button">Huidige locatie</button>
+          <button class="btn sm" id="locFromLd" type="button">Uit Locatie delen</button>
+          <button class="btn sm danger" id="locClear" type="button" hidden>Wissen</button>
+        </div>
+        <div class="addrow"><input class="inp" id="locQ" type="search" placeholder="Adres of plaats zoeken" autocomplete="off" enterkeyhint="search"><button class="btn" id="locGo" type="button">Zoeken</button></div>
+        <div class="list" id="locRes"></div>
+        <p class="hint" id="locMsg" role="status"></p>
+      </div>
+    </section>
+    <section class="dsec dangerzone" aria-label="Verwijderen">
+      <button class="btn danger" id="edel" type="button">Verwijderen</button>
+    </section>
   </div>
-  <div class="actions">
-    <button class="btn primary" id="esave" type="button">Opslaan</button>
+  <div class="dfoot">
+    <p class="hint err emsg" id="emsg" role="alert" hidden></p>
     <button class="btn" id="ecancel" type="button">Sluiten</button>
-    <button class="btn danger" id="edel" type="button">Verwijderen</button>
+    <button class="btn primary" id="esave" type="button">Opslaan</button>
   </div>
 </dialog>
 <script src="sync.js"></script>
@@ -154,9 +193,15 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'row'; b.dataset.id = p.id;
       var t = document.createElement('span'); t.className = 'txt';
       var s = document.createElement('b'); s.textContent = label(p) || 'Zonder naam'; t.appendChild(s);
+      /* tweede regel: waar het project is, of dat de locatie nog ontbreekt (die is nodig voor weer en Locatie delen) */
+      var sm = document.createElement('small');
+      if (validLL(p.lat, p.lon)) sm.textContent = p.addr || (+p.lat).toFixed(4) + ', ' + (+p.lon).toFixed(4);
+      else { sm.textContent = 'Geen locatie'; sm.className = 'noloc'; }
+      t.appendChild(sm);
       b.appendChild(t); box.appendChild(b);
     });
     $('empty').hidden = all.length > 0;
+    document.querySelector('.wrap').classList.toggle('has-list', all.length > 0);
   }
 
   $('add').onclick = function () {
@@ -176,22 +221,56 @@
 
   /* bewerken in een dialoog; het id blijft gelijk */
   var editId = null, dlg = $('dlg');
-  $('list').onclick = function (e) {
-    var b = e.target.closest('.row'); if (!b) return;
-    var p = load().filter(function (x) { return x.id === b.dataset.id; })[0]; if (!p) return;
+  /* iconen van de tools (uit nav.js) op de knoppen om een tool te openen */
+  (function () {
+    var ico = { 'index.html': 'goLoc', 'route.html': 'goRoute', 'logboek.html': 'goLog' };
+    (window.GWW_TOOLS || []).forEach(function (t) {
+      var a = ico[t.href] && $(ico[t.href]); if (!a) return;
+      a.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + t.svg + '</svg>');
+    });
+  })();
+  var snap = '';   /* inhoud van het formulier bij openen: om te zien of er iets gewijzigd is */
+  function formSnap() { return [$('enr').value, $('ename').value, $('ewho').value, $('ephone').value, $('enote').value, editLoc ? editLoc.lat + ',' + editLoc.lon + ',' + editLoc.addr : ''].join('\u0001'); }
+  function refreshCancel() { $('ecancel').textContent = formSnap() === snap ? 'Sluiten' : 'Annuleren'; }
+  function openProject(id) {
+    var p = load().filter(function (x) { return x.id === id; })[0]; if (!p) return false;
     editId = p.id; $('enr').value = p.nr; $('ename').value = p.name; $('ewho').value = p.who || ''; $('ephone').value = p.phone || ''; $('enote').value = p.note || '';
     locTok++; editLoc = validLL(p.lat, p.lon) ? { lat: +p.lat, lon: +p.lon, addr: p.addr || '' } : null; renderLoc(); $('locQ').value = ''; $('locRes').textContent = ''; $('locMsg').textContent = '';
-    $('etitle').textContent = label(p) || 'Project';
+    $('etitle').textContent = label(p) || 'Project'; $('esub').textContent = editLoc ? locLabel(editLoc) : ''; $('esub').hidden = !editLoc;
     $('goLoc').href = 'index.html#gp=' + encodeURIComponent(p.id); $('goRoute').href = 'route.html#gp=' + encodeURIComponent(p.id); $('goLog').href = 'logboek.html#gp=' + encodeURIComponent(p.id);
-    $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen';
+    disarmDelete(); $('emsg').hidden = true; snap = formSnap(); refreshCancel();
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
-  };
-  function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); editId = null; locTok++; }
+    $('ebody').scrollTop = 0; fitViewport();
+    /* het adres bevat het project: terug uit een tool komt het venster weer open (geen nieuwe geschiedenisregel) */
+    try { history.replaceState(null, '', '#p=' + encodeURIComponent(p.id)); } catch (e) { /* geen history */ }
+    return true;
+  }
+  $('list').onclick = function (e) { var b = e.target.closest('.row'); if (b) openProject(b.dataset.id); };
+  /* telefoon met toetsenbord: het venster volgt het zichtbare deel van het scherm, zodat de voet met Opslaan boven het toetsenbord blijft
+     en het veld waar je in typt in beeld scrolt */
+  function fitViewport() {
+    var v = window.visualViewport;
+    if (!dlg.open || !v || !matchMedia('(max-width: 40rem)').matches) { dlg.style.removeProperty('height'); dlg.style.removeProperty('top'); return; }
+    dlg.style.height = Math.round(v.height) + 'px'; dlg.style.top = Math.round(v.offsetTop) + 'px';
+  }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fitViewport); visualViewport.addEventListener('scroll', fitViewport); }
+  $('ebody').addEventListener('focusin', function (e) {
+    var t = e.target; if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    setTimeout(function () { try { t.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch (x) { /* oude browser */ } }, 300);
+  });
+  ['input', 'change'].forEach(function (ev) { $('ebody').addEventListener(ev, refreshCancel); });
+  function closeDlg() {
+    if (dlg.close) dlg.close(); else dlg.removeAttribute('open');
+    editId = null; locTok++; fitViewport();
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ }
+  }
+  /* Esc of de terugknop van het toestel sluit ook: het adres opruimen */
+  dlg.addEventListener('close', function () { if (editId !== null) { editId = null; locTok++; } try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ } });
   $('ecancel').onclick = closeDlg;
   $('esave').onclick = function () {
     var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0];
     if (!p) { closeDlg(); return; }
-    if (!storeEdit(cur, p)) return;
+    if (!storeEdit(cur, p)) { $('emsg').textContent = 'Geef een projectnummer of een naam.'; $('emsg').hidden = false; $('enr').focus(); return; }
     closeDlg(); render();
   };
   /* schrijft de ingevulde gegevens naar het project; het id blijft gelijk */
@@ -211,11 +290,11 @@
      Instellen: huidige locatie, een adres zoeken (PDOK), of overnemen uit Locatie delen. */
   var editLoc = null;
   function locLabel(l) { return l ? (l.addr || l.lat.toFixed(5) + ', ' + l.lon.toFixed(5)) : 'Nog geen locatie'; }
-  function renderLoc() { $('locText').textContent = locLabel(editLoc); $('locClear').hidden = !editLoc; }
+  function renderLoc() { $('locText').textContent = locLabel(editLoc); $('locClear').hidden = !editLoc; $('esub').textContent = editLoc ? locLabel(editLoc) : ''; $('esub').hidden = !editLoc; }
   var locTok = 0;   /* teller: een traag antwoord van "Huidige locatie" mag een latere keuze niet overschrijven */
   function setLoc(l, msg) {
     locTok++; editLoc = l; renderLoc(); $('locMsg').textContent = msg || '';
-    var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0]; if (p) { storeEdit(cur, p); render(); }
+    var cur = load(), p = cur.filter(function (x) { return x.id === editId; })[0]; if (p) { storeEdit(cur, p); render(); snap = formSnap(); refreshCancel(); }   /* de locatie bewaart het hele formulier meteen: dan is er niets meer te annuleren */
   }
   function jfetch(url, ms) {
     var c = typeof AbortController === 'function' ? new AbortController() : null, t = setTimeout(function () { if (c) c.abort(); }, ms);
@@ -271,8 +350,12 @@
       if (p) storeEdit(cur, p);
     });
   });
+  /* verwijderen: twee tikken; de tweede moet binnen 4 seconden komen, anders valt de knop terug */
+  var armTimer = null;
+  function disarmDelete() { clearTimeout(armTimer); $('edel').dataset.armed = ''; $('edel').textContent = 'Verwijderen'; }
   $('edel').onclick = function () {
-    if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten?'; return; }
+    if (this.dataset.armed !== '1') { this.dataset.armed = '1'; this.textContent = 'Zeker weten? Tik nogmaals'; armTimer = setTimeout(disarmDelete, 4000); return; }
+    clearTimeout(armTimer);
     var gone = editId; save(load().filter(function (x) { return x.id !== gone; })); if (window.GwwData) GwwData.deleted('projects/' + gone); closeDlg(); render();
   };
 
@@ -287,6 +370,10 @@
     else { if (first) firstImport(); GwwData.run(); }
   } else if (first) firstImport();
   render();
+  (function () {
+    var m = /^#p=(.+)$/.exec(location.hash || ''); if (!m) return;
+    if (!openProject(decodeURIComponent(m[1]))) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ } }
+  })();
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
 </script>
