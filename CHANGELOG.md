@@ -2,6 +2,18 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.24.0] - 2026-11-23
+
+Technische kwaliteitsronde: opslag, synchronisatie, offline, PDF, toegankelijkheid en veilige zones onderzocht en met nieuwe tests vastgelegd. Gegevensformaten zijn ongewijzigd.
+
+- Kapotte of vreemde opslag: Locatie delen, Projecten en Logboek gaven een scriptfout en een lege pagina als de lijst met projecten of logboekregels geen lijst was of lege regels (`null`) bevatte. Alleen bruikbare regels worden nu gelezen; de gegevens zelf worden niet aangepast of gewist.
+- Opslag die niet werkt (vol of uitgezet): Locatie delen en Route tonen nu een blijvende melding bovenaan dat bewaren niet lukt (eerder stil). Projecten zegt niet meer "Project toegevoegd" als bewaren mislukt en wist het formulier dan niet. Verbinden voor synchronisatie meldt dat de koppeling niet bewaard kan worden, in plaats van na herladen ontkoppeld te zijn.
+- PDF-rapporten: tekens buiten Latijns-1 (zoals Ł, ń, ć, ś uit Poolse bedrijfsnamen) kwamen als rommel in het dag- en weekrapport ("ZakBad Aódz"). Nu worden ze de gewone letter (Łódź wordt Lódz) en vallen emoji en symbolen weg. Alleen de PDF verandert, niet de ingevoerde tekst.
+- Een kapot adres in het Logboek (`#/p/%E0%A4%A`) gaf een scriptfout; nu een onbekend project.
+- Veilige zone: de pincodepagina en de visiepagina begonnen onder de notch; nu net als de rest. 
+- Toegankelijkheid: het zoekveld voor de projectlocatie heeft een label en de meldingen (zoekmelding en toasts) worden door een schermlezer voorgelezen. Meldingen bij Nieuw project staan nu bij de knop en niet onderaan de pagina.
+- Nieuwe tests: `robuust` (kapotte en geblokkeerde opslag, ongeldige adressen), `behoud` (alleen kijken wijzigt niets; oude formaten; foto's), `sync-storing` (storing, geen verbinding, ingetrokken token, kapot bestand, gelijktijdige wijzigingen en verwijderingen, samenvoegregels), `offline-bibliotheken` (alle pagina's, Leaflet en jsPDF offline; nieuwe versie vervangt de oude kopie), `pdf-tekens` (bijzondere tekens, veel regels, dag- en weekrapport), `veilige-zone` (notch en zijranden, nagebootst) en `toegankelijkheid` (namen, labels, live-meldingen, Esc en focus), `flows-zonder-fouten` (geen scriptfouten of onbehandelde beloften zonder internet of toestemming).
+
 ## [1.23.0] - 2026-11-23
 
 - Ontwerpronde over alle tools; geen nieuwe huisstijl. Nieuw: `DESIGN.md` met de ontwerpafspraken (variabelen, gedeelde onderdelen, regels bij een wijziging), verwezen vanuit `CLAUDE.md` en `README.md`.

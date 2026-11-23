@@ -219,6 +219,7 @@
 <header class="brand"><div class="in"><span class="dot"></span><h1>Route knijperwagen</h1><button class="gear" id="gear" type="button" aria-label="Instellingen" title="Instellingen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></header>
 
 <div class="wrap">
+<p class="callout warn" id="storeWarn" role="alert" hidden>Bewaren lukt niet op dit apparaat (opslag vol of uitgezet). Je route blijft alleen staan zolang deze pagina open is. Kopieer het bericht dus eerst.</p>
   <div class="tip" id="tip" hidden><span>Tip: tik in Safari op het deelicoon en kies <b>Zet op beginscherm</b>. Alleen via dat icoon blijven je routes en suggesties betrouwbaar bewaard.</span><button class="btn sm" id="tipX" type="button">Ok</button></div>
 
   <nav class="tabs" aria-label="Weergave">
@@ -315,7 +316,7 @@
     </div>
   </div>
 </div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 <div id="status" class="sr" role="status" aria-live="polite"></div>
 
 <script src="sync.js"></script>
@@ -574,7 +575,9 @@ function check(stops) {
 
   /* opslag: concept en geheugen lokaal, eerdere routes en geheugen ook gedeeld via db */
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* opslag mag ontbreken */ } }
+  /* lukt bewaren niet (opslag vol of uitgeschakeld), dan blijft een melding bovenaan staan: anders lijkt alles bewaard */
+  let storeWarned = false;
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { storeWarned = true; const w = document.getElementById('storeWarn'); if (w) w.hidden = false; } }
   function loadDraft() {
     const o = lsGet(KEY);
     if (o && Array.isArray(o.stops)) return o;

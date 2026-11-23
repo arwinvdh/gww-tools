@@ -32,6 +32,14 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `route-stops.test.js` | Route knijperwagen met 1, 3, 8 en 15 stops: kop van een ingeklapte stop, meldingen en springen naar de stop, verplaatsen (knoppen, toetsenbord, slepen met muis en touch), verwijderen met ongedaan maken, dupliceren, opnieuw openen en delen, zonder project |
 | `layout.test.js` | Smalle telefoons (320 en 390 px): geen zijwaartse scroll, knoppen minstens 44px, actiebalk, recente projecten |
 | `design.test.js` | Ontwerpafspraken: gedeelde onderdelen niet herdefinieerd, geen losse radius-waarden of decoratieve animaties, contrast, tikdoelen, toetsenbordfocus, geen zijwaartse scroll op zes breedtes |
+| `robuust.test.js` | Kapotte of vreemde opslag (7 sleutels x 11 varianten x 7 pagina's), opslag vol of geblokkeerd, 20 ongeldige adressen: nooit een fout of lege pagina |
+| `behoud.test.js` | Alleen kijken wijzigt geen gegevens (byte voor byte), oude formaten van logboek en route, foto's blijven na herladen en wisselen van dag |
+| `sync-storing.test.js` | Synchroniseren bij storing, geen verbinding, ingetrokken token, kapot bestand; gelijktijdige wijzigingen en verwijderingen; samenvoegregels met rare gegevens |
+| `offline-bibliotheken.test.js` | Via een lokale server: alle pagina's, Leaflet en jsPDF offline; een nieuwe versie vervangt de oude kopie en de oude cache |
+| `pdf-tekens.test.js` | Dag- en weekrapport met bijzondere tekens (Łódź, emoji, euro) en 70 regels over meerdere pagina's (leest de PDF met pdftotext, anders overgeslagen) |
+| `veilige-zone.test.js` | Notch en zijranden op een iPhone, nagebootst met Chromium (geen echte iPhone) |
+| `toegankelijkheid.test.js` | Namen en labels, live-meldingen, Esc sluit dialogen en de focus keert terug |
+| `flows-zonder-fouten.test.js` | Alle gebruiksstromen zonder internet en toestemmingen: geen scriptfouten of onbehandelde beloften |
 | `nav.test.js` | Onderbalk in alle drie de pagina's: Home en een knop per tool, de juiste knop actief, de actiebalk van de tools blijft zichtbaar boven de onderbalk, de terugknop in de kop |
 | `logboek.test.js` | Logboek: project en datum kiezen, vanzelf bewaren met vast id, materieel en voorstellen, een lege dag wordt niet bewaard, wisselen van project of datum haalt niets door elkaar |
 | `sync-projecten-logboek.test.js` | Synchroniseren van Projecten en Logboek tussen twee apparaten: aanmaken, wijzigen, verwijderen, geen dubbele projecten bij een nieuw apparaat |
