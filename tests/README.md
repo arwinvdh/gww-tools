@@ -42,6 +42,7 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 | `flows-zonder-fouten.test.js` | Alle gebruiksstromen zonder internet en toestemmingen: geen scriptfouten of onbehandelde beloften |
 | `nav.test.js` | Onderbalk in alle drie de pagina's: Home en een knop per tool, de juiste knop actief, de actiebalk van de tools blijft zichtbaar boven de onderbalk, de terugknop in de kop |
 | `logboek.test.js` | Logboek: project en datum kiezen, vanzelf bewaren met vast id, materieel en voorstellen, een lege dag wordt niet bewaard, wisselen van project of datum haalt niets door elkaar |
+| `logboek-backup.test.js` | Logboek-back-up: maken, herinnering, terugzetten zonder iets te verwijderen (nieuwere versie wint), ongeldige en vreemde bestanden |
 | `sync-projecten-logboek.test.js` | Synchroniseren van Projecten en Logboek tussen twee apparaten: aanmaken, wijzigen, verwijderen, geen dubbele projecten bij een nieuw apparaat |
 | `projecten-locatie.test.js` | Locatie per project: instellen (zoeken, huidige locatie, uit Locatie delen), wissen, weer in het logboek op de projectlocatie, Locatie delen start op de projectlocatie |
 | `logboek-weekrapport.test.js` | Weekrapport als PDF: dialoog en weekkeuze, bestand met project en weeknummer, foto's alleen met de schakelaar |

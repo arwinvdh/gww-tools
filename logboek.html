@@ -23,6 +23,7 @@
   .chips .chip { white-space: normal; }   /* voorstellen zijn lang: laten afbreken in plaats van afkappen */
   .secbody .check { font-weight: 600; }
   .state { min-height: 1.25rem; }
+  .bkrow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .day { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
   .day .txt { display: grid; min-width: 0; }
   .day b { font-weight: 600; }
@@ -90,6 +91,14 @@
     <input class="inp" id="psearch" type="search" placeholder="Zoeken" hidden>
     <div class="list" id="plist"></div>
     <button class="btn primary" id="newToday" type="button">Nieuwe dag vandaag</button>
+    <div class="card" id="backupCard" hidden>
+      <h2>Back-up</h2>
+      <p class="callout warn" id="backupHint" hidden>Je logboek is al een tijd niet bewaard als bestand. Maak een back-up: de foto's staan alleen op dit toestel.</p>
+      <p class="hint">Bewaart je logboek en projecten als bestand, zonder foto's. Terugzetten voegt alleen toe en overschrijft een dag of project alleen met een nieuwere versie; er wordt niets verwijderd.</p>
+      <div class="bkrow"><button class="btn" id="bkExp" type="button">Back-up maken</button><button class="btn" id="bkImp" type="button">Back-up terugzetten</button></div>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden aria-label="Back-upbestand kiezen">
+      <p class="hint" id="bkMsg" role="status"></p>
+    </div>
   </section>
   <section id="v2" hidden>
     <button class="btn primary" id="todayBtn" type="button">Vandaag invullen</button>
@@ -1068,6 +1077,57 @@
   function dayRows(pid) { return loadLog().filter(function (e) { return e.projectId === pid; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }); }
 
   /* laag 1: de projecten */
+  /* ---------- back-up van logboek en projecten (zonder foto's) ----------
+     Bestand: { app: 'gww-tools', v: 1, t, projects: [...gww.projects], log: [...gww.log] }. Terugzetten voegt toe en overschrijft per project of dag
+     alleen met een nieuwere versie (`modified`); verwijderen doet het nooit. De datum van de laatste back-up staat in `gww.lastBackup`. */
+  var BKEY = 'gww.lastBackup';
+  function backupDue() {
+    if (!loadLog().length) return false;
+    var t = 0; try { t = +localStorage.getItem(BKEY) || 0; } catch (e) { t = 0; }
+    return Date.now() - t > 30 * 864e5;
+  }
+  function paintBackup() { $('backupCard').hidden = !projects().length; $('backupHint').hidden = !backupDue(); }
+  $('bkExp').onclick = function () {
+    var data = { app: 'gww-tools', v: 1, t: Date.now(), projects: readJson(PKEY), log: loadLog() };
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = 'gww-logboek-backup-' + todayIso() + '.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 15000);
+    try { localStorage.setItem(BKEY, String(Date.now())); } catch (e) { /* opslag mag ontbreken */ }
+    $('bkMsg').textContent = 'Back-up gemaakt: ' + data.projects.length + (data.projects.length === 1 ? ' project en ' : ' projecten en ') + data.log.length + (data.log.length === 1 ? ' dag.' : ' dagen.') + ' Foto\u2019s zitten er niet in.';
+    paintBackup();
+  };
+  $('bkImp').onclick = function () { $('bkFile').click(); };
+  $('bkFile').onchange = function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    var bad = function () { $('bkMsg').textContent = 'Dit is geen geldige back-up van het logboek. Kies een bestand van Back-up maken.'; };
+    if (f.size > 20 * 1024 * 1024) { bad(); return; }
+    f.text().then(function (t) {
+      var j = JSON.parse(t);
+      if (!j || typeof j !== 'object' || j.app !== 'gww-tools' || !Array.isArray(j.projects) || !Array.isArray(j.log)) throw new Error('ongeldig');
+      var isObj = function (x) { return x && typeof x === 'object' && !Array.isArray(x); };
+      var merge = function (local, incoming, keyOf, valid, tombKey) {
+        var map = {}, added = 0, updated = 0, same = 0;
+        local.forEach(function (r) { if (valid(r)) map[keyOf(r)] = r; });
+        incoming.filter(function (r) { return isObj(r) && valid(r); }).forEach(function (r) {
+          var k = keyOf(r), l = map[k];
+          if (!l) { map[k] = r; added++; if (window.GwwData) GwwData.revived(tombKey(r)); }
+          else if ((+r.modified || 0) > (+l.modified || 0)) { map[k] = r; updated++; }
+          else same++;
+        });
+        var out = local.filter(function (r) { return !valid(r); });   /* wat er al stond, ook vreemde regels, blijft staan */
+        Object.keys(map).forEach(function (k) { out.push(map[k]); });
+        return { list: out, added: added, updated: updated, same: same };
+      };
+      var P = merge(readJson(PKEY), j.projects, function (r) { return r.id; }, function (r) { return typeof r.id === 'string' && r.id; }, function (r) { return 'projects/' + r.id; });
+      var L = merge(loadLog(), j.log, function (r) { return r.projectId + '|' + r.date; }, function (r) { return typeof r.projectId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) && r.projectId; }, function (r) { return 'log/' + r.projectId + '/' + r.date; });
+      try { localStorage.setItem(PKEY, JSON.stringify(P.list)); } catch (e) { $('bkMsg').textContent = 'Terugzetten lukt niet op dit apparaat (opslag vol of uitgezet).'; return; }
+      if (!saveLog(L.list)) return;
+      var np = P.added + P.updated, nl = L.added + L.updated;
+      $('bkMsg').textContent = 'Teruggezet: ' + np + (np === 1 ? ' project' : ' projecten') + ' en ' + nl + (nl === 1 ? ' dag' : ' dagen') + ' toegevoegd of bijgewerkt, ' + (P.same + L.same) + ' ongewijzigd gelaten.';
+      route();
+    }).catch(bad);
+  };
   function showProjects() {
     curPid = ''; curDate = ''; show(1); setTitle('Logboek');
     var list = projects(), today = todayIso(), f = $('psearch').value.trim().toLowerCase();
@@ -1075,6 +1135,7 @@
     list.forEach(function (p) { var rows = dayRows(p.id); info[p.id] = { n: rows.length, last: rows[0] ? rows[0].date : '' }; });
     list.sort(function (a, b) { return (info[b.id].last || '').localeCompare(info[a.id].last || '') || (b.modified || 0) - (a.modified || 0); });
     $('psearch').hidden = list.length < 7;
+    paintBackup();
     var box = $('plist'); box.textContent = '';
     list.filter(function (p) { return !f || plabel(p).toLowerCase().indexOf(f) !== -1; }).forEach(function (p) {
       var i = info[p.id], sub = !i.n ? 'nog geen dagen' : (i.last === today ? 'vandaag ingevuld' : 'laatste dag: ' + dayLabel(i.last)) + ' · ' + i.n + (i.n === 1 ? ' dag' : ' dagen');
