@@ -9,7 +9,7 @@ const mkStops = (n) => Array.from({ length: n }, (_, i) => ({ acties: [['LADEN']
   const mk = async (dev, stops, opts) => {
     const ctx = await b.newContext({ ...dev, ...(opts || {}) });
     await ctx.route(u => !u.href.startsWith('file:'), r => r.abort());
-    await ctx.addInitScript(([st]) => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); if (st) localStorage.setItem('knijperwagen-route-v2', JSON.stringify({ datum: '2099-01-02', note: 'Let op: poort 2', stops: st })); } }, [stops]);
+    await ctx.addInitScript(([st]) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('__seeded', '1'); if (st) localStorage.setItem('knijperwagen-route-v2', JSON.stringify({ datum: '2099-01-02', note: 'Let op: poort 2', stops: st })); } }, [stops]);
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
     await p.goto(ROOT + 'route.html'); await p.waitForTimeout(700);
     await p.evaluate(() => { const t = document.getElementById('tip'); if (t) t.hidden = true; });
@@ -98,6 +98,7 @@ const mkStops = (n) => Array.from({ length: n }, (_, i) => ({ acties: [['LADEN']
   const clip = await p.evaluate(() => navigator.clipboard.readText()), wa = decodeURIComponent((await p.getAttribute('#wa-send', 'href')).split('text=')[1]);
   ok(clip === wa && /^\*?Route /.test(clip) && /1️⃣ /.test(clip) && /9️⃣ /.test(clip) && clip.indexOf(o[0]) < clip.indexOf(o[8]), 'delen: Kopieer en WhatsApp geven hetzelfde bericht met alle 9 stops genummerd in volgorde');
   // opnieuw openen: herladen en via Eerdere routes
+  await p.waitForTimeout(500);   // de route wordt kort na de laatste wijziging bewaard
   await p.reload(); await p.waitForTimeout(600);
   ok((await order(p)).join() === o.join(), 'opnieuw openen: na herladen staat dezelfde route er weer');
   await p.click('#reset'); await p.waitForTimeout(300);

@@ -55,6 +55,7 @@ version.js              het appversienummer (APP_VERSION), enige bron
 CHANGELOG.md            wijzigingen per versie
 sync.js                 synchroniseren tussen apparaten via een eigen privérepo (gedeeld door beide tools)
 shared.css              gedeelde stijl (kleuren, ontwerpwaarden als variabelen, knoppen, velden, kaarten, kopband)
+DESIGN.md              ontwerpafspraken: variabelen, gedeelde onderdelen en regels voor wijzigingen
 icons/                  iconen voor het beginscherm
 tests/                  automatische controles (zie hieronder)
 ```

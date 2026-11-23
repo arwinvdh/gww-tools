@@ -11,7 +11,6 @@
    Leaflet-knoppen in de pagina zelf, buiten een laag. */
 @layer reset, base, components, overrides;
 
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes riseX { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translateX(-50%); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -29,7 +28,7 @@
     --bg: #F3F6F9; --surface: #FFFFFF; --field: #FFFFFF; --ink: #0A1B2C; --ink-2: #435568; --line: #C3CFDB;
     --accent: #014983; --on-accent: #FFFFFF; --warn: #B42318; --ok: #3F7D0A; --focus: #014983;
     --scrim: rgba(0, 31, 56, 0.5); --brand-dark: #001f38; --brand-green: #76b720;
-    --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #027EB5;
+    --wa-wall: #EAE3D8; --wa-bubble: #D9FDD3; --wa-text: #111B21; --wa-link: #01698F;
     --font: 'Avenir Next', 'Avenir Next LT Pro', Avenir, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --shadow: 0 1px 2px rgba(0, 31, 56, 0.06);
     --wrap-max: 64rem;      /* de pagina kan dit aanpassen */
@@ -38,9 +37,10 @@
        Pagina's mogen ze gebruiken; bestaande vaste waarden in de pagina's zijn niet omgezet. */
     --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-6: 1.5rem; --space-8: 2rem;
     --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-pill: 999px;
-    --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.0625rem; --text-xl: 1.25rem;
+    --text-xs: 0.75rem; --text-label: 0.8125rem; --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.0625rem; --text-xl: 1.25rem;
     --control-h: 52px;      /* hoogte van een invoerveld of knop */
     --touch-min: 44px;      /* kleinste tikdoel (ook op kleine knoppen met een vinger) */
+    --chip-h: 40px;         /* hoogte van een chip; op touch --touch-min */
     --transition-fast: 150ms;
   }
   /* de vaste actiebalk onderaan mag een gefocust veld niet bedekken */
@@ -63,7 +63,7 @@
   .gear { margin-left: auto; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; transition: background-color 0.15s; }
 
   .wrap { max-width: var(--wrap-max); margin-inline: auto; padding: 1rem max(16px, env(safe-area-inset-right, 0px)) 6rem max(16px, env(safe-area-inset-left, 0px)); }
-  .tip { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--brand-green); border-radius: 12px; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: 0.875rem; }
+  .tip { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--brand-green); border-radius: var(--radius-md); background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: var(--text-sm); }
 
   /* kaarten en velden */
   .grid { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr); }
@@ -75,13 +75,15 @@
   /* iOS Safari geeft een datumveld een eigen breedte: vastzetten zodat het in de kaart blijft en links uitgelijnd staat */
   input[type="date"].inp { -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; text-align: left; }
   input[type="date"].inp::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
+  /* een datumveld heeft onderdelen (dag, maand, jaar): :focus-visible valt daar soms weg, dus de ring staat bij :focus */
+  input[type="date"].inp:focus { border-color: var(--accent); outline: 2px solid var(--focus); outline-offset: 0; }
   .inp:focus-visible { border-color: var(--accent); outline: 2px solid var(--focus); outline-offset: 0; }
   .hint { font-size: var(--text-sm); color: var(--ink-2); margin: 0; }
   .hint.err { color: var(--warn); }
   .hint.ok { color: var(--ok); }
 
   /* knoppen */
-  .btn { min-height: var(--control-h); padding: 0.35rem 1.1rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
+  .btn { min-height: var(--control-h); padding: 0.35rem 1.1rem; border: 1.5px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; text-decoration: none; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s, opacity 0.15s; }
   .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:disabled { opacity: 0.5; cursor: default; }
   .btn.sm { min-height: 40px; padding: 0.2rem 0.75rem; font-size: var(--text-sm); }
@@ -89,16 +91,20 @@
   .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
   /* voorbeeld van het WhatsApp-bericht */
-  .wa { background: var(--wa-wall); border-radius: 12px; padding: 0.75rem; }
+  .wa { background: var(--wa-wall); border-radius: var(--radius-md); padding: 0.75rem; }
 
   /* actiebalk onderaan */
   .bar { position: fixed; inset: auto 0 var(--nav-h, 0px); padding: 0.6rem max(16px, env(safe-area-inset-right, 0px)) calc(0.6rem + var(--bar-safe, env(safe-area-inset-bottom, 0px))) max(16px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); z-index: 500; }
 
   /* dialoog en melding */
-  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem; width: min(var(--dialog-w), calc(100% - 2rem)); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 31, 56, 0.3); }
-  dialog[open] { display: grid; gap: 0.7rem; animation: rise 0.2s ease both; }
+  dialog { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.1rem; width: min(var(--dialog-w), calc(100% - 2rem)); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 31, 56, 0.3); }
+  dialog[open] { display: grid; gap: 0.7rem; }
+  dialog h2 { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--ink); text-transform: none; letter-spacing: 0; }
+  /* actierij onderaan een dialoog: gevaarlijk links, dan secundair, de hoofdactie als laatste */
+  .dlg-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .dlg-actions .btn { flex: 1 1 auto; }
   dialog::backdrop { background: var(--scrim); }
-  .toast { position: fixed; left: 50%; bottom: calc(5.5rem + var(--nav-h, 0px)); transform: translateX(-50%); max-width: calc(100% - 2rem); background: var(--ink); color: var(--bg); padding: 0.5rem 0.9rem; border-radius: 10px; z-index: 900; font-size: 0.875rem; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); animation: riseX 0.2s ease both; }
+  .toast { position: fixed; left: 50%; bottom: calc(5.5rem + var(--nav-h, 0px)); transform: translateX(-50%); max-width: calc(100% - 2rem); background: var(--ink); color: var(--bg); padding: 0.5rem 0.9rem; border-radius: 10px; z-index: 900; font-size: var(--text-sm); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); animation: riseX 0.2s ease both; }
 
   /* kaarten verschijnen direct: een werkapp reageert zonder intreeanimatie, ook bij elke nieuwe weergave */
   /* hover alleen op apparaten met een muis: op touch blijft hij anders hangen na een tik */
@@ -116,7 +122,40 @@
     .btn.sm { min-height: var(--touch-min); }
     .gear { width: var(--touch-min); height: var(--touch-min); }
     .chip { min-height: var(--touch-min); }
+    .btn.sm.danger { min-width: var(--touch-min); }
+    .check { min-height: var(--touch-min); }
   }
+}
+
+/* gedeelde onderdelen: melding, chip, uitklapbare sectie, lijst. Pagina's voegen alleen toe wat functioneel anders is. */
+@layer components {
+  /* melding met streep: groen is informatie, rood vraagt aandacht. Gebruik .hint.err of .hint.ok voor een korte regel zonder vlak. */
+  .callout { margin: 0; padding: 0.4rem 0.7rem; border-left: 4px solid var(--brand-green); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: var(--text-sm); font-weight: 600; overflow-wrap: anywhere; }
+  .callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+  /* chip: aantikbaar label of voorstel; gekozen = vol accent; .sug = voorstel (gestippeld) */
+  .chip { flex: none; display: inline-block; min-height: var(--chip-h); max-width: 100%; padding: 0 0.85rem; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--field); color: var(--ink); font: inherit; font-weight: 500; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip[aria-pressed="true"], .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .chip.sug { color: var(--ink-2); border-style: dashed; }
+  /* uitklapbare sectie met titel en samenvatting (details.sec > summary > span + span.sum) */
+  .sec { border-top: 1px solid var(--line); }
+  .sec > summary { min-height: 3.25rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.75rem; align-items: center; align-content: center; padding: 0.3rem 0; font-weight: 700; font-size: var(--text-lg); cursor: pointer; list-style: none; }
+  .sec > summary::-webkit-details-marker { display: none; }
+  /* de samenvatting staat onder de titel: lange titels en cijfers breken zo niet door elkaar */
+  .sec > summary .sum { grid-column: 1; grid-row: 2; font-weight: 500; font-size: var(--text-sm); color: var(--ink-2); overflow-wrap: anywhere; }
+  .sec > summary .sum:empty { display: none; }
+  .sec > summary .sum.warn { color: var(--warn); font-weight: 700; }
+  .sec > summary::after { content: ""; grid-column: 2; grid-row: 1 / span 2; justify-self: end; width: 0.5rem; height: 0.5rem; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform var(--transition-fast); }
+  .sec[open] > summary::after { transform: rotate(-135deg); }
+  .secbody { display: grid; gap: 0.6rem; padding-bottom: 1rem; }
+  /* checkbox met label: groot genoeg om met een vinger te raken */
+  .check { display: flex; gap: 0.6rem; align-items: center; min-height: 36px; min-width: 0; overflow-wrap: anywhere; }
+  .check input { width: 22px; height: 22px; flex: none; }
+  .empty { margin: 0; color: var(--ink-2); }
+  .list { display: grid; }
+  .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+  /* veilige zone bovenaan (notch): de kop begint eronder; de pagina's met een eigen oplossing zetten class "own-safe" op html */
+  html.has-nav:not(.own-safe) { padding-top: env(safe-area-inset-top, 0px); }
+  html.has-nav:not(.own-safe) body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
 }
 
 /* onderbalk (nav.js): Home en een knop per tool. De hoogte staat in --nav-h zodat de actiebalk, meldingen en padding erboven blijven. */

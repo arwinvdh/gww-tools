@@ -18,6 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `README.md`: beschrijving van de tools, synchroniseren, pincode, uitrollen en de checklist voor een nieuwe tool. Bron voor hoe het werkt.
 - `tests/README.md`: wat de tests controleren en hoe je ze toevoegt.
+- `DESIGN.md`: ontwerpafspraken (variabelen, onderdelen, wat in `shared.css` hoort). Lees dit vóór een wijziging aan de vormgeving.
 - `visie.html` beschrijft de projectrichting en mogelijke uitbreidingen. De pagina bevat zowel uitgangspunten als onbevestigde voorstellen. Behandel een voorstel niet automatisch als goedgekeurde eis. Vraag bij twijfel om bevestiging voordat je erop voortbouwt.
 
 ## Taal in de code

@@ -14,26 +14,19 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 /* Projecten: de gedeelde projectlijst met een vast id per project. Gedeelde stijl staat in shared.css. */
-@layer base {
-  :root { padding-top: env(safe-area-inset-top, 0px); }
-  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
-}
 @layer components {
   .wrap { padding-bottom: calc(2rem + var(--nav-h, 0px)); display: grid; gap: 1rem; }
   .two { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 30rem) { .two { grid-template-columns: 10rem minmax(0, 1fr); } }
-  .list { display: grid; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
   .row b { font-weight: 600; overflow-wrap: anywhere; }
   .row::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
   .row .txt { display: grid; min-width: 0; }
   .row small { color: var(--ink-2); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .empty { margin: 0; color: var(--ink-2); }
   .launch { display: grid; gap: 0.5rem; }
   .locbox { gap: 0.5rem; }
   .loctext { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-  .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
   #locRes .row { min-height: 3rem; }
   /* lijst: eerst scannen, dan toevoegen. Zodra er projecten zijn staat de lijst bovenaan en het formulier eronder. */
   .has-list .addcard { order: 2; }

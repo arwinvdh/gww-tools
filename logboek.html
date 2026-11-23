@@ -14,23 +14,15 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 /* Logboek: per project en dag werkzaamheden en materieel. Gedeelde stijl staat in shared.css. */
-@layer base {
-  :root { padding-top: env(safe-area-inset-top, 0px); }
-  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-dark); }
-}
 @layer components {
   .wrap { padding-bottom: calc(2rem + var(--nav-h, 0px)); display: grid; gap: 1rem; }
   .two { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 30rem) { .two { grid-template-columns: minmax(0, 1fr) 12rem; } }
   textarea.inp { min-height: 8rem; resize: vertical; line-height: 1.4; }
-  .addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
   .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .chips .chip { text-align: left; }
-  .chip { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0.2rem 0.9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 600; cursor: pointer; font: inherit; font-weight: 600; }
-  .chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
-  .chip.sug { font-weight: 500; color: var(--ink-2); border-style: dashed; }
+  .chips .chip { white-space: normal; }   /* voorstellen zijn lang: laten afbreken in plaats van afkappen */
+  .secbody .check { font-weight: 600; }
   .state { min-height: 1.25rem; }
-  .list { display: grid; }
   .day { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; min-height: 3.5rem; padding: 0.5rem 0.25rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; width: 100%; cursor: pointer; font: inherit; }
   .day .txt { display: grid; min-width: 0; }
   .day b { font-weight: 600; }
@@ -38,18 +30,8 @@
   .day small:last-child { white-space: nowrap; }
   .day::after { content: "\203A"; color: var(--ink-2); font-size: 1.4rem; }
   .day.sel { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-  .empty { margin: 0; color: var(--ink-2); }
   .wx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0.5rem; }
   .wx .info { grid-column: 1 / -1; }
-  .sec { border-top: 1px solid var(--line); }
-  .sec > summary { min-height: 3.25rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.75rem; align-items: center; align-content: center; padding: 0.3rem 0; font-weight: 700; font-size: 1.0625rem; cursor: pointer; list-style: none; }
-  .sec > summary::-webkit-details-marker { display: none; }
-  /* de samenvatting staat onder de titel: lange titels en cijfers breken zo niet door elkaar */
-  .sec > summary .sum { grid-column: 1; grid-row: 2; font-weight: 500; font-size: 0.875rem; color: var(--ink-2); overflow-wrap: anywhere; }
-  .sec > summary .sum:empty { display: none; }
-  .sec > summary::after { content: ""; grid-column: 2; grid-row: 1 / span 2; justify-self: end; width: 0.5rem; height: 0.5rem; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform 0.15s; }
-  .sec[open] > summary::after { transform: rotate(-135deg); }
-  .secbody { display: grid; gap: 0.6rem; padding-bottom: 1rem; }
   .addgrid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .addgrid .wide { grid-column: 1 / -1; }
   .rows { display: grid; }
@@ -58,29 +40,25 @@
   /* aantal, uren en verwijderen blijven bij elkaar: past het naast de naam, dan op één regel, anders eronder rechts */
   .rowitem .ctl { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
   /* aantal en uren staan als invulveld in de regel zelf: aanpassen na "Zelfde als vorige dag" kost één tik en geen verwijderen en opnieuw invoeren */
-  .pill { flex: none; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 44px; padding: 0 0.6rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--field); color: var(--ink-2); font-size: 0.875rem; }
+  .pill { flex: none; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 44px; padding: 0 0.6rem; border: 1.5px solid var(--line); border-radius: var(--radius-pill); background: var(--field); color: var(--ink-2); font-size: var(--text-sm); }
   .pill:focus-within { border-color: var(--accent); outline: 2px solid var(--focus); }
-  .pill input { width: 3.1ch; min-width: 2.2rem; border: 0; background: transparent; padding: 0; text-align: right; font: inherit; font-size: 1rem; font-weight: 600; color: var(--ink); -moz-appearance: textfield; appearance: textfield; }
+  .pill input { width: 3.1ch; min-width: 2.2rem; border: 0; background: transparent; padding: 0; text-align: right; font: inherit; font-size: var(--text-base); font-weight: 600; color: var(--ink); -moz-appearance: textfield; appearance: textfield; }
   .pill input:focus { outline: none; }
   .pill input::-webkit-outer-spin-button, .pill input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .pend { margin: 0; padding: 0.4rem 0.7rem; border-left: 4px solid var(--warn); border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--warn) 8%, var(--surface)); color: var(--ink); font-weight: 600; }
-  .sec > summary .sum.warn { color: var(--warn); font-weight: 700; }
-  .copynote { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; padding: 0.4rem 0.7rem; border-left: 4px solid var(--brand-green); border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--brand-green) 12%, var(--surface)); font-size: 0.875rem; font-weight: 600; }
+  .copynote { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
   .daysum { margin: -0.25rem 0 0.5rem; font-weight: 600; color: var(--ink); }
   .daysum:empty { display: none; }
   .state.err { color: var(--warn); font-weight: 600; }
   .day small + small { margin-top: 0.1rem; }
   .wk { display: grid; gap: 0; margin: 0 0 0.5rem; }
-  .wk .r { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); font-size: 0.875rem; }
+  .wk .r { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); font-size: var(--text-sm); }
   .wk .r b { font-weight: 600; }
   .wk .r span { color: var(--ink-2); overflow-wrap: anywhere; }
   .wk .r.none span { font-style: italic; }
   .rowitem .t b { font-weight: 600; overflow-wrap: anywhere; }
-  .rowitem .t small { color: var(--ink-2); font-size: 0.875rem; }
+  .rowitem .t small { color: var(--ink-2); font-size: var(--text-sm); }
   .rowitem .del { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink-2); cursor: pointer; }
   .rowitem .del:active { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
-  .check { display: flex; gap: 0.7rem; align-items: center; min-height: 44px; font-weight: 600; }
-  .check input { width: 24px; height: 24px; flex: none; }
   textarea.inp.small { min-height: 5rem; }
   .copyprev { justify-self: start; }
   .daynav { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
@@ -91,14 +69,12 @@
   .sub { margin: 0 0 0.5rem; }
   #v1, #v2 { display: grid; gap: 1rem; }
   #v1 .btn.primary, #v2 .btn.primary { width: 100%; }
-  a.btn { color: var(--ink); }
   #v2 h2 { margin: 0.25rem 0 -0.5rem; }
   #nlist .day { border-bottom: 1px solid var(--line); }
   .thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
-  .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
+  .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
   .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
   #pdlg img { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 10px; background: #000; }
-  #pdlg .actions, #wdlg .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 }
 </style>
 </head>
@@ -138,7 +114,7 @@
       </div>
       <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan?"></textarea></div>
       <button class="btn copyprev" id="copyPrev" type="button" hidden></button>
-      <div class="copynote" id="copyNote" role="status" hidden><span id="copyNoteTxt"></span><button class="btn sm" id="undoCopy" type="button">Ongedaan maken</button></div>
+      <div class="callout copynote" id="copyNote" role="status" hidden><span id="copyNoteTxt"></span><button class="btn sm" id="undoCopy" type="button">Ongedaan maken</button></div>
       <div id="secs"></div>
       <details class="sec" id="sec-extra">
         <summary><span>Meerwerk of afwijking</span><span class="sum" id="sum-extra"></span></summary>
@@ -190,7 +166,7 @@
   <p class="hint" id="wcount"></p>
   <label class="check"><input type="checkbox" id="wphotos"> Foto’s meenemen</label>
   <p class="hint" id="wstate" role="status"></p>
-  <div class="actions"><button class="btn primary" id="wmake" type="button">PDF maken</button><button class="btn" id="wclose" type="button">Sluiten</button></div>
+  <div class="dlg-actions"><button class="btn" id="wclose" type="button">Sluiten</button><button class="btn primary" id="wmake" type="button">PDF maken</button></div>
 </dialog>
 <dialog id="ndlg">
   <h2>Kies een project</h2>
@@ -200,10 +176,10 @@
 <dialog id="pdlg">
   <img id="pimg" alt="Foto met stempel">
   <p class="hint" id="pinfo"></p>
-  <div class="actions">
-    <button class="btn primary" id="psave" type="button">Bewaar in Foto's</button>
-    <button class="btn" id="pclose" type="button">Sluiten</button>
+  <div class="dlg-actions">
     <button class="btn danger" id="pdel" type="button">Verwijderen</button>
+    <button class="btn" id="pclose" type="button">Sluiten</button>
+    <button class="btn primary" id="psave" type="button">Bewaar in Foto's</button>
   </div>
 </dialog>
 <script src="sync.js"></script>
@@ -351,7 +327,7 @@
       var s = SECS[name], d = document.createElement('details'); d.className = 'sec'; d.id = 'sec-' + name; if (s.open) d.open = true;
       d.innerHTML = '<summary><span>' + s.title + '</span><span class="sum" id="sum-' + name + '"></span></summary>' +
         '<div class="secbody"><div class="rows" id="list-' + name + '"></div><div class="addgrid" id="grid-' + name + '"></div>' +
-        '<p class="hint pend" id="pend-' + name + '" role="status" hidden></p>' +
+        '<p class="callout warn" id="pend-' + name + '" role="status" hidden></p>' +
         '<button class="btn" type="button" id="add-' + name + '">Toevoegen</button><div class="chips" id="sug-' + name + '"></div></div>';
       host.appendChild(d);
       var grid = d.querySelector('#grid-' + name);
