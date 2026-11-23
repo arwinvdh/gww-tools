@@ -51,3 +51,4 @@ Staat de browser ergens anders (bijvoorbeeld in een testomgeving), zet dan `PW_C
 ## Een nieuwe test toevoegen
 
 Maak een bestand dat eindigt op `.test.js`. Het wordt vanzelf meegenomen. Kijk naar `layout.test.js` voor een kort voorbeeld; `ok(waar, 'tekst')` schrijft `OK` of `FOUT`.
+| `locatie-flow.test.js` | Locatie delen: zoeken en kiezen, samenvatting, pin verplaatsen, GPS, projectlocatie, ongeldige invoer, geen internet, deelacties en indeling op zes breedtes |

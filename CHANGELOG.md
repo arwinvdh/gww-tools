@@ -2,6 +2,14 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.21.0] - 2026-11-23
+
+- Locatie delen: onder de kaart staat een samenvatting van wat er gedeeld wordt: de pin (coördinaten uit de kaart), het adres (gevonden bij de pin of zelf ingevuld, of de melding dat er geen adres is) en de soort link in het bericht. Aanpassen springt naar het adresveld. De losse coördinaten naast de kaartlaag-knoppen zijn daarin opgegaan.
+- Na zoeken, kiezen of Mijn locatie blijft de kaart op de telefoon in beeld (samen met de samenvatting, boven de actiebalk), zodat je de pin kunt controleren. Voorheen scrolde de pagina naar het projectveld en verdween de kaart. Op desktop blijft de cursor naar het projectveld gaan. De kaart is op de telefoon lager (38% van het scherm, tussen 220 en 340 px), zodat hij op een kleine iPhone boven de actiebalk past. De zoekresultaten scrollen in beeld.
+- Duidelijker meldingen: geen verbinding (zoeken en adres opzoeken), niets gevonden (noemt de zoekopdracht), te korte zoekopdracht, ongeldige coördinaten (met het toegestane bereik), adres wordt opgezocht en bij een pin zonder adres de uitleg dat pin en link wel kloppen. Mijn locatie toont een draaiende ring, de nauwkeurigheid in meters (met een waarschuwing boven 50 m) en per fout (geen toestemming, niet te bepalen, te traag) wat je kunt doen.
+- Zoekresultaten zijn minstens 44px hoog. De knop Deel afbeelding past op één regel op 375 px en breder. De foutmelding bij een onbereikbare kaart noemt het alternatief (alleen de tekst delen). Het bericht in het voorbeeld heeft iets meer regelhoogte en tekstgrootte.
+- Het bericht zelf, de coördinaten, adressen, projectgegevens en alle deelacties zijn ongewijzigd.
+
 ## [1.20.0] - 2026-11-23
 
 - Logboek, dagregistratie: aantal personen en uren staan als invulveld in de regel zelf (personeel, materieel en stagnatie). Een waarde aanpassen na het overnemen van de vorige dag kost één tik, in plaats van de regel verwijderen en opnieuw invoeren. Het veld houdt de cursor tijdens het typen.

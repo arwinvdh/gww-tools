@@ -53,6 +53,7 @@ const { devices } = require('playwright');
   {
     const q = await p.evaluate(() => { const m = document.querySelector('.mapcol'), pr = document.getElementById('card-project'); return { sticky: getComputedStyle(m).position, mapLeft: Math.round(document.getElementById('map').getBoundingClientRect().left), projLeft: Math.round(pr.getBoundingClientRect().left) }; });
     ok(q.sticky === 'sticky' && q.mapLeft < q.projLeft, 'desktop: kaart staat links vast en project rechts (' + q.sticky + ', ' + q.mapLeft + ' < ' + q.projLeft + ')');
+    await p.evaluate(() => window.scrollTo(0, 400)); await p.waitForTimeout(200);   // de kolom is vast zodra hij tegen de bovenkant staat
     const hh = await p.evaluate(() => { const m = document.querySelector('.mapcol').getBoundingClientRect(), bar = document.querySelector('.bar').getBoundingClientRect(); return [Math.round(m.bottom), Math.round(bar.top)]; });
     ok(hh[0] <= hh[1], 'desktop: de vaste kaartkolom eindigt boven de actiebalk (' + hh.join(' <= ') + ')');
     const m = await offlinePage(b, devices['iPhone 13'], 'index.html');
