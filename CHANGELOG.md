@@ -2,6 +2,12 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.14.0] - 2026-11-23
+
+- Logboek in drie lagen met eigen adressen: overzicht van projecten, de dagen van een project (met een samenvatting per dag: temperatuur, personen, stagnatie, meerwerk, incident en foto's) en één dag. Elke laag heeft een terugknop; de dag heeft een vaste balk met Opslaan en terug en Dagrapport PDF, vorige en volgende dag, en Dag verwijderen (met bevestiging).
+- Nieuwe dag vandaag kiest eerst het project; zoeken bij meer dan 6 projecten. Vanuit Projecten opent het logboek de dagen van dat project.
+- Automatisch bewaren blijft; de gegevens en het formaat zijn ongewijzigd.
+
 ## [1.13.1] - 2026-11-23
 
 - Logboek: ingevoerde regels (personeel, materieel, stagnatie, leveringen) staan nu als gewone regels met de naam vet, de details eronder en een verwijderknop, in plaats van als afgeronde tags.

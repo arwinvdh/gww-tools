@@ -60,6 +60,17 @@
   .check input { width: 24px; height: 24px; flex: none; }
   textarea.inp.small { min-height: 5rem; }
   .copyprev { justify-self: start; }
+  .daynav { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .daynav b { text-align: center; flex: 1; }
+  .bar .in { max-width: var(--wrap-max); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+  .bar .state { grid-column: 1 / -1; margin: 0; }
+  body.inday .wrap { padding-bottom: calc(8.5rem + var(--nav-h, 0px)); }
+  .sub { margin: 0 0 0.5rem; }
+  #v1, #v2 { display: grid; gap: 1rem; }
+  #v1 .btn.primary, #v2 .btn.primary { width: 100%; }
+  a.btn { color: var(--ink); }
+  #v2 h2 { margin: 0.25rem 0 -0.5rem; }
+  #nlist .day { border-bottom: 1px solid var(--line); }
   .thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
   .thumbs button { padding: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--field); aspect-ratio: 4 / 3; cursor: pointer; }
   .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -76,12 +87,22 @@
     <p class="hint">Het logboek werkt per project. Maak er een aan bij Projecten.</p>
     <a class="btn primary" href="projecten.html">Naar Projecten</a>
   </div>
-  <div id="main" hidden>
+  <section id="v1" hidden>
+    <input class="inp" id="psearch" type="search" placeholder="Zoeken" hidden>
+    <div class="list" id="plist"></div>
+    <button class="btn primary" id="newToday" type="button">Nieuwe dag vandaag</button>
+  </section>
+  <section id="v2" hidden>
+    <button class="btn primary" id="todayBtn" type="button">Vandaag invullen</button>
+    <h2>Dagen</h2>
+    <div class="list" id="dlist"></div>
+    <p class="empty" id="noDays" hidden>Nog geen dagen vastgelegd.</p>
+    <a class="btn" id="editProj" href="projecten.html">Project bewerken</a>
+  </section>
+  <section id="v3" hidden>
+    <div class="daynav"><button class="btn sm" id="prevDay" type="button">‹ Vorige dag</button><button class="btn sm" id="nextDay" type="button">Volgende dag ›</button></div>
+    <p class="hint sub" id="dayProj"></p>
     <div class="card">
-      <div class="two">
-        <div class="field"><label for="proj">Project</label><select class="inp" id="proj"></select></div>
-        <div class="field"><label for="date">Datum</label><input class="inp" id="date" type="date"></div>
-      </div>
       <div class="field">
         <label for="wxTemp">Weer rond 12:00</label>
         <div class="wx">
@@ -120,18 +141,24 @@
         <input id="shot" type="file" accept="image/*" capture="environment" hidden>
       </div>
       <div class="thumbs" id="thumbs"></div>
-      <p class="hint state" id="state" role="status"></p>
-      <button class="btn primary" id="report" type="button">Dagrapport als PDF</button>
     </div>
-    <div style="margin-top:1rem">
-      <h2>Eerdere dagen van dit project</h2>
-      <div class="list" id="history"></div>
-      <p class="empty" id="noHist" hidden>Nog geen dagen vastgelegd.</p>
-    </div>
-  </div>
+    <button class="btn danger" id="delDay" type="button">Dag verwijderen</button>
+  </section>
   <p class="hint" id="syncmsg"></p>
   <p class="hint"><span id="ver"></span></p>
 </div>
+<div class="bar" id="dayBar" hidden>
+  <div class="in">
+    <p class="hint state" id="state" role="status"></p>
+    <button class="btn primary" id="saveBack" type="button">Opslaan en terug</button>
+    <button class="btn" id="report" type="button">Dagrapport PDF</button>
+  </div>
+</div>
+<dialog id="ndlg">
+  <h2>Kies een project</h2>
+  <div class="list" id="nlist"></div>
+  <button class="btn" id="nclose" type="button">Annuleren</button>
+</dialog>
 <dialog id="pdlg">
   <img id="pimg" alt="Foto met stempel">
   <p class="hint" id="pinfo"></p>
@@ -230,12 +257,12 @@
   function find(a, pid, date) { return a.filter(function (e) { return e.projectId === pid && e.date === date; })[0]; }
 
   /* velden vullen vanuit de opgeslagen regel van dit project en deze dag */
-  function loadDay() {
-    curPid = $('proj').value; curDate = $('date').value; curPhotoCount = null;
+  function loadDay(pid, date) {
+    curPid = pid; curDate = date; curPhotoCount = null;
     var e = find(loadLog(), curPid, curDate);
     day = fromRecord(e);
     setState(e ? 'Opgeslagen.' : '');
-    forceFill = true; renderAll(); forceFill = false; renderHistory(); renderPhotos();
+    forceFill = true; renderAll(); forceFill = false; renderPhotos();
     if (!day.weather && curDate <= todayIso() && (curDate === todayIso() || hasContent(day))) fetchWeather();
   }
 
@@ -248,17 +275,17 @@
     var a = loadLog(), e = find(a, pid, date), now = Date.now();
     if (!hasContent(day) && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
       if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
-      setState(''); renderHistory(); return;
+      setState(''); return;
     }
     if (!hasContent(day) && !e) { setState(''); return; }
     /* alleen schrijven bij een echte wijziging: een nieuw tijdstip zonder wijziging zou bij synchroniseren de stand van een ander apparaat overschrijven */
     var next = fields(day);
-    if (e && JSON.stringify(fields(fromRecord(e))) === JSON.stringify(next)) { setState('Opgeslagen.'); renderHistory(); return; }
+    if (e && JSON.stringify(fields(fromRecord(e))) === JSON.stringify(next)) { setState('Opgeslagen.'); return; }
     if (e) { Object.assign(e, copy(next)); e.modified = now; }
     else a.push(Object.assign({ v: 1, id: newId(), projectId: pid, date: date }, copy(next), { created: now, modified: now }));
     if (window.GwwData) GwwData.revived('log/' + pid + '/' + date);
     if (saveLog(a)) setState('Opgeslagen.');
-    renderHistory(); renderAll();
+    renderAll();
   }
   function saveSoon() { setState('Bezig met opslaan…'); clearTimeout(timer); timer = setTimeout(saveNow, 500); }
 
@@ -424,31 +451,8 @@
   $('saInc').addEventListener('change', function () { day.safety.incident = this.checked; saveNow(); renderAll(); });
   $('saNote').addEventListener('input', function () { day.safety.note = this.value; saveSoon(); });
 
-  /* eerdere dagen van het gekozen project */
-  function renderHistory() {
-    var pid = $('proj').value;
-    var rows = loadLog().filter(function (e) { return e.projectId === pid; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    var box = $('history'); box.textContent = '';
-    rows.forEach(function (e) {
-      var d = fromRecord(e);
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'day' + (e.date === $('date').value ? ' sel' : ''); b.dataset.date = e.date;
-      var t = document.createElement('span'); t.className = 'txt';
-      var s = document.createElement('b'); s.textContent = dayLabel(e.date); t.appendChild(s);
-      var line = (d.work || '').split('\n')[0] || d.machines.map(function (m) { return m.item; }).join(', ') || d.crew.map(function (c) { return c.partner; }).join(', ') || 'Foto’s';
-      var sm = document.createElement('small'); sm.textContent = line; t.appendChild(sm);
-      b.appendChild(t); box.appendChild(b);
-    });
-    $('noHist').hidden = rows.length > 0;
-  }
-  $('history').onclick = function (e) {
-    var b = e.target.closest('.day'); if (!b) return;
-    saveNow(); $('date').value = b.dataset.date; loadDay(); window.scrollTo({ top: 0 });
-  };
-
   $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); });
   $('other').addEventListener('input', function () { day.other = this.value; saveSoon(); });
-  $('date').addEventListener('change', function () { if (!$('date').value) $('date').value = todayIso(); saveNow(); loadDay(); });
-  $('proj').addEventListener('change', function () { saveNow(); loadDay(); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
   window.addEventListener('pagehide', saveNow);
 
@@ -579,7 +583,7 @@
         var a = loadLog();
         if (!find(a, pid, date)) { a.push({ v: 1, id: newId(), projectId: pid, date: date, work: '', equipment: [], created: Date.now(), modified: Date.now() }); if (window.GwwData) GwwData.revived('log/' + pid + '/' + date); saveLog(a); }
         setState('Foto bewaard. Tik erop om hem in Foto’s te bewaren.');
-        if (curPid === pid && curDate === date) renderPhotos(); renderHistory();
+        if (curPid === pid && curDate === date) renderPhotos();
       })
       .catch(function () { setState('De foto kon niet worden verwerkt of bewaard.'); });
   };
@@ -727,40 +731,142 @@
       .then(function () { btn.disabled = false; });
   };
 
-  /* projectkeuze vullen uit de gedeelde lijst; geeft het aantal projecten. De huidige keuze blijft staan als het project er nog is. */
-  function fillProjects() {
-    var list = projects(), sel = $('proj'), keep = sel.value;
-    sel.textContent = '';
-    list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
-      var o = document.createElement('option'); o.value = p.id; o.textContent = plabel(p); sel.appendChild(o);
+  /* ---------- lagen: projecten, dagen van een project, één dag ----------
+     Elke laag heeft een eigen adres, zodat de terugknop en de terugbeweging van de iPhone één laag omhoog gaan:
+       #/                     overzicht van de projecten
+       #/p/<project>          de dagen van dit project
+       #/p/<project>/<datum>  één dag
+     #gp=<project> (vanuit Projecten) opent de dagen van dat project. */
+  var view = 0;
+  function projectById(id) { return projects().filter(function (p) { return p.id === id; })[0]; }
+  function show(v) {
+    view = v;
+    ['v1', 'v2', 'v3'].forEach(function (id) { $(id).hidden = id !== 'v' + v; });
+    $('dayBar').hidden = v !== 3; document.body.classList.toggle('inday', v === 3);
+  }
+  function setTitle(t) { var h = document.querySelector('.brand h1'); if (h) h.textContent = t; document.title = t === 'Logboek' ? 'Logboek' : t + ' · Logboek'; }
+  function go(hash) { location.hash = hash; }
+  function replaceTo(hash) { location.replace(location.pathname + location.search + hash); }
+  function isoAdd(iso, n) { var p = iso.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2] + n, 12); return iso.length === 10 && !isNaN(d) ? todayIsoOf(d) : iso; }
+  function todayIsoOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function dayRows(pid) { return loadLog().filter(function (e) { return e.projectId === pid; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }); }
+
+  /* laag 1: de projecten */
+  function showProjects() {
+    curPid = ''; curDate = ''; show(1); setTitle('Logboek');
+    var list = projects(), today = todayIso(), f = $('psearch').value.trim().toLowerCase();
+    var info = {};
+    list.forEach(function (p) { var rows = dayRows(p.id); info[p.id] = { n: rows.length, last: rows[0] ? rows[0].date : '' }; });
+    list.sort(function (a, b) { return (info[b.id].last || '').localeCompare(info[a.id].last || '') || (b.modified || 0) - (a.modified || 0); });
+    $('psearch').hidden = list.length < 7;
+    var box = $('plist'); box.textContent = '';
+    list.filter(function (p) { return !f || plabel(p).toLowerCase().indexOf(f) !== -1; }).forEach(function (p) {
+      var i = info[p.id], sub = !i.n ? 'nog geen dagen' : (i.last === today ? 'vandaag ingevuld' : 'laatste dag: ' + dayLabel(i.last)) + ' · ' + i.n + (i.n === 1 ? ' dag' : ' dagen');
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'day'; b.dataset.pid = p.id;
+      var t = document.createElement('span'); t.className = 'txt';
+      var x = document.createElement('b'); x.textContent = plabel(p); t.appendChild(x);
+      var sm = document.createElement('small'); sm.textContent = sub; t.appendChild(sm);
+      b.appendChild(t); box.appendChild(b);
     });
-    if (keep && list.some(function (p) { return p.id === keep; })) sel.value = keep;
-    $('noProj').hidden = list.length > 0; $('main').hidden = list.length === 0;
-    return list;
   }
+  $('psearch').addEventListener('input', showProjects);
+  $('plist').onclick = function (e) { var b = e.target.closest('.day'); if (b) go('#/p/' + encodeURIComponent(b.dataset.pid)); };
+  $('newToday').onclick = function () {
+    var list = projects();
+    if (list.length === 1) { go('#/p/' + encodeURIComponent(list[0].id) + '/' + todayIso()); return; }
+    var box = $('nlist'); box.textContent = '';
+    list.sort(function (a, b) { return (b.modified || 0) - (a.modified || 0); }).forEach(function (p) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'day'; b.dataset.pid = p.id;
+      var t = document.createElement('span'); t.className = 'txt'; var x = document.createElement('b'); x.textContent = plabel(p); t.appendChild(x); b.appendChild(t); box.appendChild(b);
+    });
+    if ($('ndlg').showModal) $('ndlg').showModal(); else $('ndlg').setAttribute('open', '');
+  };
+  function closeNew() { if ($('ndlg').close) $('ndlg').close(); else $('ndlg').removeAttribute('open'); }
+  $('nclose').onclick = closeNew;
+  $('nlist').onclick = function (e) { var b = e.target.closest('.day'); if (!b) return; closeNew(); go('#/p/' + encodeURIComponent(b.dataset.pid) + '/' + todayIso()); };
 
-  /* start: kies het project uit #gp=<id> (vanuit Projecten), anders het laatst gebruikte project in het logboek */
-  var m = /^#gp=(.+)$/.exec(location.hash || ''), want = m ? decodeURIComponent(m[1]) : '';
-  var list = fillProjects();
-  if (list.length) {
-    if (!want) { var last = loadLog().sort(function (a, b) { return b.modified - a.modified; })[0]; want = last ? last.projectId : ''; }
-    if (want && list.some(function (p) { return p.id === want; })) $('proj').value = want;
-    if (m) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* geen history */ } }
-    $('date').value = todayIso();
-    loadDay();
+  /* laag 2: de dagen van een project, met een samenvatting per dag */
+  function summary(e) {
+    var d = fromRecord(e), parts = [];
+    if (d.weather && d.weather.temp !== '' && d.weather.temp !== undefined) parts.push(d.weather.temp + ' °C');
+    var pers = 0; d.crew.forEach(function (c) { pers += +c.count || 0; });
+    if (pers) parts.push(pers + ' pers');
+    var h = 0; d.stagnation.forEach(function (r) { h += +r.hours || 0; });
+    if (h) parts.push(h + ' u stagnatie'); else if (d.stagnation.length) parts.push('stagnatie');
+    if (d.extra.on) parts.push('meerwerk');
+    if (d.safety.incident) parts.push('incident');
+    return parts;
   }
+  function showDays(pid) {
+    var p = projectById(pid); if (!p) { replaceTo('#/'); return; }
+    curPid = pid; curDate = ''; show(2); setTitle(plabel(p));
+    var rows = dayRows(pid), today = todayIso();
+    $('todayBtn').textContent = rows.some(function (e) { return e.date === today; }) ? 'Vandaag openen' : 'Vandaag invullen';
+    $('todayBtn').dataset.date = today;
+    var box = $('dlist'); box.textContent = '';
+    rows.forEach(function (e) {
+      var parts = summary(e), d = fromRecord(e);
+      var line = parts.join(' · ') || (d.work || '').split('\n')[0] || d.machines.map(function (m) { return m.item; }).join(', ') || '';
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'day'; b.dataset.date = e.date;
+      var t = document.createElement('span'); t.className = 'txt';
+      var x = document.createElement('b'); x.textContent = dayLabel(e.date); t.appendChild(x);
+      var sm = document.createElement('small'); sm.textContent = line; t.appendChild(sm);
+      b.appendChild(t); box.appendChild(b);
+      dbDo('readonly', function (st) { return st.index('day').count(dayKey(pid, e.date)); }).then(function (n) { if (n) sm.textContent = (sm.textContent ? sm.textContent + ' · ' : '') + n + (n === 1 ? ' foto' : '’s'); }).catch(function () { /* geen foto-opslag */ });
+    });
+    $('noDays').hidden = rows.length > 0;
+  }
+  $('todayBtn').onclick = function () { go('#/p/' + encodeURIComponent(curPid) + '/' + this.dataset.date); };
+  $('dlist').onclick = function (e) { var b = e.target.closest('.day'); if (b) go('#/p/' + encodeURIComponent(curPid) + '/' + b.dataset.date); };
 
-  /* synchroniseren (als er gekoppeld is): na het ophalen de keuze en de open dag verversen, behalve als je net iets typt */
+  /* laag 3: één dag */
+  function showDay(pid, date) {
+    var p = projectById(pid); if (!p) { replaceTo('#/'); return; }
+    show(3); setTitle(dayLabel(date));
+    $('dayProj').textContent = plabel(p);
+    $('nextDay').disabled = date >= todayIso();
+    $('delDay').dataset.armed = ''; $('delDay').textContent = 'Dag verwijderen';
+    loadDay(pid, date);
+    window.scrollTo(0, 0);
+  }
+  $('prevDay').onclick = function () { replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, -1)); };
+  $('nextDay').onclick = function () { if (curDate < todayIso()) replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, 1)); };
+  $('saveBack').onclick = function () { var pid = curPid; saveNow(); go('#/p/' + encodeURIComponent(pid)); };
+  $('delDay').onclick = function () {
+    var btn = this;
+    if (btn.dataset.armed !== '1') { btn.dataset.armed = '1'; btn.textContent = 'Zeker weten? De foto’s van deze dag gaan ook weg.'; return; }
+    var pid = curPid, date = curDate;
+    clearTimeout(timer); timer = null; curPid = ''; curDate = '';   /* niets meer bewaren van deze dag */
+    var a = loadLog(), e = find(a, pid, date);
+    if (e) { saveLog(a.filter(function (x) { return x !== e; })); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
+    photosOfDay(pid, date).then(function (list) { return Promise.all(list.map(function (p) { return dbDo('readwrite', function (st) { return st.delete(p.id); }); })); })
+      .catch(function () { /* geen foto-opslag */ })
+      .then(function () { replaceTo('#/p/' + encodeURIComponent(pid)); });
+  };
+
+  /* de router */
+  function route() {
+    if (view === 3) saveNow();   /* bewaar de dag die we verlaten; curPid en curDate zijn nog van die dag */
+    var h = location.hash || '', g = /^#gp=(.+)$/.exec(h);
+    if (g) { replaceTo('#/p/' + g[1]); return; }
+    var list = projects();
+    $('noProj').hidden = list.length > 0;
+    if (!list.length) { ['v1', 'v2', 'v3'].forEach(function (id) { $(id).hidden = true; }); $('dayBar').hidden = true; document.body.classList.remove('inday'); view = 0; setTitle('Logboek'); return; }
+    var m = /^#\/p\/([^/]+)(?:\/(\d{4}-\d{2}-\d{2}))?$/.exec(h);
+    if (!m) { showProjects(); return; }
+    var pid = decodeURIComponent(m[1]);
+    if (m[2]) showDay(pid, m[2]); else showDays(pid);
+  }
+  window.addEventListener('hashchange', route);
+  route();
+
+  /* synchroniseren (als er gekoppeld is): na het ophalen de huidige laag verversen, behalve als je net iets typt */
   if (window.GwwData) {
     GwwData.onChange(function () {
       if (timer) return;
-      var had = !!curPid, l = fillProjects();
-      if (!l.length) return;
-      if (!$('date').value) $('date').value = todayIso();
-      if (!had && !$('proj').value) $('proj').selectedIndex = 0;
-      loadDay();
+      if (view === 3) { var s0 = curPid, d0 = curDate; if (s0 && d0) loadDay(s0, d0); } else route();
     });
-    if (window.GhSync) GhSync.onStatus(function (s) { $('syncmsg').textContent = s.state === 'ok' ? 'Gesynchroniseerd (foto\u2019s blijven op dit toestel).' : s.state === 'fout' ? 'Synchroniseren mislukt: ' + s.msg : ''; });
+    if (window.GhSync) GhSync.onStatus(function (s) { $('syncmsg').textContent = s.state === 'ok' ? 'Gesynchroniseerd (foto’s blijven op dit toestel).' : s.state === 'fout' ? 'Synchroniseren mislukt: ' + s.msg : ''; });
     GwwData.run();
   }
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
