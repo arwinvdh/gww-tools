@@ -2,6 +2,12 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.15.0] - 2026-11-23
+
+- Weekrapport als PDF vanuit de dagen van een project: kies een week (maandag t/m zondag), met een weekoverzicht (weer, personen, stagnatie en foto's per dag), totalen van personeel en materieel per partner (manuren en uren), stagnatie per oorzaak, leveringen, meerwerk en veiligheid, en daarna per dag de werkzaamheden en overig. Foto's meenemen is een keuze bij het maken (standaard uit; ze worden verkleind).
+- Dag- en weekrapport delen nu dezelfde opbouw.
+- Opmaak: onder een foto in het rapport staat nu witruimte voor de volgende kop.
+
 ## [1.14.0] - 2026-11-23
 
 - Logboek in drie lagen met eigen adressen: overzicht van projecten, de dagen van een project (met een samenvatting per dag: temperatuur, personen, stagnatie, meerwerk, incident en foto's) en één dag. Elke laag heeft een terugknop; de dag heeft een vaste balk met Opslaan en terug en Dagrapport PDF, vorige en volgende dag, en Dag verwijderen (met bevestiging).
