@@ -7,7 +7,7 @@ Twee kleine webtools voor dagelijks gebruik op de telefoon en de computer. Ze dr
 | **Locatie delen** | https://arwinvdh.github.io/gww-tools/ | Maakt van een Maps-link, coördinaten of adres een WhatsApp-bericht en een afbeelding met luchtfoto, projectgegevens en contactblok. |
 | **Route knijperwagen** | https://arwinvdh.github.io/gww-tools/route.html | Stelt een route met stops (laden, lossen, ophalen) samen en maakt er een kant-en-klaar WhatsApp-bericht van. |
 | **GWW Tools** (startpagina) | https://arwinvdh.github.io/gww-tools/start.html | Tegels naar alle tools, recente projecten en routes onder hun tool (alleen lezen; een tik laadt het item direct in de tool) en onder een uitklapper het koppelen. Zet deze pagina op je beginscherm als je één app wilt waarmee je de rest opent. |
-| **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project en uitvoerder, telefoon en notitie; neemt de projecten uit Locatie delen over. Vanuit een project open je Locatie delen of Route met dat project ingevuld (`#gp=<id>`). |
+| **Projecten** | https://arwinvdh.github.io/gww-tools/projecten.html | Gedeelde projectlijst met een vast id per project en uitvoerder, telefoon en notitie; neemt de projecten uit Locatie delen over. Een project heeft een vaste locatie (huidige locatie, adres zoeken of uit Locatie delen). Vanuit een project open je Locatie delen (op de projectlocatie), Route of Logboek met dat project ingevuld (`#gp=<id>`). |
 | **Logboek** | https://arwinvdh.github.io/gww-tools/logboek.html | In drie lagen: projecten, de dagen van een project en één dag met weer, werkzaamheden, personeel en materieel van partners, stagnatie, leveringen, meerwerk, veiligheid, overig en foto's met stempel. Bewaart vanzelf en maakt het dagrapport en het weekrapport (maandag t/m zondag, met totalen per partner en optioneel foto's) als PDF. |
 | **Visie en fundament** | https://arwinvdh.github.io/gww-tools/visie.html | Werkdocument over het fundament voor het logboek en een eventuele uitrol. |
 
@@ -128,7 +128,7 @@ Dit valt eronder en blijft dus werken zoals het werkt:
   - Locatie delen: `locdelen.draft`, `locdelen.draftT`, `locdelen.projects`, `locdelen.range`, `locdelen.layer`, `locdelen.regio`, `locdelen.link`, `locdelen.opt.labels`, `locdelen.opt.parcel`, `locdelen.opt.mini`, `locdelen.who`, `locdelen.role`, `locdelen.phone`, `locdelen.useWho`, `locdelen.usePhone`, `locdelen.profileT`, `locdelen.lastExport`, `locdelen.tipX`. In de code zijn ook `locdelen.base` en `locdelen.share` benoemd, maar die worden niet gebruikt.
   - Route knijperwagen: `knijperwagen-route-v2`, `knijperwagen-mem-v2`, `knijperwagen-routes-v2`, `knijperwagen-draftT`, `knijperwagen-tipX`, en de oudere `knijperwagen-route-v1` en `knijperwagen-items-v1` (alleen gelezen voor migratie).
   - Startpagina: `start.tipX`.
-  - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
+  - Projecten (sinds 1.6.0): `gww.projects`, een lijst `[{ v, id, nr, name, who, phone, note, lat, lon, addr, created, modified }]` (`who`, `phone` en `note` zijn sinds 1.8.0 optioneel, `lat`, `lon` en `addr` sinds 1.16.0). Wordt gevuld met een kopie van `locdelen.projects`; die laatste wordt er niet door gewijzigd. Locatie delen en Route knijperwagen lezen de lijst alleen om een project te kiezen.
   - Synchronisatie: `gh-sync-config`.
   - Grafstenen (sinds 1.12.0): `gww.tombstones`, `{ documentsleutel: tijdstip }` voor verwijderde projecten en logregels, nodig om verwijderingen te synchroniseren; na 90 dagen opgeruimd.
   - Logboek (sinds 1.9.0): `gww.log`, een lijst `[{ v, id, projectId, date, work, equipment, created, modified }]` plus sinds 1.13.0 optioneel `other`, `crew`, `machines`, `stagnation`, `deliveries`, `extra`, `safety` en `weather`: één regel per project en dag, `projectId` verwijst naar het `id` in `gww.projects`. Wordt sinds 1.12.0 gesynchroniseerd.
@@ -166,7 +166,7 @@ In `tests/` staan automatische controles die de tools in een echte (onzichtbare)
 | GitHub API (alleen als je synchroniseren aanzet) | je gegevens bewaren in je eigen privérepo |
 | OpenStreetMap (tegels en Nominatim) | kaart en adressen buiten Nederland, en als terugval |
 | cdnjs | Leaflet |
-| Open-Meteo | weer rond 12:00 in het logboek (alleen de coördinaten van een foto of van het toestel en de datum gaan mee; zonder bereik vul je het zelf in) |
+| Open-Meteo | weer rond 12:00 in het logboek (alleen de coördinaten van de projectlocatie, anders van een foto of van het toestel, en de datum gaan mee; zonder bereik vul je het zelf in) |
 | jsDelivr | jsPDF (PDF-bibliotheek voor het dagrapport, versie vastgezet) |
 
 Er zijn geen trackers, cookies of accounts. Naam en telefoonnummer van de afzender blijven op het apparaat en komen alleen in het bericht en de afbeelding die je zelf verstuurt. De diensten hierboven ontvangen alleen de coördinaten, zoekopdrachten en tegelverzoeken die nodig zijn voor de kaart.

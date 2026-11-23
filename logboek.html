@@ -430,8 +430,10 @@
     setWeather({ temp: t, desc: d, wind: old.wind, rain: old.rain, src: 'handmatig' });
   }
   $('wxTemp').addEventListener('change', manualWeather); $('wxDesc').addEventListener('change', manualWeather);
-  /* positie voor het weer: de plek van een foto van die dag, anders de positie van het toestel */
+  /* positie voor het weer: de locatie van het project, anders de plek van een foto van die dag, anders de positie van het toestel */
   function weatherPos(pid, date) {
+    var pr = projectById(pid);
+    if (pr && pr.lat != null && pr.lat !== '' && pr.lon != null && pr.lon !== '' && isFinite(+pr.lat) && isFinite(+pr.lon)) return Promise.resolve({ lat: +pr.lat, lon: +pr.lon });
     return photosOfDay(pid, date).then(function (l) { var p = l.filter(function (x) { return x.lat != null; })[0]; return p ? { lat: p.lat, lon: p.lon } : getPos(); }).catch(function () { return getPos(); });
   }
   function fetchWeather() {

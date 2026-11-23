@@ -2,6 +2,12 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.16.0] - 2026-11-23
+
+- Een project heeft nu een vaste locatie (lat, lon en adres, optioneel in `gww.projects`). Instellen in Projecten: huidige locatie, een adres zoeken (PDOK) of overnemen uit Locatie delen; wissen kan. Bij het eerste overnemen uit Locatie delen komt de locatie mee.
+- Het weer in het logboek gebruikt eerst de locatie van het project, daarna de plek van een foto van die dag, daarna de positie van het toestel.
+- Locatie delen opent vanuit een project met de pin op de projectlocatie en het adres ingevuld.
+
 ## [1.15.0] - 2026-11-23
 
 - Weekrapport als PDF vanuit de dagen van een project: kies een week (maandag t/m zondag), met een weekoverzicht (weer, personen, stagnatie en foto's per dag), totalen van personeel en materieel per partner (manuren en uren), stagnatie per oorzaak, leveringen, meerwerk en veiligheid, en daarna per dag de werkzaamheden en overig. Foto's meenemen is een keuze bij het maken (standaard uit; ze worden verkleind).
