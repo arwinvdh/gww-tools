@@ -37,19 +37,62 @@
   .addgrid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .addgrid .wide { grid-column: 1 / -1; }
   .rows { display: grid; }
+  /* regel: naam (tik = bewerken), daarna aantal, uren en verwijderen; past het niet naast de naam, dan samen eronder rechts */
   .rowitem { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem 0.5rem; min-height: 3.25rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
-  .rowitem .t { display: grid; min-width: 0; flex: 1 1 9rem; }
-  /* aantal, uren en verwijderen blijven bij elkaar: past het naast de naam, dan op één regel, anders eronder rechts */
-  .rowitem .ctl { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
-  /* aantal en uren staan als invulveld in de regel zelf: aanpassen na "Zelfde als vorige dag" kost één tik en geen verwijderen en opnieuw invoeren */
-  .pill { flex: none; display: inline-flex; align-items: center; gap: 0.25rem; min-height: 44px; padding: 0 0.6rem; border: 1.5px solid var(--line); border-radius: var(--radius-pill); background: var(--field); color: var(--ink-2); font-size: var(--text-sm); }
+  .rowitem .t { display: grid; min-width: 0; flex: 1 1 9rem; min-height: var(--touch-min); align-content: center; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+  .rowitem .ctl { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0.2rem 0.4rem; margin-left: auto; max-width: 100%; }
+  /* aantal en uren staan als invulveld in de regel zelf. Aantal heeft min en plus; uren hebben een uitklapper met snelkeuzes (geen toetsenbord nodig) */
+  .pill { flex: none; display: inline-flex; align-items: center; min-height: 44px; border: 1.5px solid var(--line); border-radius: var(--radius-pill); background: var(--field); color: var(--ink-2); font-size: var(--text-sm); overflow: hidden; }
   .pill:focus-within { border-color: var(--accent); outline: 2px solid var(--focus); }
-  .pill input { width: 3.1ch; min-width: 2.2rem; border: 0; background: transparent; padding: 0; text-align: right; font: inherit; font-size: var(--text-base); font-weight: 600; color: var(--ink); -moz-appearance: textfield; appearance: textfield; }
+  .pill.plain { padding: 0 0.6rem; gap: 0.25rem; }
+  .pill .stp { flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--accent); font-size: 1.5rem; font-weight: 600; line-height: 1; cursor: pointer; }
+  .pill .stp:active, .pill .uni:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .pill .uni { flex: none; min-width: 44px; height: 44px; padding: 0 0.5rem 0 0.1rem; border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; }
+  .pill .uni::after { content: ""; width: 0.4rem; height: 0.4rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+  .pill input { width: 3.1ch; min-width: 2rem; border: 0; background: transparent; padding: 0; text-align: right; font: inherit; font-size: var(--text-base); font-weight: 600; color: var(--ink); -moz-appearance: textfield; appearance: textfield; }
+  .pill:not(.plain) > input:first-child { margin-left: 0.7rem; }
+  .pill .u { padding: 0 0.15rem 0 0.2rem; }
   .pill input:focus { outline: none; }
   .pill input::-webkit-outer-spin-button, .pill input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .copynote { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  /* eerder gebruikte waarden die nog niet gecontroleerd zijn: gestippelde rand en een tekstlabel (nooit alleen een kleur) */
+  .pill.carried { border-style: dashed; border-color: var(--accent); }
+  .tag, .rowitem .t small.tag { color: var(--accent); font-size: var(--text-label); font-weight: 600; margin-left: 0.4rem; }
+  /* snel toevoegen: bekende regels boven het handmatige formulier */
+  .sugbox { display: grid; gap: 0.35rem; }
+  .sugbox .hint { font-weight: 600; }
+  .chips .sugl { flex-basis: 100%; font-size: var(--text-label); font-weight: 600; color: var(--ink-2); }
+  .chip.more { border-style: solid; color: var(--accent); font-weight: 600; }
+  details.manual > summary { min-height: var(--touch-min); display: flex; align-items: center; color: var(--accent); font-weight: 600; cursor: pointer; list-style: none; }
+  details.manual > summary::-webkit-details-marker { display: none; }
+  details.manual > summary::before { content: "+"; width: 1.25rem; font-size: 1.25rem; line-height: 1; }
+  details.manual[open] > summary::before { content: "\2212"; }
+  details.manual[open] > summary { margin-bottom: 0.35rem; }
+  details.manual.always > summary { display: none; }
+  .manual .box { display: grid; gap: 0.6rem; }
+  /* uren voor meerdere regels tegelijk: uitdrukkelijke actie, geldt niet voor materieel per dag */
+  .grp { display: grid; gap: 0.4rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+  .grp .hint { font-weight: 600; color: var(--ink); }
+  .grp .gr { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+  .grp .gr .inp { width: 5.5rem; min-height: var(--chip-h); padding: 0 0.6rem; }
+  .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .seg { gap: 0.4rem; }
+  .copyrow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .copyrow .copyprev { flex: 1 1 100%; }
+  .olist { display: grid; gap: 0.1rem; max-height: 50vh; overflow: auto; }
+  .olist h3 { margin: 0.5rem 0 0; font-size: var(--text-sm); color: var(--ink-2); }
+  .olist .check { font-weight: 500; }
+  /* melding met ongedaan maken: vast onderaan, boven de actiebalk, zodat je hem ziet waar je ook bent op de dag */
+  .copynote span { min-width: 0; }
+  .copynote .btn { flex: none; }
+  .sec > summary .sum.chk { color: var(--accent); font-weight: 700; }
+  .undobar { position: fixed; z-index: 550; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(var(--nav-h, 0px) + var(--bar-h, 7rem) + 0.5rem); max-width: calc(var(--wrap-max) - 2rem); margin-inline: auto; background: var(--surface); box-shadow: 0 6px 20px rgba(0, 31, 56, 0.25); }
+  .hval { min-width: 4rem; text-align: center; font-size: var(--text-lg); }
+  .hrow .btn { min-width: 3.5rem; font-size: var(--text-xl); line-height: 1; }
+  .hrow { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+  .copynote { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }   /* tekst links, knop rechts op één regel */
+  #edlg .addgrid { margin: 0.25rem 0; }
   .daysum { margin: -0.25rem 0 0.5rem; font-weight: 600; color: var(--ink); }
-  .daysum:empty { display: none; }
+  .daysum:empty::before { content: "\00a0"; }   /* de regel blijft staan: het eerste cijfer verschuift niets meer */
   .state.err { color: var(--warn); font-weight: 600; }
   .day small + small { margin-top: 0.1rem; }
   .wk { display: grid; gap: 0; margin: 0 0 0.5rem; }
@@ -66,8 +109,8 @@
   .daynav { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
   .daynav b { text-align: center; flex: 1; }
   .bar .in { max-width: var(--wrap-max); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
-  .bar .state { grid-column: 1 / -1; margin: 0; }
-  body.inday .wrap { padding-bottom: calc(8.5rem + var(--nav-h, 0px)); }
+  .bar .state, .bar #chkBar { grid-column: 1 / -1; margin: 0; }
+  body.inday .wrap { padding-bottom: calc(var(--bar-h, 7rem) + 1.5rem + var(--nav-h, 0px)); }
   .sub { margin: 0 0 0.5rem; }
   #v1, #v2 { display: grid; gap: 1rem; }
   #v1 .btn.primary, #v2 .btn.primary { width: 100%; }
@@ -113,19 +156,17 @@
     <div class="daynav"><button class="btn sm" id="prevDay" type="button">‹ Vorige dag</button><button class="btn sm" id="nextDay" type="button">Volgende dag ›</button></div>
     <p class="hint sub" id="dayProj"></p>
     <p class="hint daysum" id="daySum" aria-live="polite"></p>
+    <div class="copyrow"><button class="btn copyprev" id="copyPrev" type="button" hidden></button><button class="btn sm" id="pickPrev" type="button" hidden>Kiezen uit eerdere dag…</button></div>
     <div class="card">
-      <div class="field">
-        <label for="wxTemp">Weer rond 12:00</label>
-        <div class="wx">
-          <input class="inp" id="wxTemp" type="number" inputmode="decimal" step="0.1" placeholder="°C" aria-label="Temperatuur in graden Celsius">
-          <select class="inp" id="wxDesc" aria-label="Weertype"><option value="">Weertype</option></select>
-          <p class="hint info" id="wxInfo"></p>
-        </div>
-      </div>
-      <div class="field"><label for="work">Werkzaamheden</label><textarea class="inp" id="work" placeholder="Wat is er vandaag gedaan? Elke regel wordt een opsommingspunt."></textarea><div class="chips" id="workSugg" hidden></div></div>
-      <button class="btn copyprev" id="copyPrev" type="button" hidden></button>
-      <div class="callout copynote" id="copyNote" role="status" hidden><span id="copyNoteTxt"></span><button class="btn sm" id="undoCopy" type="button">Ongedaan maken</button></div>
       <div id="secs"></div>
+      <details class="sec" id="sec-work" open>
+        <summary><span>Werkzaamheden</span><span class="sum" id="sum-work"></span></summary>
+        <div class="secbody">
+          <textarea class="inp" id="work" aria-label="Werkzaamheden" placeholder="Wat is er vandaag gedaan? Elke regel wordt een opsommingspunt."></textarea>
+          <div class="chips" id="workSugg" hidden></div>
+        </div>
+      </details>
+      <div id="secs2"></div>
       <details class="sec" id="sec-extra">
         <summary><span>Meerwerk of afwijking</span><span class="sum" id="sum-extra"></span></summary>
         <div class="secbody">
@@ -150,12 +191,22 @@
         <summary><span>Overig</span><span class="sum" id="sum-other"></span></summary>
         <div class="secbody"><textarea class="inp small" id="other" aria-label="Overig" placeholder="Bezoek, afspraken, bijzonderheden"></textarea></div>
       </details>
-      <details class="sec" id="sec-photos" open>
+      <details class="sec" id="sec-photos">
         <summary><span>Foto's</span><span class="sum" id="sum-photos"></span></summary>
         <div class="secbody">
           <button class="btn" id="shotBtn" type="button">Foto maken</button>
           <input id="shot" type="file" accept="image/*" capture="environment" hidden>
           <div class="thumbs" id="thumbs"></div>
+        </div>
+      </details>
+      <details class="sec" id="sec-weather">
+        <summary><span>Weer rond 12:00</span><span class="sum" id="sum-weather"></span></summary>
+        <div class="secbody">
+          <div class="wx">
+            <input class="inp" id="wxTemp" type="number" inputmode="decimal" step="0.1" placeholder="°C" aria-label="Temperatuur in graden Celsius">
+            <select class="inp" id="wxDesc" aria-label="Weertype"><option value="">Weertype</option></select>
+            <p class="hint info" id="wxInfo"></p>
+          </div>
         </div>
       </details>
     </div>
@@ -164,8 +215,10 @@
   <p class="hint" id="syncmsg"></p>
   <p class="hint"><span id="ver"></span></p>
 </div>
+<div class="callout copynote undobar" id="copyNote" role="status" hidden><span id="copyNoteTxt"></span><button class="btn sm" id="undoCopy" type="button">Ongedaan maken</button></div>
 <div class="bar" id="dayBar" hidden>
   <div class="in">
+    <div class="callout copynote" id="chkBar" role="status" hidden><span id="chkBarTxt"></span><button class="btn sm" id="chkAll" type="button">Alles klopt</button></div>
     <p class="hint state" id="state" role="status"></p>
     <button class="btn primary" id="saveBack" type="button">Opslaan en terug</button>
     <button class="btn" id="report" type="button">Dagrapport PDF</button>
@@ -180,6 +233,28 @@
   <label class="check"><input type="checkbox" id="wphotos"> Foto’s meenemen</label>
   <p class="hint" id="wstate" role="status"></p>
   <div class="dlg-actions"><button class="btn" id="wclose" type="button">Sluiten</button><button class="btn primary" id="wmake" type="button">PDF maken</button></div>
+</dialog>
+<dialog id="hdlg">
+  <h2 id="htitle">Uren</h2>
+  <div class="chips" id="hchips"></div>
+  <div class="hrow"><button class="btn sm" id="hminus" type="button" aria-label="Een half uur minder">−</button><b class="hval" id="hval" aria-live="polite"></b><button class="btn sm" id="hplus" type="button" aria-label="Een half uur meer">+</button></div>
+  <div class="dlg-actions"><button class="btn primary" id="hdone" type="button">Gereed</button></div>
+</dialog>
+<dialog id="edlg">
+  <h2 id="etitle">Regel bewerken</h2>
+  <div class="addgrid" id="egrid"></div>
+  <div class="chips" id="ehrs"></div>
+  <p class="hint err" id="eerr" role="status"></p>
+  <div class="dlg-actions"><button class="btn danger" id="edel" type="button">Verwijderen</button><button class="btn" id="eclose" type="button">Annuleren</button><button class="btn primary" id="esave" type="button">Opslaan</button></div>
+</dialog>
+<dialog id="odlg">
+  <h2>Kiezen uit eerdere dag</h2>
+  <div class="daynav"><button class="btn sm" id="oprev" type="button">‹ Eerdere dag</button><button class="btn sm" id="onext" type="button">Latere dag ›</button></div>
+  <p><b id="otitle"></b></p>
+  <div class="olist" id="olist"></div>
+  <p class="hint" id="onone" hidden>Alles uit deze dag staat er al.</p>
+  <p class="hint">Aantallen en uren komen mee als eerder gebruikte waarden: controleer ze daarna. Wat er al staat blijft ongemoeid. Stagnatie, meerwerk, veiligheid, leveringen en foto’s worden nooit overgenomen.</p>
+  <div class="dlg-actions"><button class="btn" id="oclose" type="button">Annuleren</button><button class="btn primary" id="ook" type="button">Overnemen</button></div>
 </dialog>
 <dialog id="ndlg">
   <h2>Kies een project</h2>
@@ -244,21 +319,21 @@
   function perDay(r) { return r && r.unit === 'd'; }
   function amountText(r) { return r.hours !== '' && r.hours !== undefined && r.hours !== null && r.hours !== 0 ? fmtH(+r.hours) + (perDay(r) ? (+r.hours === 1 ? ' dag' : ' dagen') : ' u') : ''; }
   var SECS = {
-    crew: { title: 'Personeel', open: true, key: function (r) { return ((r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
+    crew: { title: 'Personeel', open: true, amt: ['count', 'hours'], carry: 'Aantal en uren', key: function (r) { return ((r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
       fields: [{ k: 'kind', ph: 'Soort', opts: kindOpts('crew'), wide: true }, { k: 'partner', ph: 'Onderaannemer (bedrijf)', wide: true, mem: 'partner' }, { k: 'count', ph: 'Aantal', num: true }, { k: 'hours', ph: 'Uren', num: true }],
       text: function (r) { return join([r.partner, r.kind ? KINDS.crew[kindOf(r)] : '', r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
       plain: function (r) { return join([r.partner || KINDS.crew[kindOf(r)], r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : '']); },
       parts: function (r) { return [r.partner || KINDS.crew[kindOf(r)], join([r.count ? r.count + ' pers' : '', r.hours ? r.hours + ' u' : ''])]; },
-      nums: [{ k: 'count', u: 'pers', label: 'Aantal personen', step: '1' }, { k: 'hours', u: 'u', label: 'Uren per persoon' }],
+      nums: [{ k: 'count', u: 'pers', label: 'Aantal personen', step: '1', stp: true }, { k: 'hours', u: 'u', label: 'Uren per persoon', sheet: true }],
       sub: function (r) { return r.partner ? KINDS.crew[kindOf(r)] : ''; },
       sum: function (l) { var n = 0; l.forEach(function (r) { n += +r.count || 0; }); var mh = manuren(l); return l.length ? (join([n ? n + ' pers' : '', mh ? fmtH(mh) + ' manuren' : '']) || l.length + '×') : 'geen'; } },
-    machines: { title: 'Materieel', open: true, key: function (r) { return ((r.item || '') + '|' + (r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
+    machines: { title: 'Materieel', open: true, amt: ['hours'], carry: 'Uren of dagen', key: function (r) { return ((r.item || '') + '|' + (r.partner || '') + '|' + kindOf(r)).toLowerCase(); },
       fields: [{ k: 'kind', ph: 'Soort', opts: kindOpts('machines'), wide: true }, { k: 'item', ph: 'Materieel, bijv. Graafmachine 14 ton', req: true, wide: true, mem: 'item' }, { k: 'partner', ph: 'Onderaannemer (bedrijf)', wide: true, mem: 'partner' },
         { k: 'unit', ph: 'Per', opts: [{ v: 'u', l: 'Per uur' }, { v: 'd', l: 'Per dag' }] }, { k: 'hours', ph: 'Uren', num: true }],
       text: function (r) { return join([r.item, r.partner, r.kind ? KINDS.machines[kindOf(r)] : '', amountText(r)]); },
       plain: function (r) { return join([r.item, r.partner || (r.kind && r.kind !== 'eigen' ? KINDS.machines[kindOf(r)] : ''), amountText(r)]); },
       parts: function (r) { return [r.item, join([r.partner, amountText(r)])]; },
-      nums: [{ k: 'hours', u: function (r) { return perDay(r) ? 'dag' : 'u'; }, label: function (r) { return perDay(r) ? 'Dagen' : 'Uren'; } }],
+      nums: [{ k: 'hours', u: function (r) { return perDay(r) ? 'dag' : 'u'; }, label: function (r) { return perDay(r) ? 'Dagen' : 'Uren'; }, sheet: true }],
       sub: function (r) { return join([KINDS.machines[kindOf(r)], r.partner]); },
       sum: function (l) { var h = 0, d = 0; l.forEach(function (r) { if (perDay(r)) d += +r.hours || 0; else h += +r.hours || 0; }); return l.length ? join([l.length + (l.length === 1 ? ' machine' : ' machines'), h ? fmtH(h) + ' u' : '', d ? fmtH(d) + (d === 1 ? ' dag' : ' dagen') : '']) : 'geen'; } },
     stagnation: { title: 'Stagnatie', key: null,
@@ -268,7 +343,7 @@
       nums: [{ k: 'hours', u: 'u', label: 'Uren' }],
       sub: function (r) { return r.note || ''; },
       sum: function (l) { var h = 0; l.forEach(function (r) { h += +r.hours || 0; }); return l.length ? (h ? fmtH(h) + ' u' : l.length + '×') : 'geen'; } },
-    deliveries: { title: 'Leveringen', key: function (r) { return ((r.what || '') + '|' + (r.supplier || '')).toLowerCase(); },
+    deliveries: { title: 'Leveringen', amt: ['qty'], carry: 'Hoeveelheid', key: function (r) { return ((r.what || '') + '|' + (r.supplier || '')).toLowerCase(); },
       fields: [{ k: 'what', ph: 'Wat is geleverd', req: true, wide: true, mem: 'what' }, { k: 'supplier', ph: 'Leverancier', wide: true, mem: 'supplier' }, { k: 'qty', ph: 'Hoeveelheid, bijv. 24 ton', mem: 'qty' }, { k: 'bon', ph: 'Bonnummer' }],
       text: function (r) { return join([r.what, r.supplier, r.qty, r.bon ? 'bon ' + r.bon : '']); },
       parts: function (r) { return [r.what, join([r.supplier, r.qty, r.bon ? 'bon ' + r.bon : ''])]; },
@@ -315,34 +390,39 @@
 
   /* velden vullen vanuit de opgeslagen regel van dit project en deze dag */
   function loadDay(pid, date) {
+    var same = pid === curPid && date === curDate;
     curPid = pid; curDate = date; curPhotoCount = null;
     var e = find(loadLog(), curPid, curDate);
     day = fromRecord(e);
-    setState(e ? savedText(e.modified || e.created || Date.now()) : 'Wordt automatisch bewaard zodra je iets invult.'); hideCopyNote(); pendWarn = false;
-    forceFill = true; renderAll(); forceFill = false; renderPhotos();
+    restoreDraft(same);
+    setState(e ? savedText(e.modified || e.created || Date.now()) : 'Wordt automatisch bewaard zodra je iets invult.'); hideCopyNote();
+    forceFill = true; renderAll(); forceFill = false; renderPhotos(); initView();
     if (!day.weather && curDate <= todayIso() && (curDate === todayIso() || hasContent(day))) fetchWeather();
   }
 
   /* opslaan: een lege dag wordt niet bewaard; het id van een bestaande regel blijft gelijk */
   var timer = null;
+  /* geeft false als bewaren op dit apparaat niet lukt (de melding staat dan in beeld), anders true */
   function saveNow() {
     clearTimeout(timer); timer = null; hideCopyNote();
     var pid = curPid, date = curDate;
-    if (!pid || !date) return;
+    if (!pid || !date) return true;
+    saveDraft();
     var a = loadLog(), e = find(a, pid, date), now = Date.now();
     if (!hasContent(day) && curPhotoCount === 0) {   /* null = nog niet bekend: dan niets verwijderen */
-      if (e) { a = a.filter(function (x) { return x !== e; }); saveLog(a); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
-      setState('Wordt automatisch bewaard zodra je iets invult.'); return;
+      if (e) { if (!saveLog(a.filter(function (x) { return x !== e; }))) return false; if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }   /* grafsteen pas als het verwijderen is gelukt */
+      setState('Wordt automatisch bewaard zodra je iets invult.'); return true;
     }
-    if (!hasContent(day) && !e) { setState('Wordt automatisch bewaard zodra je iets invult.'); return; }
+    if (!hasContent(day) && !e) { setState('Wordt automatisch bewaard zodra je iets invult.'); return true; }
     /* alleen schrijven bij een echte wijziging: een nieuw tijdstip zonder wijziging zou bij synchroniseren de stand van een ander apparaat overschrijven */
     var next = fields(day);
-    if (e && JSON.stringify(fields(fromRecord(e))) === JSON.stringify(next)) { setState(savedText(e.modified || now)); return; }
+    if (e && JSON.stringify(fields(fromRecord(e))) === JSON.stringify(next)) { setState(savedText(e.modified || now)); return true; }
     if (e) { Object.assign(e, copy(next)); e.modified = now; }
     else a.push(Object.assign({ v: 1, id: newId(), projectId: pid, date: date }, copy(next), { created: now, modified: now }));
     if (window.GwwData) GwwData.revived('log/' + pid + '/' + date);
-    if (saveLog(a)) setState(savedText(now));
+    var saved = saveLog(a); if (saved) setState(savedText(now));
     renderAll();
+    return saved;
   }
   function saveSoon() { hideCopyNote(); setState('Bezig met bewaren…'); clearTimeout(timer); timer = setTimeout(saveNow, 500); }
 
@@ -407,40 +487,72 @@
   }
 
   /* ---------- lijsten (personeel, materieel, stagnatie, leveringen) ---------- */
+  /* Elke lijst heeft hetzelfde patroon: voorstellen (één tik), de regels van vandaag (aantal en uren met min en plus, tik op de naam om te bewerken),
+     uren voor meerdere regels tegelijk, en daaronder het handmatige formulier. Het formulier is ingeklapt zolang er voorstellen zijn.
+     `pfx` kiest het toevoegformulier ('f') of het bewerkvenster ('e'). */
+  function fid(pfx, name, k) { return $(pfx + '-' + name + '-' + k); }
   /* het formulier past zich aan de soort aan: eigen personeel heeft geen bedrijf nodig, eigen materieel geen verhuurder; per dag of per uur bij materieel */
-  function paintForm(name) {
-    var kind = $('f-' + name + '-kind') ? $('f-' + name + '-kind').value : '', p = $('f-' + name + '-partner'), ph;
+  function paintForm(name, pfx) {
+    pfx = pfx || 'f';
+    SECS[name].fields.forEach(function (fl) { if (fl.select || fl.opts) syncSeg(fid(pfx, name, fl.k)); });
+    var kd = fid(pfx, name, 'kind'), kind = kd ? kd.value : '', p = fid(pfx, name, 'partner'), ph;
     if (name === 'crew') { ph = kind === 'eigen' ? 'Ploeg of afdeling (optioneel)' : kind === 'inhuur' ? 'Uitzendbureau of bedrijf' : 'Onderaannemer (bedrijf)'; p.placeholder = ph; p.setAttribute('aria-label', ph); }
     if (name === 'machines') {
       ph = kind === 'inhuur' ? 'Verhuurder (bedrijf)' : 'Onderaannemer (bedrijf)'; p.placeholder = ph; p.setAttribute('aria-label', ph);
       if (kind === 'eigen' && !p.hidden) p.value = ''; p.hidden = kind === 'eigen';
-      var h = $('f-machines-hours'), u = $('f-machines-unit').value; h.placeholder = u === 'd' ? 'Dagen' : 'Uren'; h.setAttribute('aria-label', h.placeholder);
+      var h = fid(pfx, 'machines', 'hours'), u = fid(pfx, 'machines', 'unit').value; h.placeholder = u === 'd' ? 'Dagen' : 'Uren'; h.setAttribute('aria-label', h.placeholder);
     }
   }
+  /* een keuze uit weinig opties (soort, per uur of dag, oorzaak) is een rij knoppen: één tik, geen keuzelijst. De <select> blijft de bron van de waarde (verborgen), zodat alles eromheen hetzelfde werkt. */
+  function syncSeg(sel) { if (sel && sel._seg) Array.prototype.forEach.call(sel._seg.children, function (b) { b.setAttribute('aria-pressed', b.dataset.v === sel.value ? 'true' : 'false'); }); }
+  function segFor(sel) {
+    var row = document.createElement('div'); row.className = 'chips seg wide'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+    Array.prototype.forEach.call(sel.options, function (o) { if (o.value) row.appendChild(chip('', o.textContent, { 'data-v': o.value })); });
+    row.addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; sel.value = b.dataset.v; syncSeg(sel); sel.dispatchEvent(new Event('change', { bubbles: true })); });
+    sel.classList.add('sr'); sel.setAttribute('aria-hidden', 'true'); sel.tabIndex = -1; sel._seg = row;   /* de knoppen zijn de bediening; de verborgen lijst hoort niet dubbel in de tabvolgorde of bij een schermlezer */
+    sel._seg = row; sel.parentNode.insertBefore(row, sel.nextSibling); syncSeg(sel);
+  }
+  function makeField(name, f, pfx, grid) {
+    var el;
+    if (f.select || f.opts) {
+      el = document.createElement('select');
+      (f.opts || f.select.map(function (o) { return { v: o, l: o }; })).forEach(function (o) { var op = document.createElement('option'); op.value = o.v; op.textContent = o.l; el.appendChild(op); });
+    } else {
+      el = document.createElement('input'); el.autocomplete = 'off'; el.placeholder = f.ph; if (f.num) { el.type = 'number'; el.inputMode = 'decimal'; el.step = '0.5'; el.min = '0'; }
+      if (f.mem) { el.setAttribute('list', 'dl-' + name + '-' + f.k); if (grid) { var dl = document.createElement('datalist'); dl.id = 'dl-' + name + '-' + f.k; grid.appendChild(dl); } }
+    }
+    el.className = 'inp' + (f.wide ? ' wide' : ''); el.id = pfx + '-' + name + '-' + f.k; el.setAttribute('aria-label', f.ph);
+    if (f.select || f.opts) el._wantSeg = true;
+    return el;
+  }
+  function stepBtn(sym, label, i, k, d, step) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'stp'; b.textContent = sym;
+    b.dataset.i = i; b.dataset.k = k; b.dataset.d = d; b.dataset.step = step; b.setAttribute('aria-label', label); return b;
+  }
+  var secPref = {};   /* open of dicht zoals de gebruiker het zelf koos, alleen zolang de pagina open is: renderAll opent of sluit nooit iets */
+  function setOpen(d, v) { if (d.open === v) return; d._auto = v; d.open = v; }
+  function attachToggle(d) { d.addEventListener('toggle', function () { if (d._auto === d.open) { d._auto = undefined; return; } d._auto = undefined; secPref[d.id] = d.open; }); }
   function buildSections() {
-    var host = $('secs');
+    var hosts = { crew: $('secs'), machines: $('secs'), stagnation: $('secs2'), deliveries: $('secs2') };
     LISTS.forEach(function (name) {
       var s = SECS[name], d = document.createElement('details'); d.className = 'sec'; d.id = 'sec-' + name; if (s.open) d.open = true;
       d.innerHTML = '<summary><span>' + s.title + '</span><span class="sum" id="sum-' + name + '"></span></summary>' +
-        '<div class="secbody"><div class="rows" id="list-' + name + '"></div><div class="addgrid" id="grid-' + name + '"></div>' +
+        '<div class="secbody">' +
+        '<div class="sugbox" id="sugbox-' + name + '" hidden><p class="hint" id="sugt-' + name + '"></p><div class="chips" id="sug-' + name + '"></div></div>' +
+        '<div class="rows" id="list-' + name + '"></div>' +
+        (s.amt && name !== 'deliveries' ? '<div class="grp" id="grp-' + name + '" hidden><p class="hint" id="grpt-' + name + '"></p><div class="gr" id="grph-' + name + '"></div>' +
+          '<div class="gr"><input class="inp" id="grpi-' + name + '" type="number" inputmode="decimal" step="0.5" min="0" placeholder="Uren" aria-label="Uren voor alle regels"><button class="btn sm" type="button" id="grpb-' + name + '">Zet alle</button></div></div>' : '') +
+        '<details class="manual' + (s.key ? '' : ' always') + '" id="manual-' + name + '"><summary>Handmatig toevoegen</summary><div class="box"><div class="addgrid" id="grid-' + name + '"></div>' +
         '<p class="callout warn" id="pend-' + name + '" role="status" hidden></p>' +
-        '<button class="btn" type="button" id="add-' + name + '">Toevoegen</button><div class="chips" id="sug-' + name + '"></div></div>';
-      host.appendChild(d);
+        '<button class="btn" type="button" id="add-' + name + '">Toevoegen</button></div></details></div>';
+      hosts[name].appendChild(d);
       var grid = d.querySelector('#grid-' + name);
       s.fields.forEach(function (f) {
-        var el;
-        if (f.select || f.opts) {
-          el = document.createElement('select');
-          (f.opts || f.select.map(function (o) { return { v: o, l: o }; })).forEach(function (o) { var op = document.createElement('option'); op.value = o.v; op.textContent = o.l; el.appendChild(op); });
-        } else {
-          el = document.createElement('input'); el.autocomplete = 'off'; el.placeholder = f.ph; if (f.num) { el.type = 'number'; el.inputMode = 'decimal'; el.step = '0.5'; el.min = '0'; }
-          if (f.mem) { el.setAttribute('list', 'dl-' + name + '-' + f.k); var dl = document.createElement('datalist'); dl.id = 'dl-' + name + '-' + f.k; grid.appendChild(dl); }
-        }
-        el.className = 'inp' + (f.wide ? ' wide' : ''); el.id = 'f-' + name + '-' + f.k; el.setAttribute('aria-label', f.ph);
-        el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('add-' + name).click(); } });
-        el.addEventListener('input', function () { pendWarn = false; updatePending(); });
-        el.addEventListener('change', function () { pendWarn = false; updatePending(); });
-        grid.appendChild(el);
+        var el = makeField(name, f, 'f', grid);
+        el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); addRow(name, true); } });
+        var typed = function () { restored[name] = false; updatePending(); draftSoon(); };
+        el.addEventListener('input', typed); el.addEventListener('change', typed);
+        grid.appendChild(el); if (el._wantSeg) segFor(el);
       });
       /* standaard de soort die je het laatst gebruikte; een bekende naam zet zelf de soort (en bij materieel de eenheid en het bedrijf) goed */
       var kd = $('f-' + name + '-kind'); if (kd) { kd.value = (mem.meta.last && mem.meta.last[name] && KINDS[name][mem.meta.last[name]]) ? mem.meta.last[name] : 'eigen'; kd.addEventListener('change', function () { paintForm(name); }); }
@@ -453,94 +565,315 @@
         updatePending();
       });
       paintForm(name);
-      $('add-' + name).onclick = function () { addRow(name); };
+      /* typte je in het formulier, dan blijft het toetsenbord staan en ga je na Toevoegen door in het eerste veld; tikte je er zonder te typen, dan verandert er geen focus */
+      var typing = false, ab = $('add-' + name);
+      ab.addEventListener('pointerdown', function (e) { typing = !!(grid.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)); if (typing) e.preventDefault(); });
+      ab.addEventListener('mousedown', function (e) { if (grid.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) e.preventDefault(); });
+      ab.onclick = function (e) { var by = typing || e.detail === 0 && grid.contains(document.activeElement); typing = false; addRow(name, by); };
       $('list-' + name).addEventListener('input', function (ev) {
         var t = ev.target; if (!t.dataset || !t.dataset.rowInput) return;
         var row = day[name][+t.dataset.i]; if (!row) return;
-        row[t.dataset.k] = numVal(t.value); saveSoon(); renderSums();
+        row[t.dataset.k] = numVal(t.value); unflag(name, row); saveSoon(); renderSums(); paintChk(name);
       });
       $('list-' + name).onclick = function (ev) {
-        var b = ev.target.closest('.del'); if (!b) return;
-        day[name].splice(+b.dataset.i, 1); renderAll(); saveNow();
+        var b = ev.target.closest('.del'); if (b) { removeRow(name, +b.dataset.i); return; }
+        var st = ev.target.closest('.stp'); if (st) { stepRow(name, +st.dataset.i, st.dataset.k, +st.dataset.d * +st.dataset.step); return; }
+        var un = ev.target.closest('.uni'); if (un) { openHours(name, +un.dataset.i); return; }
+        var t = ev.target.closest('.t'); if (t) openEdit(name, +t.dataset.i);
       };
       $('sug-' + name).onclick = function (ev) {
         var b = ev.target.closest('.chip'); if (!b) return;
-        day[name].push(copy(JSON.parse(b.dataset.row))); renderAll(); saveNow();
+        if (b.dataset.more) { more[name] = b.dataset.more === '1'; renderSugg(name); return; }
+        var row = copy(JSON.parse(b.dataset.row)); if (name === 'deliveries') delete row.bon;   /* een bonnummer hoort bij één levering: nooit overnemen */
+        day[name].push(row); setCarried(name, row); learnRow(name, row); renderAll(); saveNow();
       };
+      if (s.amt && name !== 'deliveries') {
+        $('grph-' + name).onclick = function (ev) { var b = ev.target.closest('.chip'); if (b) setAllHours(name, +b.dataset.h); };
+        $('grpb-' + name).onclick = function () { var v = numVal($('grpi-' + name).value); if (v === '' || v <= 0) { $('grpi-' + name).focus(); return; } setAllHours(name, v); $('grpi-' + name).value = ''; };
+      }
     });
+    Array.prototype.forEach.call(document.querySelectorAll('details.sec, details.manual'), attachToggle);
   }
   function numVal(v) { v = String(v || '').replace(',', '.').trim(); return v === '' || isNaN(+v) ? '' : +v; }
-  function addRow(name) {
-    var s = SECS[name], row = {}, missing = '';
-    s.fields.forEach(function (f) { var el = $('f-' + name + '-' + f.k); row[f.k] = f.num ? numVal(el.value) : String(el.value || '').replace(/\s+/g, ' ').trim(); });
-    if (name === 'crew') { if (row.kind === 'eigen') { if (row.count === '' && row.hours === '' && !row.partner) missing = 'count'; } else if (!row.partner) missing = 'partner'; }
-    else s.fields.forEach(function (f) { if (f.req && row[f.k] === '' && !missing) missing = f.k; });
-    if (missing) { $('f-' + name + '-' + missing).focus(); return; }
+  function readRow(name, pfx) {
+    var row = {};
+    SECS[name].fields.forEach(function (f) { var el = fid(pfx, name, f.k); row[f.k] = f.num ? numVal(el.value) : String(el.value || '').replace(/\s+/g, ' ').trim(); });
     if (name === 'machines') { if (row.unit !== 'd') delete row.unit; if (row.kind === 'eigen') row.partner = ''; }
+    return row;
+  }
+  /* het eerste veld dat nog ontbreekt, of '' als de regel compleet genoeg is */
+  function missingField(name, row) {
+    var missing = '';
+    if (name === 'crew') { if (row.kind === 'eigen') { if (row.count === '' && row.hours === '' && !row.partner) missing = 'count'; } else if (!row.partner) missing = 'partner'; }
+    else SECS[name].fields.forEach(function (f) { if (f.req && row[f.k] === '' && !missing) missing = f.k; });
+    return missing;
+  }
+  function addRow(name, byKey) {
+    var s = SECS[name], row = readRow(name, 'f'), missing = missingField(name, row);
+    if (missing) { var mf = $('f-' + name + '-' + missing); (mf._seg && mf._seg.firstChild || mf).focus(); return; }
     day[name].push(row); learnRow(name, row);
     s.fields.forEach(function (f) { if (!f.select && !f.opts) $('f-' + name + '-' + f.k).value = ''; });
-    paintForm(name);
-    renderAll(); saveNow(); var first = $('f-' + name + '-' + (name === 'crew' || name === 'machines' ? (name === 'crew' ? 'partner' : 'item') : s.fields[0].k)); if (first && !first.hidden) first.focus();
+    restored[name] = false; paintForm(name);
+    renderAll(); saveNow();
+    /* alleen na Enter weer naar het eerste veld: wie op Toevoegen tikte, krijgt niet ongevraagd het toetsenbord terug */
+    if (byKey) { var first = $('f-' + name + '-' + (name === 'crew' ? 'partner' : name === 'machines' ? 'item' : s.fields[0].k)); if (first && !first.hidden) first.focus(); }
   }
-  /* voorstellen uit eerdere dagen: de meest gebruikte regels, met de laatst gebruikte aantallen en uren */
-  function suggestions(name) {
-    var s = SECS[name]; if (!s.key) return [];
-    var cnt = {}, tpl = {}, a = loadLog().slice().sort(function (x, y) { return (x.modified || 0) - (y.modified || 0); });
-    a.forEach(function (e) {
-      var rows = fromRecord(e)[name];
-      rows.forEach(function (r) { var k = s.key(r); if (!k) return; cnt[k] = (cnt[k] || 0) + 1; tpl[k] = r; });
+
+  /* ---------- voorstellen uit eerdere dagen ----------
+     Volgorde: 1. recent op dit project (de laatste RECENT_DAYS dagen met zo'n regel), 2. vaak op dit project, 3. recent en vaak op andere projecten.
+     Een regel komt één keer voor (dezelfde sleutel als bij het overnemen). Aantallen en uren zijn die van de laatste keer: ze worden als "eerder gebruikt"
+     getoond en moeten gecontroleerd worden. De dag zelf telt niet mee, en stagnatie wordt nooit voorgesteld. */
+  var RECENT_DAYS = 3, SUG_SHOW = 5, SUG_MAX = 12, more = {}, workMore = false;
+  function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+  /* items(d) geeft per dag { k: sleutel, v: waarde }; recs staat op datum oplopend, dus de laatste waarde is de nieuwste */
+  function rankItems(recs, items) {
+    var pdates = [], st = {};
+    recs.forEach(function (x) { if (x.e.projectId === curPid && items(x.d).length && pdates.indexOf(x.e.date) === -1) pdates.push(x.e.date); });
+    var recent = pdates.slice(-RECENT_DAYS);
+    recs.forEach(function (x) {
+      var mine = x.e.projectId === curPid;
+      items(x.d).forEach(function (it, ix) {
+        var t = st[it.k] || (st[it.k] = { k: it.k, pn: 0, plast: '', on: 0, olast: '', pv: null, ov: null, rec: false, ord: ix });
+        t.ord = ix;   /* volgorde in de nieuwste dag: bij gelijke stand houdt de lijst de volgorde van de gebruiker */
+        if (mine) { t.pn++; t.plast = x.e.date; t.pv = it.v; if (recent.indexOf(x.e.date) > -1) t.rec = true; } else { t.on++; t.olast = x.e.date; t.ov = it.v; }
+      });
     });
-    var present = day[name].map(s.key);
-    return Object.keys(cnt).filter(function (k) { return present.indexOf(k) === -1; })
-      .sort(function (x, y) { return cnt[y] - cnt[x] || x.localeCompare(y); }).slice(0, 6).map(function (k) { return tpl[k]; });
+    var all = Object.keys(st).map(function (k) { return st[k]; });
+    var rec = all.filter(function (t) { return t.rec; }).sort(function (a, b) { return cmp(b.plast, a.plast) || b.pn - a.pn || a.ord - b.ord || cmp(a.k, b.k); });
+    var freq = all.filter(function (t) { return t.pn && !t.rec; }).sort(function (a, b) { return b.pn - a.pn || cmp(b.plast, a.plast) || a.ord - b.ord || cmp(a.k, b.k); });
+    var oth = all.filter(function (t) { return !t.pn; }).sort(function (a, b) { return b.on - a.on || cmp(b.olast, a.olast) || a.ord - b.ord || cmp(a.k, b.k); });
+    return { project: rec.concat(freq).map(function (t) { return t.pv; }), other: oth.map(function (t) { return t.ov; }) };
+  }
+  /* veelgebruikte uren (of dagen, bij materieel per dag) uit eerdere invoer: eerst wat op dit project vaak voorkomt, daarna overal */
+  function rankHours(recs, name, days) {
+    var c = {};
+    recs.forEach(function (x) {
+      var mine = x.e.projectId === curPid;
+      x.d[name].forEach(function (r) { var h = +r.hours; if (!(h > 0) || perDay(r) !== !!days) return; var t = c[h] || (c[h] = { h: h, w: 0 }); t.w += mine ? 1000 : 1; });
+    });
+    return Object.keys(c).map(function (k) { return c[k]; }).sort(function (a, b) { return b.w - a.w || a.h - b.h; }).slice(0, 4).map(function (t) { return t.h; });
+  }
+  function emptyHist() { var e = function () { return { project: [], other: [] }; }; return { crew: e(), machines: e(), deliveries: e(), work: e(), hours: { crew: [], machines: [] }, days: { crew: [], machines: [] } }; }
+  var hist = emptyHist();
+  function buildHist() {
+    var recs = loadLog().filter(function (e) { return !(e.projectId === curPid && e.date === curDate); })   /* de dag zelf telt niet mee; dezelfde datum bij een ander project wel */
+     
+      .sort(function (x, y) { return cmp(x.date, y.date) || (x.modified || 0) - (y.modified || 0); })
+      .map(function (e) { return { e: e, d: fromRecord(e) }; });
+    var h = emptyHist();
+    ['crew', 'machines', 'deliveries'].forEach(function (name) {
+      var s = SECS[name];
+      h[name] = rankItems(recs, function (d) { return d[name].map(function (r) { return { k: s.key(r), v: r }; }).filter(function (it) { return it.k; }); });
+    });
+    h.work = rankItems(recs, function (d) { return workLines(d.work).map(function (l) { return { k: l.toLowerCase(), v: l }; }); });
+    h.hours.crew = rankHours(recs, 'crew'); h.hours.machines = rankHours(recs, 'machines'); h.days.machines = rankHours(recs, 'machines', true);
+    return h;
   }
   function chip(cls, text, attrs) {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'chip ' + cls; b.textContent = text;
     Object.keys(attrs || {}).forEach(function (k) { b.setAttribute(k, attrs[k]); }); return b;
   }
-  /* de regels van een lijst niet opnieuw opbouwen terwijl je in een aantal of uren typt: het veld zou de cursor kwijtraken */
-  function typingIn(box) { var ae = document.activeElement; return !!(ae && ae.dataset && ae.dataset.rowInput && box.contains(ae)); }
-  function renderAll() {
-    LISTS.forEach(function (name) {
-      var s = SECS[name], box = $('list-' + name), sb = $('sug-' + name); sb.textContent = '';
-      if (!typingIn(box)) {
-        box.textContent = '';
-        day[name].forEach(function (r, i) {
-          var row = document.createElement('div'); row.className = 'rowitem';
-          var t = document.createElement('span'); t.className = 't';
-          var b1 = document.createElement('b'); b1.textContent = s.parts(r)[0] || ''; t.appendChild(b1);
-          var sub = s.sub(r); if (sub) { var sm = document.createElement('small'); sm.textContent = sub; t.appendChild(sm); }
-          row.appendChild(t);
-          var ctl = document.createElement('span'); ctl.className = 'ctl'; row.appendChild(ctl);
-          (s.nums || []).forEach(function (n) {
-            var w = document.createElement('label'), inp = document.createElement('input'), u = document.createElement('span');
-            w.className = 'pill'; inp.type = 'number'; inp.inputMode = 'decimal'; inp.step = n.step || '0.5'; inp.min = '0';
-            inp.value = r[n.k] === undefined || r[n.k] === null ? '' : r[n.k];
-            inp.dataset.rowInput = '1'; inp.dataset.i = i; inp.dataset.k = n.k; inp.setAttribute('aria-label', (typeof n.label === 'function' ? n.label(r) : n.label) + ' bij ' + (s.parts(r)[0] || 'deze regel'));
-            u.textContent = typeof n.u === 'function' ? n.u(r) : n.u; w.appendChild(inp); w.appendChild(u); ctl.appendChild(w);
-          });
-          var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.dataset.i = i; del.setAttribute('aria-label', s.text(r) + ' verwijderen');
-          del.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-          ctl.appendChild(del); box.appendChild(row);
-        });
-      }
-      suggestions(name).forEach(function (r) { sb.appendChild(chip('sug', '+ ' + s.text(r), { 'data-row': JSON.stringify(r) })); });
-      var d = $('sec-' + name); if (day[name].length && !d.open) d.open = true;
+  function label(t) { var l = document.createElement('span'); l.className = 'sugl'; l.textContent = t; return l; }
+  function hasAmt(name, r) { var s = SECS[name]; return !!(s.amt && s.amt.some(function (k) { return r[k] !== '' && r[k] !== undefined && r[k] !== null && r[k] !== 0; })); }
+  function renderSugg(name) {
+    var s = SECS[name], sb = $('sug-' + name), box = $('sugbox-' + name), h = hist[name]; sb.textContent = '';
+    if (!s.key || !h) { box.hidden = true; return; }
+    var present = day[name].map(s.key), ok = function (r) { return present.indexOf(s.key(r)) === -1; };
+    /* een bonnummer hoort bij één levering: nooit in een voorstel */
+    var clean = function (r) { if (name !== 'deliveries' || !r.bon) return r; var c = copy(r); delete c.bon; return c; };
+    var all = h.project.filter(ok).map(function (r) { return { r: clean(r), o: false }; }).concat(h.other.filter(ok).map(function (r) { return { r: clean(r), o: true }; }));
+    var lim = more[name] ? SUG_MAX : SUG_SHOW, shown = all.slice(0, lim), prevO = false;
+    shown.forEach(function (x) {
+      if (x.o && !prevO) sb.appendChild(label('Van andere projecten'));
+      prevO = x.o; sb.appendChild(chip('sug', '+ ' + s.text(x.r), { 'data-row': JSON.stringify(x.r) }));
     });
+    if (all.length > SUG_SHOW) sb.appendChild(chip('more', more[name] ? 'Minder' : 'Meer (' + (Math.min(all.length, SUG_MAX) - SUG_SHOW) + ')', { 'data-more': more[name] ? '0' : '1' }));
+    box.hidden = !all.length;
+    $('sugt-' + name).textContent = shown.some(function (x) { return hasAmt(name, x.r); }) && s.carry ? 'Snel toevoegen (' + s.carry.toLowerCase() + ' van de vorige keer)' : 'Snel toevoegen';
+  }
+
+  /* ---------- eerder gebruikte waarden die nog gecontroleerd moeten worden ----------
+     Een voorstel of overname neemt aantal en uren van de vorige keer mee. Die staan zichtbaar als "eerder gebruikt" tot je ze aanpast of op Klopt tikt.
+     De vlag is alleen bij het apparaat (in het concept van deze dag, niet in het logboek) en verandert niets aan wat er in het logboek staat. */
+  var chk = { crew: {}, machines: {}, deliveries: {} };
+  function isCarried(name, r) { var s = SECS[name]; return !!(s.key && chk[name] && chk[name][s.key(r)] && hasAmt(name, r)); }
+  function setCarried(name, r) { if (SECS[name].key && hasAmt(name, r)) chk[name][SECS[name].key(r)] = 1; }
+  function unflag(name, r) { var s = SECS[name]; if (s.key && chk[name]) { delete chk[name][s.key(r)]; draftSoon(); } }
+  function carriedIdx(name) { var o = []; day[name].forEach(function (r, i) { if (isCarried(name, r)) o.push(i); }); return o; }
+  function carriedTotal() { return LISTS.reduce(function (n, name) { return n + (chk[name] ? carriedIdx(name).length : 0); }, 0); }
+  function paintChk(name) {
+    var idx = carriedIdx(name);
+    Array.prototype.forEach.call($('list-' + name).querySelectorAll('.rowitem'), function (el, i) {
+      var on = idx.indexOf(i) > -1; el.classList.toggle('carried', on);
+      Array.prototype.forEach.call(el.querySelectorAll('.pill'), function (p) { p.classList.toggle('carried', on); });
+      var tg = el.querySelector('.tag'); if (tg) tg.hidden = !on;
+    });
+    updatePending();
+  }
+  /* één melding in de vaste balk voor de hele dag, met één knop om alles te bevestigen */
+  function paintChkBar() {
+    var n = carriedTotal(), box = $('chkBar'); box.hidden = !n;
+    if (n) $('chkBarTxt').textContent = (n === 1 ? '1 regel' : n + ' regels') + ' met eerdere waarden: controleren';
+    syncBarH();
+  }
+  $('chkAll').onclick = function () { chk = { crew: {}, machines: {}, deliveries: {} }; LISTS.forEach(paintChk); paintChkBar(); saveDraft(); };
+
+  function snap(name) { return { rows: copy(day[name]), chk: copy(chk[name] || {}) }; }
+  function restoreSnap(name, sn) { day[name] = sn.rows; chk[name] = sn.chk; }
+  /* melding met ongedaan maken: vast onderaan in beeld, ook als je ver naar beneden bent gescrold */
+  var undoFn = null, undoTimer = null;
+  function hideCopyNote() { undoFn = null; clearTimeout(undoTimer); $('copyNote').hidden = true; }
+  function showUndo(text, fn) { undoFn = fn; $('copyNoteTxt').textContent = text; $('copyNote').hidden = false; clearTimeout(undoTimer); undoTimer = setTimeout(hideCopyNote, 15000); }
+  $('undoCopy').onclick = function () { if (!undoFn) return; var f = undoFn; hideCopyNote(); f(); };
+
+  /* verwijderen met ongedaan maken; lukt bewaren niet, dan blijft de regel staan */
+  function removeRow(name, i) {
+    var r = day[name][i]; if (!r) return;
+    var s = SECS[name], sn = snap(name), lbl = s.parts(r)[0] || 'Regel';
+    day[name].splice(i, 1);
+    if (s.key && day[name].map(s.key).indexOf(s.key(r)) === -1) delete chk[name][s.key(r)];
+    renderAll();
+    if (!saveNow()) { restoreSnap(name, sn); renderAll(); setState('Opslaan lukt niet op dit apparaat: de regel is niet verwijderd.', true); return; }
+    showUndo(lbl + ' verwijderd.', function () { restoreSnap(name, sn); renderAll(); saveNow(); });
+  }
+  /* min en plus: stap in het veld zelf, zonder het hele scherm opnieuw op te bouwen en zonder toetsenbord */
+  function stepRow(name, i, k, delta) {
+    var row = day[name][i]; if (!row) return;
+    var cur = numVal(row[k]), v = Math.round(((cur === '' ? 0 : cur) + delta) * 10) / 10;
+    row[k] = v > 0 ? v : ''; unflag(name, row);
+    var inp = $('list-' + name).querySelector('input[data-i="' + i + '"][data-k="' + k + '"]'); if (inp) inp.value = row[k];
+    saveSoon(); renderSums(); paintChk(name);
+  }
+  /* uren voor meerdere regels tegelijk: een uitdrukkelijke keuze van de gebruiker; materieel per dag blijft altijd zoals het was */
+  function groupRows(name) { var o = []; day[name].forEach(function (r, i) { if (name === 'crew' || !perDay(r)) o.push(i); }); return o; }
+  function setAllHours(name, v) {
+    var idx = groupRows(name); if (!idx.length) return;
+    var sn = snap(name), skipped = day[name].length - idx.length;
+    idx.forEach(function (i) { day[name][i].hours = v; unflag(name, day[name][i]); });
+    renderAll();
+    if (!saveNow()) { restoreSnap(name, sn); renderAll(); setState('Opslaan lukt niet op dit apparaat: de uren zijn niet aangepast.', true); return; }
+    showUndo('Uren van ' + idx.length + ' regels gezet op ' + fmtH(v) + ' u.' + (skipped ? ' ' + skipped + (skipped === 1 ? ' regel' : ' regels') + ' per dag niet aangepast.' : ''), function () { restoreSnap(name, sn); renderAll(); saveNow(); });
+  }
+  function renderGroup(name) {
+    var g = $('grp-' + name); if (!g) return;
+    var idx = groupRows(name); g.hidden = idx.length < 2; if (g.hidden) return;
+    $('grpt-' + name).textContent = 'Uren voor alle ' + idx.length + ' regels' + (name === 'machines' ? ' per uur' : '');
+    var box = $('grph-' + name); box.textContent = '';
+    (hist.hours[name] || []).forEach(function (v) { box.appendChild(chip('', fmtH(v) + ' u', { 'data-h': v })); });
+  }
+
+  /* ---------- uren kiezen uit eerdere waarden (twee tikken, geen toetsenbord) ---------- */
+  var hsel = null;
+  function openHours(name, i) {
+    var r = day[name][i]; if (!r) return;
+    var d = perDay(r), list = (d ? hist.days[name] : hist.hours[name]) || [];
+    hsel = { name: name, i: i, v: numVal(r.hours), d: d };
+    $('htitle').textContent = (d ? 'Dagen' : 'Uren') + ' bij ' + (SECS[name].parts(r)[0] || 'deze regel');
+    var box = $('hchips'); box.textContent = '';
+    list.forEach(function (v) { box.appendChild(chip(v === hsel.v ? 'on' : '', fmtH(v) + (d ? (v === 1 ? ' dag' : ' dagen') : ' u'), { 'data-h': v })); });
+    box.hidden = !list.length; paintHval(); openDlg($('hdlg')); $('htitle').setAttribute('tabindex', '-1'); $('htitle').focus();
+  }
+  function paintHval() { $('hval').textContent = hsel && hsel.v !== '' ? fmtH(hsel.v) + (hsel.d ? (hsel.v === 1 ? ' dag' : ' dagen') : ' u') : '–'; }
+  function applyHours(v) {
+    if (!hsel) return; var name = hsel.name, r = day[name][hsel.i]; hsel = null; closeDlg($('hdlg')); if (!r) return;
+    var sn = snap(name); r.hours = v > 0 ? v : ''; unflag(name, r); renderAll();
+    if (!saveNow()) { restoreSnap(name, sn); renderAll(); setState('Opslaan lukt niet op dit apparaat: de uren zijn niet aangepast.', true); }
+  }
+  $('hchips').onclick = function (ev) { var b = ev.target.closest('.chip'); if (b) applyHours(+b.dataset.h); };
+  $('hminus').onclick = function () { if (hsel) { hsel.v = Math.max(0, Math.round(((hsel.v === '' ? 0 : hsel.v) - 0.5) * 10) / 10); paintHval(); } };
+  $('hplus').onclick = function () { if (hsel) { hsel.v = Math.round(((hsel.v === '' ? 0 : hsel.v) + 0.5) * 10) / 10; paintHval(); } };
+  $('hdone').onclick = function () { if (hsel) applyHours(hsel.v === '' ? 0 : hsel.v); };
+  $('hdlg').addEventListener('close', function () { hsel = null; });
+
+  /* ---------- een regel bewerken ---------- */
+  var editing = null;
+  function openDlg(d) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+  function closeDlg(d) { if (d.close) d.close(); else d.removeAttribute('open'); }
+  function paintEditHours() {
+    var box = $('ehrs'); box.textContent = ''; if (!editing) return;
+    var name = editing.name, u = fid('e', name, 'unit');
+    if (!fid('e', name, 'hours') || !hist.hours[name] || (u && u.value === 'd')) return;
+    hist.hours[name].forEach(function (v) { box.appendChild(chip('', fmtH(v) + ' u', { 'data-h': v })); });
+  }
+  function openEdit(name, i) {
+    var r = day[name][i]; if (!r) return; var s = SECS[name];
+    editing = { name: name, i: i }; $('etitle').textContent = s.title + ' bewerken'; $('eerr').textContent = '';
+    var g = $('egrid'); g.textContent = '';
+    s.fields.forEach(function (f) {
+      var el = makeField(name, f, 'e', null);
+      if (f.select || f.opts) el.value = f.k === 'kind' ? kindOf(r) : f.k === 'unit' ? (perDay(r) ? 'd' : 'u') : (r[f.k] || '');
+      else el.value = r[f.k] === undefined || r[f.k] === null ? '' : r[f.k];
+      el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('esave').click(); } });
+      g.appendChild(el); if (el._wantSeg) segFor(el);
+    });
+    var kd = fid('e', name, 'kind'); if (kd) kd.addEventListener('change', function () { paintForm(name, 'e'); });
+    var ud = fid('e', name, 'unit'); if (ud) ud.addEventListener('change', function () { paintForm(name, 'e'); paintEditHours(); });
+    paintForm(name, 'e'); paintEditHours();
+    openDlg($('edlg')); $('etitle').setAttribute('tabindex', '-1'); $('etitle').focus();   /* geen veld met toetsenbord openen: alleen wie typt, krijgt het toetsenbord */
+  }
+  $('ehrs').onclick = function (ev) { var b = ev.target.closest('.chip'); if (b && editing) fid('e', editing.name, 'hours').value = b.dataset.h; };
+  $('eclose').onclick = function () { editing = null; closeDlg($('edlg')); };
+  $('edlg').addEventListener('close', function () { editing = null; });
+  $('esave').onclick = function () {
+    if (!editing) return; var name = editing.name, i = editing.i, old = day[name][i]; if (!old) { closeDlg($('edlg')); return; }
+    var row = readRow(name, 'e'), missing = missingField(name, row);
+    if (missing) { $('eerr').textContent = 'Vul ' + SECS[name].fields.filter(function (f) { return f.k === missing; })[0].ph.toLowerCase() + ' in.'; var ef = fid('e', name, missing); (ef._seg && ef._seg.firstChild || ef).focus(); return; }
+    var nr = Object.assign({}, old, row); if (name === 'machines' && row.unit !== 'd') delete nr.unit;
+    var sn = snap(name); day[name][i] = nr; unflag(name, old); learnRow(name, nr);
+    editing = null; closeDlg($('edlg')); renderAll();
+    if (!saveNow()) { restoreSnap(name, sn); renderAll(); setState('Opslaan lukt niet op dit apparaat: de wijziging is niet bewaard.', true); }
+  };
+  $('edel').onclick = function () { if (!editing) return; var name = editing.name, i = editing.i; editing = null; closeDlg($('edlg')); removeRow(name, i); };
+
+  /* typen verandert het scherm niet onder je vingers: de regels van een lijst worden niet opnieuw opgebouwd terwijl je in een aantal of uren typt */
+  function typingIn(box) { var ae = document.activeElement; return !!(ae && ae.dataset && ae.dataset.rowInput && box.contains(ae)); }
+  function renderRows(name) {
+    var s = SECS[name], box = $('list-' + name); if (typingIn(box)) return;
+    box.textContent = '';
+    day[name].forEach(function (r, i) {
+      var row = document.createElement('div'); row.className = 'rowitem';
+      var name0 = s.parts(r)[0] || '';
+      var t = document.createElement('button'); t.type = 'button'; t.className = 't'; t.dataset.i = i; t.setAttribute('aria-label', (name0 || 'Regel') + ' bewerken');
+      var nl = document.createElement('span'), b1 = document.createElement('b'); b1.textContent = name0; nl.appendChild(b1); t.appendChild(nl);   /* naam en tag op één regel: de tag verandert de hoogte van de regel niet */
+      var sub = s.sub(r); if (sub) { var sm = document.createElement('small'); sm.textContent = sub; t.appendChild(sm); }
+      var tg = document.createElement('small'); tg.className = 'tag'; tg.textContent = 'Eerder gebruikt'; tg.hidden = true; nl.appendChild(tg);
+      row.appendChild(t);
+      var ctl = document.createElement('span'); ctl.className = 'ctl'; row.appendChild(ctl);
+      (s.nums || []).forEach(function (n) {
+        var w = document.createElement('span'), inp = document.createElement('input'), step = n.step || '0.5';
+        var lbl = typeof n.label === 'function' ? n.label(r) : n.label, who = name0 || 'deze regel', ut = typeof n.u === 'function' ? n.u(r) : n.u;
+        w.className = 'pill' + (n.stp || n.sheet ? '' : ' plain'); inp.type = 'number'; inp.inputMode = 'decimal'; inp.step = step; inp.min = '0';
+        inp.value = r[n.k] === undefined || r[n.k] === null ? '' : r[n.k];
+        inp.dataset.rowInput = '1'; inp.dataset.i = i; inp.dataset.k = n.k; inp.setAttribute('aria-label', lbl + ' bij ' + who);
+        if (n.stp) w.appendChild(stepBtn('\u2212', 'Minder ' + lbl.toLowerCase() + ' bij ' + who, i, n.k, -1, step));
+        w.appendChild(inp);
+        if (n.sheet) {   /* de eenheid is een knop: snelkeuzes voor de uren, zonder toetsenbord */
+          var ub = document.createElement('button'); ub.type = 'button'; ub.className = 'uni'; ub.dataset.i = i; ub.dataset.k = n.k; ub.textContent = ut; ub.setAttribute('aria-label', lbl + ' bij ' + who + ' kiezen uit eerdere waarden'); w.appendChild(ub);
+        } else { var u = document.createElement('span'); u.className = 'u'; u.textContent = ut; w.appendChild(u); }
+        if (n.stp) w.appendChild(stepBtn('+', 'Meer ' + lbl.toLowerCase() + ' bij ' + who, i, n.k, 1, step));
+        ctl.appendChild(w);
+      });
+      var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.dataset.i = i; del.setAttribute('aria-label', s.text(r) + ' verwijderen');
+      del.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      ctl.appendChild(del);
+      box.appendChild(row);
+    });
+    paintChk(name);
+  }
+  function renderAll() {
+    hist = buildHist();
+    LISTS.forEach(function (name) { renderSugg(name); renderRows(name); renderGroup(name); paintChk(name); });
     renderSums();
-    // meerwerk en veiligheid
+    /* meerwerk en veiligheid: alleen de inhoud; open of dicht blijft zoals de gebruiker het koos */
     $('exOn').checked = !!day.extra.on; $('exBox').hidden = !day.extra.on;
     if (!busy('exWho')) $('exWho').value = day.extra.who;
-    $('exHow').value = day.extra.how || 'Schriftelijk';
+    $('exHow').value = day.extra.how || 'Schriftelijk'; syncSeg($('exHow'));
     if (!busy('exNote')) $('exNote').value = day.extra.note;
-    if (day.extra.on) $('sec-extra').open = true;
     $('saTool').checked = !!day.safety.toolbox; $('saLmra').checked = !!day.safety.lmra; $('saInc').checked = !!day.safety.incident;
     if (!busy('saNote')) $('saNote').value = day.safety.note;
-    if (day.safety.incident || day.safety.note) $('sec-safety').open = true;
     if (!busy('work')) $('work').value = day.work;
     if (!busy('other')) $('other').value = day.other;
-    if ((day.other || '').trim()) $('sec-other').open = true;
-    renderWeather(); renderCopyPrev(); updatePending();
+    renderWeather(); renderCopyPrev(); updatePending(); renderWorkSugg();
   }
   /* samenvattingen bij de ingeklapte secties en de regel bovenaan de dag: alleen wat echt is ingevuld, niets berekend of aangenomen */
   function renderSums() {
@@ -548,6 +881,7 @@
     $('sum-safety').textContent = day.safety.incident ? 'incident' : (day.safety.toolbox || day.safety.lmra ? [day.safety.toolbox ? 'toolbox' : '', day.safety.lmra ? 'LMRA' : ''].filter(Boolean).join(' + ') : (day.safety.note && day.safety.note.trim() ? 'toelichting' : 'niets geregistreerd'));
     $('sum-photos').textContent = curPhotoCount ? curPhotoCount + (curPhotoCount === 1 ? ' foto' : '’s') : 'geen';
     var ow = (day.other || '').trim(); $('sum-other').textContent = ow ? (ow.length > 40 ? ow.slice(0, 40).replace(/\s+\S*$/, '') + '…' : ow.split('\n')[0]) : 'geen';
+    var wn = cleanWork(day.work).split('\n').filter(Boolean).length; $('sum-work').textContent = wn ? wn + (wn === 1 ? ' punt' : ' punten') : 'geen';
     $('daySum').textContent = statParts(day).concat(curPhotoCount ? [curPhotoCount + (curPhotoCount === 1 ? ' foto' : '’s')] : []).join(' · ');
     updatePending();
   }
@@ -564,8 +898,7 @@
     if (d.safety.incident) parts.push('incident');
     return parts;
   }
-  /* wat in een toevoegveld is getypt maar nog niet via Toevoegen in de lijst staat: zichtbaar maken, zodat het niet stilletjes verdwijnt */
-  var pendWarn = false;
+  /* wat in een toevoegveld is getypt maar nog niet via Toevoegen in de lijst staat: zichtbaar maken (en als concept bewaard, zie hieronder) */
   function pendingText(name) {
     var s = SECS[name], t = '';
     s.fields.forEach(function (f) { if (f.select || f.opts) return; var el = $('f-' + name + '-' + f.k); if (el && !t) t = String(el.value || '').trim(); });
@@ -573,28 +906,80 @@
   }
   function updatePending() {
     LISTS.forEach(function (name) {
-      var t = pendingText(name), h = $('pend-' + name), sm = $('sum-' + name);
-      var base = SECS[name].sum(day[name]);
-      h.hidden = !t; if (t) h.textContent = 'Nog niet toegevoegd: ' + t + '. Tik op Toevoegen.';
-      sm.classList.toggle('warn', !!t);
-      sm.textContent = t ? (base && base !== 'geen' ? base + ' · ' : '') + 'niet toegevoegd' : base;
+      var t = pendingText(name), h = $('pend-' + name), sm = $('sum-' + name), cc = chk[name] ? carriedIdx(name).length : 0;
+      var base = SECS[name].sum(day[name]), tags = [];
+      h.hidden = !t; if (t) h.textContent = (restored[name] ? 'Concept hervat, nog niet toegevoegd: ' : 'Nog niet toegevoegd: ') + t + '. Tik op Toevoegen.';
+      if (cc) tags.push('te controleren'); if (t) tags.push('niet toegevoegd');
+      sm.classList.toggle('warn', !!t); sm.classList.toggle('chk', !!cc && !t);   /* rood alleen voor iets dat nog niet is toegevoegd; te controleren is een herinnering */
+      sm.textContent = tags.length ? (base && base !== 'geen' ? base + ' · ' : '') + tags.join(' · ') : base;
     });
+    paintChkBar();
   }
   function clearAddForms() {
     LISTS.forEach(function (name) { SECS[name].fields.forEach(function (f) { if (!f.select && !f.opts) $('f-' + name + '-' + f.k).value = ''; }); if ($('f-' + name + '-kind')) paintForm(name); });
-    pendWarn = false;
   }
-  /* weggaan met een half ingevulde regel: eerst een waarschuwing, de tweede tik gaat toch door */
-  function guardPending() {
-    var names = LISTS.filter(function (n) { return pendingText(n); });
-    if (!names.length || pendWarn) return false;
-    pendWarn = true; var n = names[0];
-    $('sec-' + n).open = true; updatePending();
-    setState('Bij ' + SECS[n].title.toLowerCase() + ' staat iets dat nog niet is toegevoegd. Tik op Toevoegen, of tik nogmaals om zonder door te gaan.', true);
-    try { $('add-' + n).scrollIntoView({ block: 'center' }); } catch (e) { /* oude browser */ }
-    return true;
+
+  /* ---------- concept per project, dag en sectie ----------
+     Wat in een toevoegveld is getypt maar nog niet toegevoegd, en welke waarden nog gecontroleerd moeten worden, staat apart in `gww.logdraft`
+     ({ v: 1, items: { '<project-id>|<datum>': { t, forms: { <sectie>: { <veld>: tekst } }, chk: { <sectie>: [sleutels] } } } }). Alleen op dit apparaat,
+     niet gesynchroniseerd en nooit in een rapport of de back-up: een concept is geen registratie. Na 30 dagen wordt het opgeruimd. */
+  var DKEY = 'gww.logdraft', DRAFT_DAYS = 30, dtimer = null, restored = {};
+  function loadDrafts() {
+    try { var d = JSON.parse(localStorage.getItem(DKEY)); if (d && typeof d === 'object' && !Array.isArray(d) && d.items && typeof d.items === 'object' && !Array.isArray(d.items)) return d; } catch (e) { /* kapot concept: opnieuw beginnen */ }
+    return { v: 1, items: {} };
+  }
+  function writeDrafts(d) { try { if (Object.keys(d.items).length) localStorage.setItem(DKEY, JSON.stringify(d)); else localStorage.removeItem(DKEY); } catch (e) { /* opslag mag ontbreken: een concept is een gemak */ } }
+  function collectForms() {
+    var out = {};
+    LISTS.forEach(function (name) {
+      var f = {}, any = false;
+      SECS[name].fields.forEach(function (fl) { if (fl.select || fl.opts) return; var el = fid('f', name, fl.k), v = el ? String(el.value || '') : ''; if (v.trim()) { f[fl.k] = v; any = true; } });
+      if (!any) return;
+      SECS[name].fields.forEach(function (fl) { if (!(fl.select || fl.opts)) return; var el = fid('f', name, fl.k); if (el) f[fl.k] = el.value; });
+      out[name] = f;
+    });
+    return out;
+  }
+  function saveDraft() {
+    clearTimeout(dtimer); dtimer = null;
+    if (!curPid || !curDate) return;
+    var d = loadDrafts(), k = curPid + '|' + curDate, forms = collectForms(), c = {}, any = false;
+    Object.keys(chk).forEach(function (n) { var ks = Object.keys(chk[n]); if (ks.length) { c[n] = ks; any = true; } });
+    if (!Object.keys(forms).length && !any) delete d.items[k]; else d.items[k] = { t: Date.now(), forms: forms, chk: c };
+    var cut = Date.now() - DRAFT_DAYS * 864e5; Object.keys(d.items).forEach(function (x) { if (!d.items[x] || !(d.items[x].t > cut)) delete d.items[x]; });
+    writeDrafts(d);
+  }
+  function draftSoon() { clearTimeout(dtimer); dtimer = setTimeout(saveDraft, 300); }
+  function dropDraft(pid, date) { var d = loadDrafts(); if (d.items[pid + '|' + date]) { delete d.items[pid + '|' + date]; writeDrafts(d); } }
+  /* same = dezelfde dag opnieuw geladen (na synchroniseren): wat al in beeld staat blijft staan */
+  function restoreDraft(same) {
+    var it = loadDrafts().items[curPid + '|' + curDate];
+    if (!same) { chk = { crew: {}, machines: {}, deliveries: {} }; restored = {}; if (it && it.chk && typeof it.chk === 'object') Object.keys(chk).forEach(function (n) { (Array.isArray(it.chk[n]) ? it.chk[n] : []).forEach(function (k) { chk[n][String(k)] = 1; }); }); }
+    Object.keys(chk).forEach(function (n) { var keys = day[n].map(SECS[n].key); Object.keys(chk[n]).forEach(function (k) { if (keys.indexOf(k) === -1) delete chk[n][k]; }); });   /* alleen regels die er nog zijn */
+    if (!it || !it.forms || typeof it.forms !== 'object') return;
+    LISTS.forEach(function (name) {
+      var f = it.forms[name]; if (!f || typeof f !== 'object') return; var did = false;
+      SECS[name].fields.forEach(function (fl) { if (fl.select || fl.opts) return; var el = fid('f', name, fl.k); if (el && typeof f[fl.k] === 'string' && !el.value) { el.value = f[fl.k]; did = true; } });
+      if (!did) return;
+      SECS[name].fields.forEach(function (fl) { if (!(fl.select || fl.opts)) return; var el = fid('f', name, fl.k); if (el && typeof f[fl.k] === 'string' && [].some.call(el.options, function (o) { return o.value === f[fl.k]; })) el.value = f[fl.k]; });
+      paintForm(name); restored[name] = true;
+    });
   }
   buildSections(); seedMem(); fillDatalists();
+
+  /* begintoestand van de dag: personeel, materieel en werkzaamheden open, de rest compact met een samenvatting; het toevoegformulier is
+     ingeklapt zolang er voorstellen zijn. Alleen bij een andere dag, en een eigen keuze (secPref) wint altijd. */
+  var secInit = '', DEFAULT_OPEN = { crew: true, machines: true, work: true };
+  function initView() {
+    var key = curPid + '|' + curDate; if (secInit === key) return; secInit = key;
+    ['crew', 'machines', 'work', 'stagnation', 'deliveries', 'extra', 'safety', 'other', 'photos', 'weather'].forEach(function (n) {
+      var id = 'sec-' + n; setOpen($(id), secPref[id] !== undefined ? secPref[id] : !!DEFAULT_OPEN[n]);
+    });
+    LISTS.forEach(function (name) {
+      var id = 'manual-' + name, has = !$('sugbox-' + name).hidden;
+      setOpen($(id), SECS[name].key ? (secPref[id] !== undefined ? secPref[id] : (!has || !!restored[name])) : true);
+    });
+  }
 
   /* "Zelfde als vorige dag": personeel en materieel van de laatste eerdere dag van dit project, met één tik */
   function previousDay() {
@@ -609,6 +994,12 @@
     if (!crew && !mach) return null;
     return { date: p.date, crew: crew ? d.crew : null, machines: mach ? d.machines : null };
   }
+  /* eerdere dagen van dit project met iets om over te nemen (personeel, materieel of werkzaamheden), de nieuwste eerst */
+  function earlierDays() {
+    return loadLog().filter(function (e) { return e.projectId === curPid && e.date < curDate; })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
+      .filter(function (e) { var d = fromRecord(e); return d.crew.length || d.machines.length || workLines(d.work).length; });
+  }
   function renderCopyPrev() {
     var plan = copyPlan(), b = $('copyPrev');
     b.hidden = !plan;
@@ -616,21 +1007,67 @@
       b.textContent = 'Zelfde ' + (plan.crew && plan.machines ? 'personeel en materieel' : plan.crew ? 'personeel' : 'materieel') + ' als ' + dayLabel(plan.date);
       b.dataset.date = plan.date;
     }
+    $('pickPrev').hidden = !earlierDays().length;
   }
-  var undoCopy = null;
-  function hideCopyNote() { undoCopy = null; $('copyNote').hidden = true; }
   $('copyPrev').onclick = function () {
     var plan = copyPlan(); if (!plan) return;
-    var before = { crew: copy(day.crew), machines: copy(day.machines) };
-    if (plan.crew) day.crew = copy(plan.crew); if (plan.machines) day.machines = copy(plan.machines);
+    var sc = snap('crew'), sm = snap('machines');
+    if (plan.crew) { day.crew = copy(plan.crew); day.crew.forEach(function (r) { setCarried('crew', r); }); }
+    if (plan.machines) { day.machines = copy(plan.machines); day.machines.forEach(function (r) { setCarried('machines', r); }); }
     renderAll(); saveNow();
-    undoCopy = before;
-    $('copyNoteTxt').textContent = 'Overgenomen van ' + dayLabel(plan.date) + '. Controleer aantallen en uren: pas ze hieronder aan.';
-    $('copyNote').hidden = false;
+    showUndo('Overgenomen van ' + navDay(plan.date) + '.', function () { restoreSnap('crew', sc); restoreSnap('machines', sm); renderAll(); saveNow(); });
   };
-  $('undoCopy').onclick = function () {
-    if (!undoCopy) return;
-    day.crew = undoCopy.crew; day.machines = undoCopy.machines; renderAll(); saveNow(); hideCopyNote();
+
+  /* selectief overnemen uit een eerdere dag: personeel, materieel en werkzaamheden aan- of uitvinken. Er wordt alleen toegevoegd wat er nog niet staat;
+     bestaande invoer blijft zoals ze is. Stagnatie, meerwerk, veiligheid, leveringen (en bonnen) en foto's komen niet in de lijst. */
+  var pick = { list: [], idx: 0 };
+  function addWorkLines(lines) {
+    var base = String(day.work || '').split('\n').filter(function (l) { return !/^\s*•\s*$/.test(l); }).join('\n').replace(/\s+$/, ''), have = workLines(base).map(function (l) { return l.toLowerCase(); });
+    lines.forEach(function (t) { if (have.indexOf(t.toLowerCase()) > -1) return; have.push(t.toLowerCase()); base += (base ? '\n' : '') + BUL + t; });
+    day.work = base;
+  }
+  function removeWorkLine(t) {
+    day.work = String(day.work || '').split('\n').filter(function (l) { return l.replace(/^\s*•\s*/, '').trim().toLowerCase() !== t.toLowerCase(); }).join('\n');
+  }
+  function paintPick() {
+    var e = pick.list[pick.idx], d = fromRecord(e), box = $('olist'), any = false; box.textContent = '';
+    $('otitle').textContent = 'Van ' + dayLabel(e.date);
+    $('oprev').disabled = pick.idx >= pick.list.length - 1; $('onext').disabled = pick.idx <= 0;
+    var group = function (title, name, items, text) {
+      if (!items.length) return; any = true;
+      var h = document.createElement('h3'); h.textContent = title; box.appendChild(h);
+      items.forEach(function (it) {
+        var l = document.createElement('label'), c = document.createElement('input'), sp = document.createElement('span');
+        l.className = 'check'; c.type = 'checkbox'; c.checked = true; c.dataset.g = name; c.dataset.i = it.i; sp.textContent = text(it.r);
+        l.appendChild(c); l.appendChild(sp); box.appendChild(l);
+      });
+    };
+    ['crew', 'machines'].forEach(function (name) {
+      var s = SECS[name], present = day[name].map(s.key);
+      group(s.title, name, d[name].map(function (r, i) { return { r: r, i: i }; }).filter(function (it) { return present.indexOf(s.key(it.r)) === -1; }), s.text);
+    });
+    var used = workLines(day.work).map(function (l) { return l.toLowerCase(); }), lines = workLines(d.work);
+    group('Werkzaamheden', 'work', lines.map(function (t, i) { return { r: t, i: i }; }).filter(function (it) { return used.indexOf(it.r.toLowerCase()) === -1; }), function (t) { return t; });
+    $('ook').disabled = !any; $('onone').hidden = any;
+  }
+  $('pickPrev').onclick = function () { pick.list = earlierDays(); pick.idx = 0; if (!pick.list.length) return; paintPick(); openDlg($('odlg')); $('olist').setAttribute('tabindex', '-1'); };
+  $('oprev').onclick = function () { if (pick.idx < pick.list.length - 1) { pick.idx++; paintPick(); } };
+  $('onext').onclick = function () { if (pick.idx > 0) { pick.idx--; paintPick(); } };
+  $('oclose').onclick = function () { closeDlg($('odlg')); };
+  $('ook').onclick = function () {
+    var e = pick.list[pick.idx]; if (!e) return; var d = fromRecord(e), n = 0, lines = [];
+    var sc = snap('crew'), sm = snap('machines'), w0 = day.work;
+    Array.prototype.forEach.call($('olist').querySelectorAll('input:checked'), function (c) {
+      var g = c.dataset.g, i = +c.dataset.i;
+      if (g === 'work') { lines.push(workLines(d.work)[i]); return; }
+      var r = copy(d[g][i]); if (!r) return; day[g].push(r); setCarried(g, r); n++;
+    });
+    if (lines.length) { addWorkLines(lines); n += lines.length; }
+    closeDlg($('odlg'));
+    if (!n) return;
+    renderAll(); $('work').value = day.work; renderSums();
+    if (!saveNow()) { restoreSnap('crew', sc); restoreSnap('machines', sm); day.work = w0; renderAll(); setState('Opslaan lukt niet op dit apparaat: er is niets overgenomen.', true); return; }
+    showUndo('Overgenomen van ' + navDay(e.date) + ': ' + n + (n === 1 ? ' regel' : ' regels') + '.', function () { restoreSnap('crew', sc); restoreSnap('machines', sm); day.work = w0; renderAll(); saveNow(); });
   };
 
   /* ---------- weer rond 12:00 ---------- */
@@ -650,6 +1087,7 @@
     if (w && w.rain !== undefined && w.rain !== '') parts.push('neerslag die dag ' + fmtNum(w.rain) + ' mm');
     parts.push(w ? (w.src === 'auto' ? 'automatisch om 12:00' : 'zelf ingevuld') : '');
     $('wxInfo').textContent = parts.filter(Boolean).join(' · ');
+    $('sum-weather').textContent = w ? (join([w.temp !== '' && w.temp !== undefined ? w.temp + ' °C' : '', w.desc]) || 'ingevuld') : 'geen';
   }
   function setWeather(w) { day.weather = w; renderWeather(); if (hasContent(day)) saveSoon(); }
   function manualWeather() {
@@ -682,6 +1120,7 @@
   }
 
   /* meerwerk en veiligheid */
+  segFor($('exHow'));
   $('exOn').addEventListener('change', function () { day.extra.on = this.checked; renderAll(); saveNow(); });
   $('exWho').addEventListener('input', function () { day.extra.who = this.value; saveSoon(); });
   $('exHow').addEventListener('change', function () { day.extra.how = this.value; saveNow(); renderAll(); });
@@ -693,12 +1132,12 @@
 
   /* werkzaamheden als opsomming: elke regel begint met een punt; Enter maakt een nieuwe regel met een punt, Enter op een lege regel of terugwissen
      van het punt stopt de opsomming. Regels met alleen een punt tellen niet mee en worden niet bewaard. */
-  var BUL = '\u2022 ';
+  var BUL = '• ';
   function fireInput(el) { el.dispatchEvent(new Event('input', { bubbles: true })); }
   $('work').addEventListener('focus', function () { if (!this.value) { this.value = BUL; this.setSelectionRange(BUL.length, BUL.length); day.work = this.value; } renderWorkSugg(); });
   $('work').addEventListener('blur', function () {
     if (cleanWork(this.value) === '') { this.value = ''; day.work = ''; }
-    learnWork(); setTimeout(function () { $('workSugg').hidden = true; }, 200);
+    learnWork(); renderWorkSugg();
   });
   $('work').addEventListener('beforeinput', function (e) {
     var ta = this; if (ta.selectionStart !== ta.selectionEnd) return;
@@ -711,21 +1150,53 @@
       fireInput(ta);
     } else if (e.inputType === 'deleteContentBackward' && before === BUL) { e.preventDefault(); ta.setRangeText('', ls, pos, 'end'); fireInput(ta); }
   });
-  $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); renderWorkSugg(); });
+  $('work').addEventListener('input', function () { day.work = this.value; saveSoon(); renderWorkSugg(); renderSums(); });
   $('work').addEventListener('click', renderWorkSugg); $('work').addEventListener('keyup', function (e) { if (/Arrow|Home|End/.test(e.key)) renderWorkSugg(); });
-  /* voorstellen: eerder gebruikte werkregels die passen bij wat je typt, of de meest gebruikte als de regel nog leeg is */
-  function renderWorkSugg() {
-    var ta = $('work'), box = $('workSugg'), pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
-    var q = v.slice(ls, le).replace(/^\s*•\s*/, '').trim(), used = workLines(v).map(function (l) { return l.toLowerCase(); });
-    var list = memList('work', q.length >= 2 ? q : '', 40).filter(function (t) { return used.indexOf(t.toLowerCase()) === -1 && t.toLowerCase() !== q.toLowerCase(); }).slice(0, 5);
-    box.textContent = ''; list.forEach(function (t) { box.appendChild(chip('sug', '+ ' + t, { 'data-t': t })); });
-    box.hidden = !list.length || document.activeElement !== ta;
+  /* voorstellen, ook zonder dat het veld focus heeft: eerst recent op dit project, dan vaak op dit project, dan andere projecten. Een tik zet de regel
+     erbij (of haalt hem weer weg); je kunt er meerdere achter elkaar kiezen. Terwijl je een regel typt, vullen passende voorstellen die regel aan. */
+  function currentLine(ta) {
+    var pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
+    return { ls: ls, le: le, q: v.slice(ls, le).replace(/^\s*•\s*/, '').trim() };
   }
-  $('workSugg').addEventListener('pointerdown', function (e) { if (e.target.closest('.chip')) e.preventDefault(); });   /* het veld houdt de focus */
+  /* De lijst staat onder het veld en houdt zijn hoogte, ook terwijl je typt of het veld loslaat: anders schuift alles eronder weg
+     op het moment dat je op een volgende sectie tikt. Passen geen voorstellen bij wat je typt, dan blijft de gewone lijst staan. */
+  var idleH = 0;
+  function renderWorkSugg() {
+    var ta = $('work'), box = $('workSugg'), focused = document.activeElement === ta, q = focused ? currentLine(ta).q : '';
+    var used = workLines(ta.value).map(function (l) { return l.toLowerCase(); }), seen = {}, items = [];
+    box.textContent = '';
+    if (q.length >= 2) {
+      var ql = q.toLowerCase();
+      hist.work.project.concat(hist.work.other, memList('work', q, 40)).forEach(function (t) {
+        var k = t.toLowerCase(); if (seen[k] || k.indexOf(ql) === -1 || k === ql || used.indexOf(k) > -1) return; seen[k] = 1; items.push(t);
+      });
+      if (items.length) {
+        items.slice(0, 5).forEach(function (t) { box.appendChild(chip('sug', '+ ' + t, { 'data-t': t, 'data-mode': 'complete' })); });
+        box.hidden = false; box.style.minHeight = idleH ? idleH + 'px' : ''; return;
+      }
+    }
+    var cur = hist.work.project.map(function (t) { return { t: t, o: false }; }).concat(hist.work.other.map(function (t) { return { t: t, o: true }; }));
+    var lim = workMore ? SUG_MAX : SUG_SHOW, prevO = false;
+    box.style.minHeight = '';
+    cur.slice(0, lim).forEach(function (x) {
+      var on = used.indexOf(x.t.toLowerCase()) > -1;
+      if (x.o && !prevO) box.appendChild(label('Van andere projecten'));
+      prevO = x.o; box.appendChild(chip('sug', (on ? '✓ ' : '+ ') + x.t, { 'data-t': x.t, 'data-mode': 'toggle', 'aria-pressed': on ? 'true' : 'false' }));
+    });
+    if (cur.length > SUG_SHOW) box.appendChild(chip('more', workMore ? 'Minder' : 'Meer (' + (Math.min(cur.length, SUG_MAX) - SUG_SHOW) + ')', { 'data-more': workMore ? '0' : '1' }));
+    if (box.firstChild) box.insertBefore(label('Snel toevoegen'), box.firstChild);
+    box.hidden = !cur.length; if (!box.hidden) idleH = box.offsetHeight;
+  }
+  $('workSugg').addEventListener('pointerdown', function (e) { if (e.target.closest('.chip')) e.preventDefault(); });   /* het veld houdt de focus (en het toetsenbord blijft zoals het was) */
   $('workSugg').addEventListener('click', function (e) {
     var b = e.target.closest('.chip'); if (!b) return;
-    var ta = $('work'), pos = ta.selectionStart, v = ta.value, ls = v.lastIndexOf('\n', pos - 1) + 1, le = v.indexOf('\n', pos); if (le < 0) le = v.length;
-    ta.setRangeText(BUL + b.dataset.t, ls, le, 'end'); ta.focus(); fireInput(ta);
+    var ta = $('work');
+    if (b.dataset.more) { workMore = b.dataset.more === '1'; renderWorkSugg(); return; }
+    if (b.dataset.mode === 'complete') {
+      var c = currentLine(ta); ta.setRangeText(BUL + b.dataset.t, c.ls, c.le, 'end'); ta.focus(); fireInput(ta); return;
+    }
+    if (b.getAttribute('aria-pressed') === 'true') removeWorkLine(b.dataset.t); else { addWorkLines([b.dataset.t]); memLearn('work', b.dataset.t); memDirty = true; saveMem(); }
+    ta.value = day.work; fireInput(ta);
   });
   function learnWork() { workLines(day.work).forEach(function (l) { memLearn('work', l); }); memDirty = true; saveMem(); }
   $('exWho').addEventListener('change', function () { memLearn('who', this.value); saveMem(); fillDatalists(); });
@@ -866,7 +1337,9 @@
   };
 
   function renderPhotos() {
+    var key = curPid + '|' + curDate;
     return photosOfDay(curPid, curDate).then(function (list) {
+      if (key !== curPid + '|' + curDate) return;   /* de dag is intussen gewisseld: een oud antwoord mag het aantal van de nieuwe dag niet zetten (een dag met alleen foto's zou als leeg verwijderd kunnen worden) */
       curPhotoCount = list.length;
       thumbUrls.forEach(function (u) { URL.revokeObjectURL(u); }); thumbUrls = [];
       var box = $('thumbs'); box.textContent = '';
@@ -875,7 +1348,7 @@
         var im = document.createElement('img'), u = URL.createObjectURL(p.blob); thumbUrls.push(u); im.src = u; im.alt = ''; b.appendChild(im); box.appendChild(b);
       });
       box._list = list; renderSums();
-    }).catch(function () { curPhotoCount = 0; renderSums(); });
+    }).catch(function () { if (key === curPid + '|' + curDate) { curPhotoCount = 0; renderSums(); } });
   }
   $('thumbs').onclick = function (e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -1066,7 +1539,7 @@
         var name = 'dagrapport-' + (proj && proj.nr ? proj.nr.replace(/[^\w-]+/g, '') + '-' : '') + date + '.pdf';
         return deliverPdf(blob, name);
       });
-    }).then(function () { setState('Dagrapport klaar.'); })
+    }).then(function () { var n = carriedTotal(); setState(n ? 'Dagrapport klaar. Let op: ' + n + (n === 1 ? ' regel heeft' : ' regels hebben') + ' nog eerder gebruikte waarden die je niet hebt gecontroleerd.' : 'Dagrapport klaar.'); })
       .catch(function () { setState('Het rapport kon niet worden gemaakt. De PDF-bibliotheek laadt alleen met verbinding, de eerste keer.'); })
       .then(function () { btn.disabled = false; });
   };
@@ -1223,8 +1696,11 @@
   function show(v) {
     view = v;
     ['v1', 'v2', 'v3'].forEach(function (id) { $(id).hidden = id !== 'v' + v; });
-    $('dayBar').hidden = v !== 3; document.body.classList.toggle('inday', v === 3);
+    $('dayBar').hidden = v !== 3; document.body.classList.toggle('inday', v === 3); syncBarH(); if (v !== 3) hideCopyNote();
   }
+  /* de hoogte van de actiebalk, zodat de melding met ongedaan maken er net boven staat */
+  function syncBarH() { var b = $('dayBar'); if (!b.hidden && b.offsetHeight) document.documentElement.style.setProperty('--bar-h', b.offsetHeight + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(syncBarH).observe($('dayBar'));
   function setTitle(t) { var h = document.querySelector('.brand h1'); if (h) h.textContent = t; document.title = t === 'Logboek' ? 'Logboek' : t + ' · Logboek'; }
   function go(hash) { location.hash = hash; }
   function replaceTo(hash) { location.replace(location.pathname + location.search + hash); }
@@ -1327,11 +1803,12 @@
     var rows = dayRows(pid), today = todayIso();
     $('todayBtn').textContent = rows.some(function (e) { return e.date === today; }) ? 'Vandaag openen' : 'Vandaag invullen';
     $('todayBtn').dataset.date = today;
-    var box = $('dlist'); box.textContent = '';
+    var box = $('dlist'), drafts = loadDrafts().items; box.textContent = '';
     rows.forEach(function (e) {
-      var parts = summary(e), d = fromRecord(e);
-      var line = parts.join(' · ') || (d.work || '').split('\n')[0].replace(/^•\s*/, '') || d.machines.map(function (m) { return m.item; }).join(', ') || '';
+      var parts = summary(e), d = fromRecord(e), line;
+      line = parts.join(' · ') || (d.work || '').split('\n')[0].replace(/^•\s*/, '') || d.machines.map(function (m) { return m.item; }).join(', ') || '';
       var work = parts.length ? (d.work || '').trim().split('\n')[0].replace(/^•\s*/, '') : '';
+      if (drafts[pid + '|' + e.date] && drafts[pid + '|' + e.date].forms && Object.keys(drafts[pid + '|' + e.date].forms).length) line = (line ? line + ' · ' : '') + 'concept';
       var b = document.createElement('button'); b.type = 'button'; b.className = 'day'; b.dataset.date = e.date;
       var t = document.createElement('span'); t.className = 'txt';
       var x = document.createElement('b'); x.textContent = dayLabel(e.date); t.appendChild(x);
@@ -1356,9 +1833,9 @@
     loadDay(pid, date);
     window.scrollTo(0, 0);
   }
-  $('prevDay').onclick = function () { if (guardPending()) return; replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, -1)); };
-  $('nextDay').onclick = function () { if (curDate >= todayIso() || guardPending()) return; replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, 1)); };
-  $('saveBack').onclick = function () { if (guardPending()) return; var pid = curPid; saveNow(); go('#/p/' + encodeURIComponent(pid)); };
+  $('prevDay').onclick = function () { replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, -1)); };
+  $('nextDay').onclick = function () { if (curDate >= todayIso()) return; replaceTo('#/p/' + encodeURIComponent(curPid) + '/' + isoAdd(curDate, 1)); };
+  $('saveBack').onclick = function () { var pid = curPid; saveNow(); go('#/p/' + encodeURIComponent(pid)); };
   /* de knoppen noemen de dag waar ze heen gaan */
   function navDay(iso) { return dayLabel(iso).replace(/ \d{4}$/, ''); }
   function navLabels(date) {
@@ -1369,9 +1846,12 @@
     var btn = this;
     if (btn.dataset.armed !== '1') { btn.dataset.armed = '1'; btn.textContent = 'Zeker weten? De foto’s van deze dag gaan ook weg.'; return; }
     var pid = curPid, date = curDate;
-    clearTimeout(timer); timer = null; curPid = ''; curDate = '';   /* niets meer bewaren van deze dag */
+    clearTimeout(timer); timer = null;
     var a = loadLog(), e = find(a, pid, date);
-    if (e) { saveLog(a.filter(function (x) { return x !== e; })); if (window.GwwData) GwwData.deleted('log/' + pid + '/' + date); }
+    /* lukt verwijderen niet (opslag vol of uitgezet), dan blijft alles staan: geen grafsteen, foto's blijven, je blijft op de dag */
+    if (e && !saveLog(a.filter(function (x) { return x !== e; }))) { btn.dataset.armed = ''; btn.textContent = 'Dag verwijderen'; return; }
+    if (e && window.GwwData) GwwData.deleted('log/' + pid + '/' + date);
+    curPid = ''; curDate = ''; dropDraft(pid, date);   /* niets meer bewaren van deze dag */
     photosOfDay(pid, date).then(function (list) { return Promise.all(list.map(function (p) { return dbDo('readwrite', function (st) { return st.delete(p.id); }); })); })
       .catch(function () { /* geen foto-opslag */ })
       .then(function () { replaceTo('#/p/' + encodeURIComponent(pid)); });
@@ -1379,7 +1859,7 @@
 
   /* de router */
   function route() {
-    if (view === 3) { saveNow(); learnWork(); }   /* bewaar de dag die we verlaten; curPid en curDate zijn nog van die dag */
+    if (view === 3) { saveNow(); saveDraft(); learnWork(); }   /* bewaar de dag en het concept dat we verlaten; curPid en curDate zijn nog van die dag */
     var h = location.hash || '', g = /^#gp=(.+)$/.exec(h);
     if (g) { replaceTo('#/p/' + g[1]); return; }
     var list = projects();

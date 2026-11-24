@@ -1,6 +1,6 @@
 // Logboek: soort per regel (eigen, externe inhuur, onderaannemer), materieel per uur of per dag, leverancier, werkzaamheden als opsomming,
 // slim onthouden en voorstellen (gww.logmem), kopjes en samenvattingen, en de rapporten per soort.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 const fs = require('fs'), os = require('os'), path = require('path'), { execSync } = require('child_process');
 const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
 const have = (() => { try { execSync('pdftotext -v', { stdio: 'ignore' }); return true; } catch (e) { return false; } })();
@@ -14,7 +14,7 @@ const iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0
     localStorage.setItem('gww.log', JSON.stringify([{ v: 1, id: 'l1', projectId: 'p1', date: Y, work: '• Sleuf gegraven\n• Kabels gelegd\nOude losse tekst', other: '', equipment: ['G'],
       crew: [{ partner: 'Oud Bouwbedrijf BV', count: 3, hours: 8 }], machines: [{ item: 'Graafmachine 14 ton', partner: 'Verhuur NV', hours: 7.5 }], deliveries: [{ what: 'Menggranulaat', qty: '24 ton', bon: '1' }],
       stagnation: [{ cause: 'Weer', hours: 2, note: 'Regen in de ochtend' }], extra: { on: true, who: 'Toezichthouder Jansen', how: 'Mondeling', note: 'x' }, created: 5, modified: 6 }])); }, [YD]);
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   const log = () => p.evaluate(() => JSON.parse(localStorage.getItem('gww.log')));
   const day = async (d) => (await log()).find(x => x.date === d);
   const open = (n) => p.evaluate((x) => { document.getElementById('sec-' + x).open = true; }, n);
@@ -24,7 +24,7 @@ const iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0
   const sums = await p.evaluate(() => ['crew', 'machines', 'stagnation', 'deliveries', 'extra', 'safety', 'other', 'photos'].map(n => n + '=' + document.getElementById('sum-' + n).textContent));
   ok(sums.join(' ') === 'crew=geen machines=geen stagnation=geen deliveries=geen extra=geen safety=niets geregistreerd other=geen photos=geen', 'lege dag: elk kopje heeft een samenvatting (geen / niets geregistreerd): ' + sums.join(' '));
   const heads = await p.evaluate(() => [...document.querySelectorAll('#v3 .sec > summary > span:first-child')].map(e => e.textContent));
-  ok(heads.join() === 'Personeel,Materieel,Stagnatie,Leveringen,Meerwerk of afwijking,Veiligheid,Overig,Foto\'s', 'kopjes: Personeel en Materieel (geen partners meer), Overig en Foto\'s zijn gewone secties (' + heads.join() + ')');
+  ok(heads.join() === 'Personeel,Materieel,Werkzaamheden,Stagnatie,Leveringen,Meerwerk of afwijking,Veiligheid,Overig,Foto\'s,Weer rond 12:00', 'kopjes in de volgorde van het dagelijks gebruik: Personeel, Materieel en Werkzaamheden eerst, uitzonderingen daarna, Weer als laatste (' + heads.join() + ')');
   const gap = await p.evaluate(() => { const d = document.getElementById('delDay').getBoundingClientRect(), s = document.getElementById('sec-photos').getBoundingClientRect(); return Math.round(d.top - s.bottom); });
   ok(gap >= 16, 'ruimte boven Dag verwijderen: ' + gap + 'px');
 

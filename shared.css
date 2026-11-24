@@ -136,6 +136,7 @@
   .chip { flex: none; display: inline-block; min-height: var(--chip-h); max-width: 100%; padding: 0 0.85rem; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--field); color: var(--ink); font: inherit; font-weight: 500; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chip[aria-pressed="true"], .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .chip.sug { color: var(--ink-2); border-style: dashed; }
+  .chip.sug[aria-pressed="true"] { color: var(--on-accent); border-style: solid; }   /* een gekozen voorstel (bijv. een werkregel die er al staat) blijft leesbaar */
   /* uitklapbare sectie met titel en samenvatting (details.sec > summary > span + span.sum) */
   .sec { border-top: 1px solid var(--line); }
   .sec > summary { min-height: 3.25rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.75rem; align-items: center; align-content: center; padding: 0.3rem 0; font-weight: 700; font-size: var(--text-lg); cursor: pointer; list-style: none; }

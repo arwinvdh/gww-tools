@@ -1,5 +1,5 @@
 // Weekrapport als PDF vanuit de dagen van een project: dialoog, weekkeuze, bestand met en zonder foto's.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 const fs = require('fs');
 const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
 (async () => {
@@ -18,7 +18,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
       { v: 1, id: 'b', projectId: 'p1', date: d1, work: 'Kabels gelegd', crew: [{ partner: 'Bouwpartner BV', count: 4, hours: 8 }], created: 1, modified: 4 }
     ]));
   }, [D(0), D(1)]);
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   const gen = async (withPhotos) => {
     await p.goto(ROOT + 'logboek.html#/p/p1'); await p.waitForTimeout(500);
     if (await p.locator('#wdlg').evaluate(d => d.open)) await p.click('#wclose');
@@ -47,7 +47,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   await p.goto(ROOT + 'logboek.html#/p/p1/' + D(0)); await p.waitForTimeout(500);
   const b64 = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 1200; c.height = 900; const g = c.getContext('2d'); for (let i = 0; i < 300; i++) { g.fillStyle = 'rgb(' + (i * 7 % 255) + ',' + (i * 13 % 255) + ',' + (i * 29 % 255) + ')'; g.fillRect((i * 37) % 1200, (i * 53) % 900, 90, 70); } return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
   await p.setInputFiles('#shot', { name: 'f.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(b64, 'base64') });
-  await p.waitForSelector('#thumbs button', { timeout: 15000 });
+  await p.waitForSelector('#thumbs button', { timeout: 15000, state: 'attached' });
   const noPhotos = await gen(false), withPhotos = await gen(true);
   ok(/\/Subtype\s*\/Image/.test(withPhotos.buf.toString('latin1')) && !/\/Subtype\s*\/Image/.test(noPhotos.buf.toString('latin1')), 'foto’s komen alleen in de PDF als je de schakelaar aanzet');
   ok(withPhotos.buf.length > noPhotos.buf.length + 5000, 'met foto’s is de PDF groter (' + noPhotos.buf.length + ' tegen ' + withPhotos.buf.length + ' bytes)');

@@ -46,7 +46,7 @@ const check = () => {
       const s = getComputedStyle(e), bg = bgOf(e), fg = over(rgba(s.color), bg), L1 = lum(fg), L2 = lum(bg), r = (Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05), fs = parseFloat(s.fontSize);
       if (r < ((fs >= 24 || (fs >= 18.66 && parseInt(s.fontWeight) >= 700)) ? 3 : 4.5)) low.push(nm(e) + ' ' + r.toFixed(2));
     }
-    if (e.matches('button,a[href],select,input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]),summary,textarea') && !e.closest('.leaflet-control') && !e.closest('.pill') && !e.closest('.wa-b') && !(e.matches('a.lnk') && !e.closest('.linkrow')) && e.id !== 'meta') {
+    if (e.matches('button,a[href],select,input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]),summary,textarea') && !e.closest('.leaflet-control') && !e.closest('.pill') && !e.closest('.wa-b') && !(e.matches('a.lnk') && !e.closest('.linkrow')) && e.id !== 'meta' && !e.matches('[aria-hidden="true"]')) {   /* verborgen <select> achter de keuzeknoppen: de knoppen zijn de bediening */
       const b = e.getBoundingClientRect(); if (b.height < 43.5 || b.width < 43.5) small.push(nm(e) + ' ' + Math.round(b.width) + 'x' + Math.round(b.height));
     }
   });

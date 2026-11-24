@@ -1,6 +1,6 @@
 // Logboek, dagregistratie: aantal en uren in de regel, overzicht per sectie, bewaarstatus, overnemen van de vorige dag,
 // half ingevulde regels, dagnavigatie, dag- en weekoverzicht, lege/gedeeltelijke/uitgebreide dagen en bestaande registraties.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 (async () => {
   const b = await chromium.launch(launchOptions());
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -8,12 +8,12 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   const mk = async (vp) => {
     const ctx = await b.newContext({ viewport: vp || { width: 390, height: 900 } });
     await ctx.route(u => !u.href.startsWith('file:'), r => r.abort());
-    await ctx.addInitScript(([Y, O]) => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');
+    await ctx.addInitScript(([Y, O]) => { if (!localStorage.getItem('__s')) { localStorage.setItem('__s', '1');   /* in localStorage: sessionStorage ging na reload soms verloren en dan werd opnieuw gezaaid */
       localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', created: 1, modified: 2 }]));
       localStorage.setItem('gww.log', JSON.stringify([
         { v: 1, id: 'l1', projectId: 'p1', date: Y, work: 'Gisteren sleuf gegraven', equipment: ['Graafmachine'], crew: [{ partner: 'Bouwpartner BV', count: 3, hours: 8 }], machines: [{ item: 'Graafmachine', partner: 'Verhuur NV', hours: 7.5 }], created: 5, modified: 5 },
         { v: 1, id: 'l0', projectId: 'p1', date: O, work: 'Oud formaat', equipment: ['Dumper'], created: 1, modified: 1 }])); } }, [YEST, OLD]);
-    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); return p;
+    const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); return p;
   };
   const p = await mk();
   const log = () => p.evaluate(() => JSON.parse(localStorage.getItem('gww.log') || '[]'));
@@ -66,20 +66,22 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await p.fill('#f-crew-partner', 'Zonder uren'); await p.fill('#f-crew-count', '5'); await p.click('#add-crew'); await p.waitForTimeout(700);
   ok(/9 pers · 24 manuren/.test(await p.textContent('#sum-crew')), 'regel zonder uren: aantal telt mee, manuren niet aangenomen (' + await p.textContent('#sum-crew') + ')');
 
-  // 5. half ingevulde regel: zichtbaar en niet stilletjes kwijt
+  // 5. half ingevulde regel: zichtbaar, en niet kwijt bij weggaan (concept per project, dag en sectie; nooit in het logboek)
   await p.fill('#f-crew-partner', 'Halve regel');
   ok(await p.locator('#pend-crew').isVisible() && /niet toegevoegd/.test(await p.textContent('#sum-crew')), 'half ingevuld: melding en samenvatting laten zien dat het nog niet is toegevoegd');
-  await p.click('#saveBack'); await p.waitForTimeout(400);
-  ok(/p1\/\d{4}/.test(await hash()) && /nog niet is toegevoegd/.test(await p.textContent('#state')), 'Opslaan en terug: eerste tik waarschuwt en blijft op de dag');
-  await p.click('#prevDay'); await p.waitForTimeout(500);
-  ok(new RegExp(YEST).test(await hash()), 'Vorige dag: na de waarschuwing gaat de tweede tik door naar die dag');
-  ok(await p.inputValue('#f-crew-partner') === '', 'bij de andere dag zijn de toevoegvelden leeg (de halve regel reist niet mee)');
-  await goDay(TODAY); await p.fill('#f-crew-partner', 'Nog een halve'); await p.click('#prevDay'); await p.waitForTimeout(300);
-  ok(new RegExp(TODAY).test(await hash()), 'Vorige dag: de eerste tik met een halve regel waarschuwt en blijft op de dag');
   await p.click('#saveBack'); await p.waitForTimeout(500);
-  ok(/#\/p\/p1$/.test(await hash()) && !(await rec(TODAY)).crew.some(c => c.partner === 'Halve regel'), 'tweede tik gaat door; de halve regel is niet bewaard');
+  const dr = await p.evaluate(() => JSON.parse(localStorage.getItem('gww.logdraft') || 'null'));
+  ok(/#\/p\/p1$/.test(await hash()) && !(await rec(TODAY)).crew.some(c => c.partner === 'Halve regel') && dr && dr.items['p1|' + TODAY] && dr.items['p1|' + TODAY].forms.crew.partner === 'Halve regel', 'Opslaan en terug gaat meteen door zonder waarschuwing; de halve regel is een concept en niet in het logboek');
+  await p.evaluate(() => { location.hash = '#/p/p1'; }); await p.waitForTimeout(300);
+  ok(/concept/.test(await p.$eval('#dlist .day', e => e.innerText)), 'de dagenlijst laat zien dat er een concept is');
   await goDay(TODAY);
-  ok(await p.inputValue('#f-crew-partner') === '' && await p.locator('#pend-crew').isHidden(), 'toevoegvelden zijn leeg bij een volgende keer');
+  ok(await p.inputValue('#f-crew-partner') === 'Halve regel' && /Concept hervat/.test(await p.textContent('#pend-crew')), 'terug op de dag: het concept is hervat en staat nog niet in de lijst');
+  await p.click('#prevDay'); await p.waitForTimeout(500);
+  ok(new RegExp(YEST).test(await hash()) && await p.inputValue('#f-crew-partner') === '', 'Vorige dag gaat meteen door; bij de andere dag zijn de toevoegvelden leeg (het concept hoort bij zijn eigen dag)');
+  await goDay(TODAY); await p.reload(); await p.waitForTimeout(600);
+  ok(await p.inputValue('#f-crew-partner') === 'Halve regel', 'na herladen is het concept er nog');
+  await p.fill('#f-crew-partner', ''); await p.waitForTimeout(500);
+  ok(await p.evaluate((k) => { const d = JSON.parse(localStorage.getItem('gww.logdraft') || 'null'); return !d || !d.items[k]; }, 'p1|' + TODAY) && await p.locator('#pend-crew').isHidden(), 'het veld leegmaken haalt het concept weg');
 
   // 6. dagen- en weekoverzicht
   await p.evaluate(() => { location.hash = '#/p/p1'; }); await p.waitForTimeout(500);
@@ -94,7 +96,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await goDay(TODAY);
   const b64 = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 800; c.height = 600; const g = c.getContext('2d'); g.fillStyle = 'rgb(200,200,60)'; g.fillRect(0, 0, 800, 600); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
   await p.setInputFiles('#shot', { name: 'f.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(b64, 'base64') });
-  await p.waitForSelector('#thumbs button', { timeout: 15000 }); await p.waitForTimeout(300);
+  await p.waitForSelector('#thumbs button', { timeout: 15000, state: 'attached' }); await p.waitForTimeout(300);
   ok(await p.textContent('#sum-photos') === '1 foto' && (await p.textContent('#daySum')).includes('1 foto'), 'foto\'s: sectie en dagregel tonen het aantal');
 
   // 8. uitgebreide dag op een smal scherm: geen overloop, tikvlakken, lange partnernaam

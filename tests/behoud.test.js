@@ -1,6 +1,6 @@
 // Behoud van bestaande gegevens: projecten, routes, logboek en foto's blijven ongewijzigd na het openen van elke pagina en na opnieuw laden.
 // Oude formaten (zonder nieuwere velden) blijven geldig. Alleen kijken verandert niets.
-const { chromium, launchOptions, ok, ROOT, LEAFLET_JS, LEAFLET_CSS } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, LEAFLET_JS, LEAFLET_CSS, autoOpen } = require('./helpers.js');
 const { devices } = require('playwright');
 const iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); const dd = new Date(); const YD = iso(new Date(dd.getFullYear(), dd.getMonth(), dd.getDate() - 1, 12)); const OLD = iso(new Date(dd.getFullYear(), dd.getMonth(), dd.getDate() - 40, 12));
 const SEED = {
@@ -21,7 +21,7 @@ const keys = Object.keys(SEED);
   await ctx.route('**/leaflet.min.*', r => r.fulfill({ path: r.request().url().endsWith('.js') ? LEAFLET_JS : LEAFLET_CSS }));
   await ctx.addInitScript(([seed]) => { if (localStorage.getItem('__s')) return; localStorage.setItem('__s', '1'); localStorage.setItem('knijperwagen-tipX', '1'); localStorage.setItem('start.tipX', '1');
     Object.keys(seed).forEach(k => localStorage.setItem(k, typeof seed[k] === 'string' ? seed[k] : JSON.stringify(seed[k]))); }, [SEED]);
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   const snap = () => p.evaluate((keys) => { const o = {}; keys.forEach(k => { o[k] = localStorage.getItem(k); }); return o; }, keys);
   await p.goto(ROOT + 'start.html'); await p.waitForTimeout(400);
   const before = await snap();
@@ -45,7 +45,7 @@ const keys = Object.keys(SEED);
   await p.goto(ROOT + 'logboek.html#/p/p1/' + YD); await p.waitForTimeout(500);
   const b64 = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 800; c.height = 600; const g = c.getContext('2d'); g.fillStyle = 'rgb(180,200,80)'; g.fillRect(0, 0, 800, 600); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
   await p.setInputFiles('#shot', { name: 'f.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(b64, 'base64') });
-  await p.waitForSelector('#thumbs button', { timeout: 15000 }); await p.waitForTimeout(300);
+  await p.waitForSelector('#thumbs button', { timeout: 15000, state: 'attached' }); await p.waitForTimeout(300);
   const logAfterPhoto = await p.evaluate(() => JSON.parse(localStorage.getItem('gww.log')).find(x => x.id === 'l1'));
   ok(logAfterPhoto.work === 'Sleuf' && logAfterPhoto.crew.length === 1 && logAfterPhoto.safety.toolbox === true, 'foto toevoegen laat de rest van de dag ongemoeid');
   await p.reload(); await p.waitForTimeout(700);

@@ -1,5 +1,5 @@
 // Logboek, foto's: bewerken met stempel, bewaren op het apparaat, openen en verwijderen.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 (async () => {
   const iso0 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const TODAY = iso0(new Date());
   const b = await chromium.launch(launchOptions());
@@ -7,12 +7,12 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await ctx.route(u => !u.href.startsWith('file:'), r => r.abort());
   await ctx.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');
     localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', created: 1, modified: 2 }])); } });
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   await p.goto(ROOT + 'logboek.html#/p/p1/' + TODAY); await p.waitForTimeout(500);
   // testfoto: egaal geel van 2400x1800, zodat de stempel en het verkleinen te zien zijn
   const b64 = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 2400; c.height = 1800; const g = c.getContext('2d'); g.fillStyle = 'rgb(230,230,60)'; g.fillRect(0, 0, 2400, 1800); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
   await p.setInputFiles('#shot', { name: 'foto.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(b64, 'base64') });
-  await p.waitForSelector('#thumbs button', { timeout: 15000 });
+  await p.waitForSelector('#thumbs button', { timeout: 15000, state: 'attached' });
   const r = await p.evaluate(async () => {
   const iso0 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const TODAY = iso0(new Date());
     const db = await new Promise((res, rej) => { const q = indexedDB.open('gww-photos', 1); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
