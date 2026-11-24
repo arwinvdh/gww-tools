@@ -1,5 +1,5 @@
 // Logboek in lagen: overzicht van projecten, de dagen van een project, één dag; knoppen en navigatie.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 (async () => {
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const TODAY = iso(new Date()), YEST = iso(new Date(Date.now() - 864e5));
@@ -14,7 +14,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
         localStorage.setItem('gww.log', JSON.stringify(lg));
       }
     }, [projects, log]);
-    const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); return p;
+    const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); return p;
   };
   const P = [
     { v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', created: 1, modified: 3 },

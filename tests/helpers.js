@@ -21,6 +21,17 @@ async function offlinePage(browser, device, file) {
   return p;
 }
 
+// Een gebruiker opent een ingeklapte sectie of een ingeklapt formulier eerst, en typt dan. Deze hulp doet hetzelfde voor
+// p.fill, p.click, p.selectOption en p.press: staat het veld in een gesloten <details>, dan gaat die eerst open.
+function autoOpen(p) {
+  const open = (sel) => p.evaluate((s) => { const el = document.querySelector(s); for (let d = el && el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true; }, sel).catch(() => {});
+  for (const m of ['fill', 'click', 'tap', 'selectOption', 'press', 'check', 'focus']) {
+    const orig = p[m].bind(p);
+    p[m] = async (sel, ...rest) => { if (typeof sel === 'string') await open(sel); return orig(sel, ...rest); };
+  }
+  return p;
+}
+
 const ok = (c, t) => { console.log((c ? 'OK   ' : 'FOUT ') + t); if (!c) process.exitCode = 1; };
 
-module.exports = { chromium, ROOT, LEAFLET_JS, LEAFLET_CSS, launchOptions, offlinePage, ok };
+module.exports = { chromium, ROOT, LEAFLET_JS, LEAFLET_CSS, launchOptions, offlinePage, ok, autoOpen };

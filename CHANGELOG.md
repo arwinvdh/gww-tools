@@ -2,6 +2,19 @@
 
 Alle noemenswaardige wijzigingen per versie. Formaat volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/), versies volgen [SemVer](https://semver.org/lang/nl/).
 
+## [1.27.0] - 2026-11-24
+
+Logboek: snellere dagelijkse invoer, met zo min mogelijk tikken, scrollen en toetsenbord. Gegevensformaten van het logboek zijn ongewijzigd.
+
+- Voorstellen per project: bekende personeelsregels, materieel, leveringen en werkzaamheden staan boven het handmatige formulier en worden met één tik toegevoegd. Volgorde: recent op dit project (laatste drie dagen), vaak op dit project, daarna andere projecten (apart gelabeld). Elke regel komt één keer voor, standaard vijf met "Meer". Stagnatie wordt nooit voorgesteld, bonnummers van leveringen nooit overgenomen.
+- Eerder gebruikte aantallen en uren (uit een voorstel of overname) staan als "Eerder gebruikt" met gestippelde rand en in de samenvatting als "te controleren", met één knop "Alles klopt" in de vaste balk. Aanpassen of bevestigen haalt de markering weg. Het dagrapport meldt als er nog niet gecontroleerde regels zijn. De markering staat in het concept van het apparaat, niet in het logboek.
+- Personeel en materieel: min en plus bij aantallen, bij uren een uitklapper met snelkeuzes uit eerdere invoer (geen toetsenbord nodig), tik op de naam om de hele regel te bewerken, verwijderen met ongedaan maken in een vaste melding onderaan. Uren voor alle regels tegelijk (eigen veld of snelkeuze); materieel per dag wordt daarbij nooit aangepast.
+- Soort, per uur of dag, oorzaak en hoe opgedragen zijn knoppen in plaats van keuzelijsten (één tik).
+- Werkzaamheden: voorstellen staan onder het veld, ook zonder focus; meerdere achter elkaar kiezen (nogmaals tikken haalt weg), vrije tekst en opsomming blijven. Nieuw: "Kiezen uit eerdere dag" om personeel, materieel en werkzaamheden van een eerdere dag selectief over te nemen (met brondatum, alleen wat er nog niet staat, met ongedaan maken). Stagnatie, meerwerk, veiligheid, leveringen en foto's worden niet overgenomen.
+- Schermopbouw: Personeel, Materieel en Werkzaamheden bovenaan en open; de rest compact met samenvatting; Weer onderaan (blijft automatisch). Het handmatige formulier is ingeklapt zolang er voorstellen zijn. Open of dicht zoals je het zelf koos blijft staan; opslaan en bewerken opent of sluit niets meer. Na Toevoegen springt het toetsenbord alleen terug als je typte.
+- Concepten: wat in een toevoegveld is getypt maar nog niet toegevoegd blijft per project, dag en sectie bewaard (ook na navigeren, herladen of sluiten) en staat niet in het logboek, de rapporten of de back-up. De dagenlijst toont "concept". "Opslaan en terug" waarschuwt niet meer: er gaat niets verloren. Nieuwe opslagsleutel `gww.logdraft` (alleen op het apparaat, na 30 dagen opgeruimd).
+- Opslagfouten: bij een mislukte opslag blijft een verwijderde regel of dag staan, er komt geen grafsteen en de foto's blijven; de melding staat in beeld.
+
 ## [1.26.0] - 2026-11-23
 
 - Logboek, werkzaamheden: noteren als opsomming. Bij het openen staat er een punt, Enter maakt een nieuwe regel met een punt, Enter op een lege punt of Backspace direct na het punt stopt de opsomming. Een regel met alleen een punt wordt niet bewaard. Bestaande tekst blijft zoals hij was. In de PDF staan de punten met inspringing.

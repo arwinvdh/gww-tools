@@ -1,2 +1,2 @@
 // Enige bron voor het appversienummer (SemVer). Wordt vóór het script van elke pagina geladen.
-var APP_VERSION = '1.26.0';
+var APP_VERSION = '1.27.0';

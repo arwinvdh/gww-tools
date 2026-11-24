@@ -26,6 +26,8 @@ Gebruik de variabelen in nieuwe regels, geen losse px of rem voor afronding en t
 - Veld `.inp` met label in `.field > label`. Een veld heeft altijd een zichtbaar label of een `aria-label`.
 - Kaart `.card` met `h2` als kop. Sectie binnen een kaart of pagina: `details.sec` (titel, samenvatting in `.sum`, `.secbody`).
 - Melding: korte regel `.hint` (`.err`, `.ok`); melding met streep `.callout` (groen, informatie) of `.callout.warn` (rood, aandacht); tijdelijk bericht `.toast`.
+- Keuze uit weinig opties in een formulier (Logboek: soort, per uur of dag, oorzaak): rij chips (`.seg`, gekozen = `aria-pressed`) met de `<select>` verborgen (`.sr`) als bron van de waarde: één tik in plaats van een keuzelijst.
+- Melding met ongedaan maken: `.undobar`, vast boven de actiebalk (Logboek), zodat hij in beeld is waar je ook scrolt.
 - Chip `.chip`: aantikbaar voorstel of label. Gekozen is `aria-pressed="true"` (vol accent). Voorstel: `.chip.sug` (gestippeld).
 - Selectie in een rij van opties: `.seg` (Locatie delen), `.acts` en `.tabs` (Route), allemaal vol accent voor de gekozen optie.
 - Dialoog `<dialog>`: titel `h2`, onderaan `.dlg-actions` met links het gevaarlijke, dan het secundaire, de hoofdactie als laatste. Het projectvenster is op de telefoon schermvullend (`#dlg` in `projecten.html`).

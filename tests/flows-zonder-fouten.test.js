@@ -1,6 +1,6 @@
 // Gebruiksstromen zonder (bruikbaar) internet en zonder toestemmingen: nergens een scriptfout, onbehandelde belofte of foutmelding in de console.
 // Elke handeling die het netwerk, GPS of een bibliotheek nodig heeft, mag mislukken, maar nooit stil of met een crash.
-const { chromium, launchOptions, ok, ROOT, LEAFLET_JS, LEAFLET_CSS } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, LEAFLET_JS, LEAFLET_CSS, autoOpen } = require('./helpers.js');
 const { devices } = require('playwright');
 const iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); const dd = new Date(); const TODAY = iso(dd);
 (async () => {
@@ -12,7 +12,7 @@ const iso = x => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0
     window.open = function () { return null; };
     if (localStorage.getItem('__s')) return; localStorage.setItem('__s', '1'); localStorage.setItem('knijperwagen-tipX', '1'); localStorage.setItem('start.tipX', '1');
     localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', lat: 52.09, lon: 5.12, created: 1, modified: 3 }])); localStorage.setItem('locdelen.projects', JSON.stringify([{ nr: 'IB1', name: 'Eerste', lat: 52.09, lon: 5.12 }])); }, [TODAY]);
-  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); const errs = []; p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|ERR_FAILED|CORS|vault\.json|Access to fetch|Fetch API cannot load/.test(m.text())) errs.push('console: ' + m.text().slice(0, 100)); });
   const step = async (name, fn) => { errs.length = 0; try { await fn(); } catch (e) { errs.push('stap mislukt: ' + e.message.split('\n')[0]); } await p.waitForTimeout(900); const rej = await p.evaluate(() => window.__rej.splice(0)).catch(() => []); const all = [...errs, ...rej]; ok(all.length === 0, name + (all.length ? ' (' + all.slice(0, 2).join(' | ').slice(0, 160) + ')' : '')); };
   const clickIf = async (sel) => { const l = p.locator(sel); if (await l.count() && await l.first().isEnabled()) await l.first().click({ timeout: 3000 }).catch(() => {}); };

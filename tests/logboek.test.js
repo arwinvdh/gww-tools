@@ -1,5 +1,5 @@
 // Logboek: per project en dag werkzaamheden en materieel, met vast id en verwijzing naar het project-id.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 (async () => {
   const iso0 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const TODAY = iso0(new Date());
   const b = await chromium.launch(launchOptions());
@@ -8,7 +8,7 @@ const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
   await ctx.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');
     localStorage.setItem('gww.projects', JSON.stringify([
       { v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', created: 1, modified: 2 }, { v: 1, id: 'p2', nr: 'IB2', name: 'Tweede', created: 1, modified: 1 }])); } });
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   await p.goto(ROOT + 'logboek.html#/p/p2/' + TODAY); await p.waitForTimeout(500);
   const hash = async (h) => { await p.evaluate((x) => { location.hash = x; }, h); await p.waitForTimeout(500); };
   const log = () => p.evaluate(() => JSON.parse(localStorage.getItem('gww.log') || '[]'));

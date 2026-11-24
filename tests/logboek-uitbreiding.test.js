@@ -1,5 +1,5 @@
 // Logboek: weer rond 12:00, personeel en materieel van partners, stagnatie, leveringen, meerwerk, veiligheid en overig.
-const { chromium, launchOptions, ok, ROOT } = require('./helpers.js');
+const { chromium, launchOptions, ok, ROOT, autoOpen } = require('./helpers.js');
 const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
 (async () => {
   const b = await chromium.launch(launchOptions());
@@ -18,7 +18,7 @@ const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
   await ctx.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');
     localStorage.setItem('gww.projects', JSON.stringify([{ v: 1, id: 'p1', nr: 'IB1', name: 'Eerste', created: 1, modified: 2 }]));
     localStorage.setItem('gww.log', JSON.stringify([{ v: 1, id: 'old', projectId: 'p1', date: '2026-01-02', work: 'Oud formaat', equipment: ['Dumper'], created: 1, modified: 1 }])); } });
-  const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
+  const p = autoOpen(await ctx.newPage()); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const today = iso(new Date());
   const log = () => p.evaluate(() => JSON.parse(localStorage.getItem('gww.log') || '[]'));
