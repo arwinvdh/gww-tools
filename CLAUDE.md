@@ -1,72 +1,49 @@
-# CLAUDE.md
+# GWW Tools
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Statische webapp-suite voor de GWW-uitvoering (Locatie delen, Route, Projecten, Logboek). Eén HTML-bestand per tool plus `shared.css`, geen build, geen framework, geen eigen backend.
+Hoe het werkt (tools, synchroniseren, pincode, uitrollen, opslagsleutels, checklist nieuwe tool): `README.md`. Lees dat eerst; geen tweede handboek hier.
+Vormgeving: `DESIGN.md` (lees vóór elke wijziging aan de vormgeving). Tests: `tests/README.md`.
+Projectrichting: `visie.html` bevat uitgangspunten én onbevestigde voorstellen. Een voorstel is geen eis; vraag bij twijfel om bevestiging.
 
-## Werkwijze
+## Commando's
+Er is geen build en geen lint; de tests zijn de controle.
+- `cd tests && npm install`: eenmalig (`node_modules` staat niet in de repo). Chromium: `npx playwright install chromium`.
+- `npm test`: alle testbestanden, duurt enkele minuten. `node <naam>.test.js`: één testbestand.
+- Chromium elders? Dan `PW_CHROMIUM=/pad/naar/chromium npm test`. In de cloudomgeving: `PW_CHROMIUM=/opt/pw-browsers/chromium npm test`; installeer daar geen Playwright of browser opnieuw.
+- Resultaat: een geslaagde controle begint met `OK`, een mislukte met `FOUT`. Zoek daarop, niet op "FAIL".
+- Draai de tests die bij je wijziging horen. Bij gedeelde code (`shared.css`, `sync.js`, `sw.js`) de hele suite.
+- Bekende uitzonderingen: `robuust.test.js` duurt ~230 s (grens in `run-all.js` is 240 s; draai hem los als hij faalt) en `route-stops.test.js` is af en toe onbetrouwbaar.
 
-- Antwoord in het Nederlands, kort en praktisch. De eigenaar heeft basiskennis van techniek: leg vaktermen kort uit.
-- Bouw klein en gericht. Toekomstwensen zijn geen bouwopdracht.
-- Bij een audit of onderzoek: niets wijzigen zonder vervolgopdracht.
-- Bij een bouwopdracht: blijf binnen de afgesproken scope. Overleg eerst bij ingrijpende of onverwachte wijzigingen.
+## Structuur
+- Pagina's in de hoofdmap: `index.html` (Locatie delen), `route.html`, `projecten.html`, `logboek.html`, `start.html`, `vault.html`, `visie.html`.
+- Gedeeld: `shared.css` (één stijlbron), `sync.js` (GitHub-synchronisatie), `datasync.js` (samenvoegen van Projecten en Logboek), `nav.js` (onderbalk), `version.js` (enige bron van `APP_VERSION`), `sw.js` (service worker, offline).
+- `tests/`: Playwright-tests op `file://` met een nagebootste GitHub (`mock-github.js`). `icons/`, manifesten, `CHANGELOG.md`.
+- Een nieuw bestand hoort in `LOCAL` in `sw.js`; de checklist voor een nieuwe tool staat in `README.md`.
+
+## Grenzen
+- Geen tokens, pincodes of andere geheimen in bestanden of antwoorden. Publiek uitgeleverde bestanden bevatten geen onversleutelde geheimen; behandel versleutelde bestanden niet automatisch als veilig en bespreek wijzigingen aan de beveiligingsopzet vooraf.
+- Wijzig opslag, synchronisatie (`sync.js`, `datasync.js`) of gegevensformaten niet zonder eerst de gevolgen en een eventuele migratie te bespreken. Kijk ook naar bestaande data, synchronisatie en oudere appversies.
+- Hernoem of vertaal geen opslagsleutels, JSON-velden of externe koppelingen zonder expliciet akkoord. Een nieuwe sleutel alleen na akkoord en met een regel in `README.md`.
 - Behoud bestaande functionaliteit en bestaande gebruikersgegevens.
-- Wijzig opslag, synchronisatie (`sync.js`) of gegevensformaten niet zonder eerst de gevolgen en een eventuele migratie te bespreken.
-- Gebruik de bestaande aanpak, tenzij de opdracht een wijziging vereist.
-- Na een bouwopdracht doe je zelf het git-werk: committen, pushen, pull request openen en samenvoegen naar `main`, zonder te vragen. De eigenaar is niet technisch en wil snel resultaat. Meld alleen het nieuwe versienummer en wat er veranderd is. Tags maak je alleen op verzoek.
-- Zet geen tokens, pincodes of andere geheimen in bestanden of antwoorden.
+- Geen framework, dependency of extra architectuurlaag zonder concrete noodzaak en overleg.
+- Bouw klein en gericht; toekomstwensen zijn geen bouwopdracht. Bij een audit of onderzoek: niets wijzigen zonder vervolgopdracht. Overleg eerst bij ingrijpende of onverwachte wijzigingen.
+- Na twee mislukte pogingen met dezelfde aanpak: stoppen, diagnose en alternatief geven.
+- Meld welke controles niet zijn uitgevoerd. De tests lopen in Chromium met een nagebootste GitHub: Safari op een echte iPhone, de echte GitHub-koppeling, de live site en de pincode op een echt apparaat zijn daarmee niet gecontroleerd.
 
-## Waar staat wat
-
-- `README.md`: beschrijving van de tools, synchroniseren, pincode, uitrollen en de checklist voor een nieuwe tool. Bron voor hoe het werkt.
-- `tests/README.md`: wat de tests controleren en hoe je ze toevoegt.
-- `DESIGN.md`: ontwerpafspraken (variabelen, onderdelen, wat in `shared.css` hoort). Lees dit vóór een wijziging aan de vormgeving.
-- `visie.html` beschrijft de projectrichting en mogelijke uitbreidingen. De pagina bevat zowel uitgangspunten als onbevestigde voorstellen. Behandel een voorstel niet automatisch als goedgekeurde eis. Vraag bij twijfel om bevestiging voordat je erop voortbouwt.
-
-## Taal in de code
-
-- Nieuwe functie- en variabelenamen in het Engels, in camelCase. Volg bij bestaande code de naamgeving die er staat.
-- Comments en documentatie in het Nederlands. Teksten op het scherm in het Nederlands.
-- Hernoem of vertaal bestaande code niet alleen om de taal gelijk te trekken.
-- Hernoem of vertaal opslagsleutels, JSON-velden en externe koppelingen niet zonder expliciet akkoord. Dit komt bovenop de regel over opslag en gegevensformaten onder Werkwijze.
-
-## Bouwprincipes
-
-Deze principes gelden voor nieuwe en gewijzigde code. Ze zijn geen opdracht om bestaande code preventief te verbouwen.
-
-- Voeg geen framework, dependency of extra architectuurlaag toe zonder concrete noodzaak en overleg.
-- Dit is een statische site: publiek uitgeleverde bestanden mogen geen onversleutelde geheimen bevatten. Behandel versleutelde bestanden niet automatisch als veilig; bespreek wijzigingen aan de beveiligingsopzet vooraf.
-- Bekijk bij wijzigingen aan opgeslagen gegevens ook de gevolgen voor bestaande data, synchronisatie en oudere appversies. Spreek zo nodig eerst een migratie af (dit vult de regel over opslag onder Werkwijze aan).
-- Houd nieuwe en gewijzigde code overzichtelijk: geef functies een duidelijke verantwoordelijkheid en scheid weergave, inhoudelijke logica en opslag waar dat praktisch helpt. Dit verplicht niet tot aparte bestanden of een buildstap.
-- Gebruik voor nieuwe gegevens waarnaar blijvend wordt verwezen een stabiele id, onafhankelijk van wijzigbare namen. Dit verandert geen bestaande projectsleutels en bepaalt niet of tools een projectlijst delen.
-- Leg het waarom van niet-vanzelfsprekende keuzes kort vast (in comments, zie Taal in de code). Houd `README.md` actueel bij wijzigingen aan gebruik, synchronisatie of installatie.
-
-## Tests
-
-Er is geen build en geen lint. Elke tool is één HTML-bestand plus `shared.css`; de tests zijn de controle.
-
-```bash
-cd tests
-npm install     # eenmalig; node_modules staat niet in de repo
-npm test        # alle testbestanden na elkaar, duurt enkele minuten
-node start.test.js   # één testbestand (elk bestand eindigend op .test.js werkt zo)
-```
-
-- Een geslaagde controle begint met `OK`, een mislukte met `FOUT`. Zoek daarop, niet op "FAIL".
-- De tests openen de pagina's offline als `file://` in Chromium, met een nagebootste GitHub (`mock-github.js`). Ze raken geen echte GitHub of token.
-- `npm test` heeft naast `npm install` een beschikbare Chromium nodig. `tests/README.md` noemt daarvoor `npx playwright install chromium`.
-- Staat Chromium ergens anders, dan wijs je ernaar met de omgevingsvariabele `PW_CHROMIUM`, bijvoorbeeld `PW_CHROMIUM=/pad/naar/chromium npm test`. Dit hangt van de omgeving af, het is geen projectvereiste. Voorbeeld voor de huidige cloudomgeving: `PW_CHROMIUM=/opt/pw-browsers/chromium npm test`; installeer daar geen Playwright of browser opnieuw.
-- Draai de tests die bij je wijziging horen. Bij een wijziging aan gedeelde code (`shared.css`, `sync.js`, `sw.js`) de hele suite.
-- Zeg per resultaat wat wel en niet is getest. De tests lopen in Chromium met een nagebootste GitHub. Safari op een echte iPhone, de echte GitHub-koppeling, de live site en de pincode op een echt apparaat zijn daarmee niet gecontroleerd.
+## Conventies
+- Nederlandse comments, documentatie en schermteksten. Nieuwe functie- en variabelenamen in het Engels, camelCase; volg bij bestaande code de naamgeving die er staat en hernoem niet alleen om de taal gelijk te trekken.
+- Statische site, mobile first (iPhone, één hand): tikdoelen minstens 44px; gebruik de variabelen en onderdelen uit `shared.css` en zet herbruikbare onderdelen daar, niet in een pagina.
+- Gebruik voor nieuwe gegevens waarnaar blijvend wordt verwezen een stabiele id, onafhankelijk van wijzigbare namen.
+- Houd nieuwe code overzichtelijk (duidelijke verantwoordelijkheid per functie) en leg het waarom van niet-vanzelfsprekende keuzes kort vast in een comment. Houd `README.md` actueel bij wijzigingen aan gebruik, synchronisatie of installatie. Dit is geen opdracht om bestaande code preventief te verbouwen.
+- De eigenaar heeft basiskennis van techniek: antwoord kort en praktisch en leg vaktermen kort uit.
 
 ## Versies en caching
+- `APP_VERSION` (SemVer) staat alleen in `version.js`; `index.html`, `route.html` en `start.html` tonen het. Een wijziging met gevolgen voor de app krijgt een nieuwe versie, een sectie in `CHANGELOG.md` en een hoger `CACHE` in `sw.js`. Docs- of testwijzigingen niet. Een nummer wordt nooit hergebruikt.
+- Verhoog `CACHE` ook na een wijziging aan `index.html`, `route.html`, `logboek.html`, `projecten.html`, `sync.js`, `datasync.js`, `shared.css`, iconen of manifesten. Bij `start.html`, `vault.html` en `visie.html`: beoordeel eerst hoe de cache voor die wijziging werkt.
+- Pagina's, manifesten, scripts en stijl worden eerst via het netwerk geladen en vallen na 4 seconden of zonder verbinding terug op de bewaarde kopie; een vergeten `CACHE` merk je dus vooral offline of bij slecht bereik.
 
-- Het appversienummer staat alleen in `version.js` (`APP_VERSION`, SemVer). `index.html`, `route.html` en `start.html` tonen het; geen pagina heeft een eigen versienummer. Een wijziging met gevolgen voor de app krijgt een nieuwe versie, een sectie in `CHANGELOG.md` en een hoger `CACHE`; docs- of testwijzigingen niet. Een nummer wordt nooit hergebruikt.
-- `sw.js` heeft `CACHE` en `LOCAL`. Volgens de README verhoog je `CACHE` na een wijziging aan `index.html`, `route.html`, `sync.js`, `shared.css`, iconen of manifesten, en bij een nieuw bestand in `LOCAL`. De README noemt `start.html`, `vault.html` en `visie.html` daarbij niet: beoordeel dan eerst hoe de cache voor die wijziging werkt voordat je `CACHE` wel of niet verhoogt.
-- Pagina's, manifesten, scripts en stijl worden eerst via het netwerk geladen en vallen na 4 seconden of zonder verbinding terug op de bewaarde kopie. Het effect van een vergeten `CACHE` merk je dus vooral offline of bij slecht bereik.
-- Een nieuw bestand moet in `LOCAL` in `sw.js`; de checklist voor een nieuwe tool staat in de README.
-
-## Conventies voor commits en branches
-
-- Commits volgens Conventional Commits: Engelse type (`feat`, `fix`, `docs`, `test`, `chore`, `refactor`) met een Nederlandse omschrijving, bijvoorbeeld `fix(sw): beperk cacheopruiming tot de eigen app`.
-- Korte taakbranches met een beschrijvende naam, geen projectnaam en geen branch per tool.
-- Wijzigingen gaan via een pull request naar `main`; niet rechtstreeks pushen. Voeg zelf samen als de tests groen zijn.
+## Git
+- Commits volgens Conventional Commits: Engelse type (`feat`, `fix`, `docs`, `test`, `chore`, `refactor`), Nederlandse omschrijving, bijvoorbeeld `fix(sw): beperk cacheopruiming tot de eigen app`.
+- Korte taakbranches met een beschrijvende naam, geen projectnaam en geen branch per tool. Wijzigingen gaan via een pull request naar `main`; niet rechtstreeks pushen. Voeg zelf samen als de tests groen zijn.
+- Na een bouwopdracht doe je zelf het git-werk (committen, pushen, pull request, samenvoegen) zonder te vragen; meld alleen het nieuwe versienummer en wat er veranderd is. Uitzondering: zegt de opdracht dat je eerst moet laten beoordelen, dan wacht je op akkoord.
 - Maak geen tag (`vX.Y.Z`) zonder opdracht van de eigenaar.
